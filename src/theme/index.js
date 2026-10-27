@@ -55,9 +55,12 @@ export function createAppTheme(mode = 'light') {
         defaultProps: { disableElevation: true },
         styleOverrides: {
           root: { borderRadius: 8, whiteSpace: 'nowrap', flexShrink: 0 },
-          sizeLarge: { height: 48, fontSize: 15, padding: '8px 22px' },
-          sizeMedium: { height: 36 },
-          sizeSmall: { height: 30, fontSize: 13 },
+          // CTA sizes from the Figma design system: Large 48 / Medium 40 / Small 36.
+          sizeLarge: { height: 48, padding: '0 20px', fontSize: pxToRem(16), lineHeight: 24 / 16 },
+          sizeMedium: { height: 40, padding: '0 16px' },
+          sizeSmall: { height: 36, padding: '0 16px', fontSize: pxToRem(14) },
+          startIcon: { marginRight: 8 },
+          endIcon: { marginLeft: 8 },
           containedInherit: {
             color: light ? '#FFFFFF' : grey[800],
             backgroundColor: light ? grey[800] : '#FFFFFF',

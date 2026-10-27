@@ -99,11 +99,11 @@ function WeighRecord({ truck, onConfirmed }) {
       </Grid>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
-        <Button color="inherit" onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
+        <Button color="inherit" size="large" onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
         <Stack direction="row" spacing={1.5}>
           {captured ? (
             <>
-              <Button variant="outlined" color="inherit" onClick={() => setCaptured(null)}>Re-weigh</Button>
+              <Button variant="outlined" color="inherit" size="large" onClick={() => setCaptured(null)}>Re-weigh</Button>
               <Button variant="contained" size="large" onClick={() => onConfirmed(truck, captured)}>Confirm weight</Button>
             </>
           ) : (

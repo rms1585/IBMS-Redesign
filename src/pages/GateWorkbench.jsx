@@ -95,7 +95,7 @@ function ArrivingRecord({ truck, side, onAdmit }) {
         </Stack>
       </Box>
       <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ p: 3, pt: 0 }}>
-        <Button variant="outlined" color="inherit">Report problem</Button>
+        <Button variant="outlined" color="inherit" size="large">Report problem</Button>
         <Button variant="contained" size="large" onClick={() => setConfirm(true)}>Admit truck</Button>
       </Stack>
       <Dialog open={confirm} onClose={() => setConfirm(false)} maxWidth="xs" fullWidth>
