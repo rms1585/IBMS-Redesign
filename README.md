@@ -19,6 +19,11 @@ npm start        # Electron against the built dist/
 npm run dist     # package installers (dmg / nsis / AppImage) into release/
 ```
 
+## Hosting on GitHub
+
+- **Web version (GitHub Pages):** every push to `main` builds the app and publishes it to https://rms1585.github.io/ibms-redesign/ (`.github/workflows/pages.yml`). Turn it on once under *Settings → Pages → Source: GitHub Actions*.
+- **Desktop installers (GitHub Releases):** push a version tag (`git tag v0.1.0 && git push origin v0.1.0`) to build Windows `.exe`, macOS `.dmg` and Linux `.AppImage` files and attach them to a release (`.github/workflows/release.yml`). The installers are unsigned for now.
+
 ## Structure
 
 ```

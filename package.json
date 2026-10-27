@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "description": "IBMS Redesign: desktop app for Bangladesh land-port management",
   "private": true,
+  "author": "rms1585",
+  "repository": "github:rms1585/ibms-redesign",
+  "homepage": "https://rms1585.github.io/ibms-redesign/",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
