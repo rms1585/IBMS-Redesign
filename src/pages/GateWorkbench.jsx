@@ -179,7 +179,7 @@ export default function GateWorkbench({ side }) {
         title={title}
         links={[{ name: 'Operations' }, { name: title }]}
         subtitle={side === 'border' ? 'Faces the zero line: foreign entry and empty return, export departure and stone crossings.' : 'Faces the Bangladesh road: local trucks arriving to receive cargo and leaving loaded.'}
-        action={<Button variant="outlined" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setManual(true)}>Register unexpected truck</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setManual(true)}>Register unexpected truck</Button>}
       />
       <Tabs value={tab} onChange={(e, v) => { setTab(v); setSelected(null); }} sx={{ mb: 3 }}>
         <Tab value="arriving" label={<Stack direction="row" spacing={1} alignItems="center"><span>Arriving</span><Label color="primary">{arriving.length}</Label></Stack>} />
