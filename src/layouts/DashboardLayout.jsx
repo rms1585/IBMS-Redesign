@@ -10,6 +10,7 @@ import { currentUser, ports, alerts } from '../data/mock';
 import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
+import blpaLogo from '../assets/blpa-logo.png';
 import { ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
 
 const NAV_WIDTH = 280;
@@ -19,15 +20,13 @@ const HEADER = 72;
 function Logo({ mini }) {
   return (
     <Stack direction="row" alignItems="center" spacing={1.25} sx={{ px: mini ? 0 : 1, justifyContent: mini ? 'center' : 'flex-start' }}>
+      {/* White disc keeps the logo's dark-green ring legible on dark backgrounds. */}
       <Box
-        sx={{
-          width: 36, height: 36, borderRadius: 1.25, display: 'grid', placeItems: 'center', flexShrink: 0,
-          background: (t) => `linear-gradient(135deg, ${t.palette.primary.light}, ${t.palette.primary.dark})`,
-          color: '#fff', fontWeight: 800, fontSize: 15, letterSpacing: -0.5,
-        }}
-      >
-        IB
-      </Box>
+        component="img"
+        src={blpaLogo}
+        alt="Bangladesh Land Port Authority"
+        sx={{ width: 40, height: 40, flexShrink: 0, objectFit: 'contain', borderRadius: '50%', bgcolor: '#fff', p: '2px' }}
+      />
       {!mini && (
         <Box sx={{ lineHeight: 1 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>IBMS</Typography>
