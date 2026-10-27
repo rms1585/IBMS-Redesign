@@ -55,7 +55,7 @@ export default function Billing() {
       <PageHeader
         title="Billing & payment"
         links={[{ name: 'Operations' }, { name: 'Billing' }, { name: 'BEN-IGM-2026-08841' }]}
-        action={<Button variant="contained" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>Record bank fallback</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>Record bank fallback</Button>}
       />
       <Alert severity="info" sx={{ mb: 3 }}>Demonstration tariff (TO-2026-03, invented reference). These are not legal rates.</Alert>
       <Grid container spacing={3} sx={{ mb: 3 }}>

@@ -70,7 +70,7 @@ export default function WarehouseLayout() {
         title="Warehouse layout"
         links={[{ name: 'Administration' }, { name: 'Warehouse layout' }]}
         subtitle="Facility → zone → bay grid. Sheds and open yards hold cargo and attract storage rent; transshipment yards do not."
-        action={<Button variant="contained" color="inherit" startIcon={<AddRoundedIcon />}>Create facility</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />}>Create facility</Button>}
       />
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 3 }}>

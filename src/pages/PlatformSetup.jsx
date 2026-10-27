@@ -105,7 +105,7 @@ export default function PlatformSetup() {
         action={
           <>
             {tab !== 'tariff' && <Button variant="outlined" color="inherit" startIcon={<UploadFileRoundedIcon />} onClick={() => setImportOpen(true)}>Import {label.toLowerCase()}</Button>}
-            <Button variant="contained" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => (tab === 'ports' ? setPortOpen(true) : setToast(`New ${label.toLowerCase()} form opens here.`))}>
+            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => (tab === 'ports' ? setPortOpen(true) : setToast(`New ${label.toLowerCase()} form opens here.`))}>
               {tab === 'ports' ? 'Create port' : tab === 'tariff' ? 'Record tariff order' : 'Add'}
             </Button>
           </>

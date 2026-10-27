@@ -25,7 +25,7 @@ export default function Equipment() {
       <PageHeader
         title="Equipment & labour"
         links={[{ name: 'Administration' }, { name: 'Equipment & labour' }]}
-        action={<Button variant="contained" color="inherit" startIcon={<AddRoundedIcon />}>{tab === 'equipment' ? 'Add equipment' : 'Add gang'}</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />}>{tab === 'equipment' ? 'Add equipment' : 'Add gang'}</Button>}
       />
       <Alert severity="info" sx={{ mb: 3 }}>Usage is recorded during warehouse and transshipment handling and read by billing: machine use applies the equipment rate, manual gang work applies the manual rate.</Alert>
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>

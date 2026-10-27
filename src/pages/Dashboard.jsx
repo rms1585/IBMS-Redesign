@@ -239,7 +239,7 @@ export default function Dashboard() {
               <ToggleButton value="month">Month</ToggleButton>
               <ToggleButton value="year">Year</ToggleButton>
             </ToggleButtonGroup>
-            <Button variant="contained" color="inherit" startIcon={<FileDownloadOutlinedIcon />}>Export</Button>
+            <Button variant="contained" startIcon={<FileDownloadOutlinedIcon />}>Export</Button>
           </>
         }
       />

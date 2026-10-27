@@ -40,7 +40,7 @@ function ManualRegistration({ open, onClose, onDone }) {
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" color="warning" disabled={!valid} onClick={() => onDone(form)}>Admit and flag</Button>
+        <Button variant="contained" disabled={!valid} onClick={() => onDone(form)}>Admit and flag</Button>
       </DialogActions>
     </Dialog>
   );

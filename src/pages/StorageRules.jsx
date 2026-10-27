@@ -87,7 +87,7 @@ export default function StorageRules() {
         action={
           <>
             <Button variant="outlined" color="inherit" startIcon={<UploadFileRoundedIcon />} onClick={() => setFmt(true)}>Import rules</Button>
-            <Button variant="contained" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New rule</Button>
+            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New rule</Button>
           </>
         }
       />

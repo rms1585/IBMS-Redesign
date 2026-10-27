@@ -130,7 +130,7 @@ export default function Roles() {
         title="Roles"
         links={[{ name: 'Administration' }, { name: 'Roles' }]}
         subtitle="A role combines scope, modules and actions. Templates are read-only: copy one to make a local role you can edit."
-        action={<Button variant="contained" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>Create role</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>Create role</Button>}
       />
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
         <Tab value="all" label="All" />

@@ -68,7 +68,7 @@ export default function Users() {
       <PageHeader
         title="Users"
         links={[{ name: 'Administration' }, { name: 'Users' }]}
-        action={<Button variant="contained" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New user</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New user</Button>}
       />
       <DataTable
         rows={list}
