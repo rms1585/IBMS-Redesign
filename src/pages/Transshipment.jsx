@@ -1,7 +1,7 @@
 import { Box, Card, Stack, Typography, Button, Grid2 as Grid, LinearProgress, Divider } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { PageHeader, SectionCard, formatKg } from '../components/common';
 import Label from '../components/Label';
+import { AddRoundedIcon } from '../components/icons';
 
 const source = { plate: 'WB-19-C-0791', manifest: 'BEN-IGM-2026-08799', product: 'Onion', goodsKg: 30000, remainingKg: 12000, driver: 'Mithun Saha', location: 'Yard T1, position 3', weighing: 'Loaded weighed' };
 const receivers = [

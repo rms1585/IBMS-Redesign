@@ -5,13 +5,10 @@ import {
   LinearProgress, Checkbox,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { PageHeader, SectionCard, UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { ports, agencies, users } from '../data/mock';
+import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, LockOutlinedIcon } from '../components/icons';
 
 const steps = [
   { key: 'port', title: 'The port', desc: 'Name and Customs station' },
@@ -86,7 +83,7 @@ function StepResources({ modules }) {
               <TableRow key={n} hover>
                 <TableCell sx={{ pl: 2, fontWeight: 600 }}>{n}</TableCell>
                 <TableCell>{t}</TableCell>
-                <TableCell sx={{ color: d.includes('due') ? 'warning.dark' : 'text.secondary' }}>{d}</TableCell>
+                <TableCell sx={{ color: d.includes('due') ? 'warning.text' : 'text.secondary' }}>{d}</TableCell>
                 <TableCell><Label color="success">{s}</Label></TableCell>
                 <TableCell align="right" sx={{ pr: 2, whiteSpace: 'nowrap' }}><Button size="small" color="inherit">Edit</Button><Button size="small" color="error">Retire</Button></TableCell>
               </TableRow>

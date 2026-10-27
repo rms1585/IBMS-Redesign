@@ -3,12 +3,11 @@ import {
   Box, Card, Stack, Typography, Button, Tabs, Tab, Grid2 as Grid, TextField, MenuItem, Dialog, DialogTitle,
   DialogContent, DialogActions, Alert, Snackbar, Table, TableHead, TableRow, TableCell, TableBody,
 } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
 import { PageHeader } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { storageRules } from '../data/mock';
+import { AddRoundedIcon, UploadFileRoundedIcon } from '../components/icons';
 
 const categories = ['Food', 'Chemical', 'Baby products', 'Textile', 'Rubber', 'Stone'];
 const stateColor = { Active: 'success', 'Waiting for approval': 'warning', Draft: 'default' };

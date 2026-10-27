@@ -5,6 +5,7 @@ Desktop app for IBMS, the Bangladesh land-port management platform (BLPA officer
 - **Shell:** Electron 33, with a Vite + React 18 renderer
 - **Design system:** Minimals-style theme on MUI 6 (Public Sans, soft labels, 16 px cards, dashed dividers, collapsible left navigation, light/dark mode)
 - **Primary colour:** `#008F40`
+- **Colours, typography and icons** follow the IBMS Figma design system: its colour styles (`src/theme/palette.js`), its Public Sans desktop type scale (`src/theme/index.js`) and Hugeicons Stroke Rounded icons (`src/components/icons.jsx`)
 
 > All data is demonstration fixtures (`src/data/mock.js`). Tariff values are an invented reference and are **not legal rates**. There is no backend yet.
 

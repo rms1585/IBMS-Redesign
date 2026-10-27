@@ -3,11 +3,11 @@ import {
   Box, Card, Stack, Typography, Button, Tabs, Tab, Stepper, Step, StepLabel, TextField, MenuItem, Grid2 as Grid,
   Checkbox, FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, Divider,
 } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { PageHeader } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { roles, modulesCatalog, ports } from '../data/mock';
+import { AddRoundedIcon } from '../components/icons';
 
 function CreateRole({ open, onClose, onSave }) {
   const [step, setStep] = useState(0);

@@ -11,7 +11,7 @@ export default function Label({ color = 'default', variant = 'soft', startIcon, 
   const styles = {
     soft: isDefault
       ? { color: theme.palette.text.secondary, backgroundColor: alpha(theme.palette.grey[500], 0.16) }
-      : { color: light ? p.dark : p.light, backgroundColor: alpha(p.main, 0.16) },
+      : { color: light ? p.text ?? p.dark : p.light, backgroundColor: alpha(p.main, 0.16) },
     filled: isDefault
       ? { color: light ? '#fff' : theme.palette.grey[800], backgroundColor: theme.palette.text.primary }
       : { color: p.contrastText, backgroundColor: p.main },

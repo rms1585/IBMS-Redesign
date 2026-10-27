@@ -3,12 +3,11 @@ import {
   Box, Stack, Typography, Button, Grid2 as Grid, TextField, MenuItem, Dialog, DialogTitle, DialogContent,
   DialogActions, Alert, Snackbar, IconButton, Menu,
 } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import { PageHeader, UserAvatar, ReasonDialog } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { users as initial, roles, ports } from '../data/mock';
+import { AddRoundedIcon, MoreVertRoundedIcon } from '../components/icons';
 
 const statusColor = { Active: 'success', Invited: 'info', Deactivated: 'default' };
 

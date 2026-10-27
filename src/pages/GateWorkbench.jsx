@@ -3,13 +3,11 @@ import {
   Box, Card, Stack, Typography, Button, Tabs, Tab, Divider, Grid2 as Grid, Alert, Snackbar,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Table, TableBody, TableRow, TableCell,
 } from '@mui/material';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { PageHeader, DetailRow, formatBDT, formatKg, EmptyState } from '../components/common';
 import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
 import Label from '../components/Label';
 import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes } from '../data/mock';
+import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
 

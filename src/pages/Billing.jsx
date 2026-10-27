@@ -3,10 +3,10 @@ import {
   Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Grid2 as Grid, Alert,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Tooltip,
 } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { PageHeader, SectionCard, KpiCard, formatBDT } from '../components/common';
 import Label from '../components/Label';
 import { billLines, payments as initialPayments, currentUser } from '../data/mock';
+import { AddRoundedIcon } from '../components/icons';
 
 const statusColor = { Confirmed: 'success', Dishonored: 'error', 'Pending confirmation': 'warning' };
 

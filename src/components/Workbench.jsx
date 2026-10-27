@@ -1,8 +1,8 @@
 import { Box, Card, Stack, Typography, ButtonBase, Divider } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import VideocamRoundedIcon from '@mui/icons-material/VideocamRounded';
 import { SearchField, EmptyState } from './common';
 import Label from './Label';
+import { VideocamRoundedIcon } from './icons';
 
 // Operational workbench: searchable queue on the left, selected record in the centre,
 // contextual rail (camera, movement, progress) on the right.

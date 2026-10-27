@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { Box, Card, Stack, Typography, Button, Grid2 as Grid, ButtonBase, Menu, MenuItem, Divider, Alert, Snackbar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
-import WarehouseRoundedIcon from '@mui/icons-material/WarehouseRounded';
 import { PageHeader, SectionCard, ReasonDialog } from '../components/common';
 import { BayGrid, BayLegend } from '../components/BayGrid';
 import Label from '../components/Label';
 import { facilities, bayState } from '../data/mock';
+import { AddRoundedIcon, MoreHorizRoundedIcon, WarehouseRoundedIcon } from '../components/icons';
 
 function zoneStats(z) {
   let used = 0; let blocked = 0;

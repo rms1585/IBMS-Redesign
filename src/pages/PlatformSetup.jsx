@@ -3,12 +3,11 @@ import {
   Box, Card, Stack, Typography, Tabs, Tab, Button, Grid2 as Grid, TextField, MenuItem, Dialog, DialogTitle,
   DialogContent, DialogActions, Alert, Snackbar, Step, StepLabel, Stepper,
 } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
 import { PageHeader, formatBDT } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { ports, products, vehicleTypes, agencies, traders, holidays, tariffLines } from '../data/mock';
+import { AddRoundedIcon, UploadFileRoundedIcon } from '../components/icons';
 
 function BulkImport({ open, onClose, what }) {
   const [step, setStep] = useState(0);

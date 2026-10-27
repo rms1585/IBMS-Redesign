@@ -5,18 +5,12 @@ import {
   Menu, MenuItem, Select, Collapse,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
-import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
-import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
-import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
-import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
 import { navConfig } from './navConfig';
 import { currentUser, ports, alerts } from '../data/mock';
 import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
+import { ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
 
 const NAV_WIDTH = 280;
 const NAV_MINI = 88;
@@ -267,7 +261,7 @@ export default function DashboardLayout() {
         {!mini && (
           <Box sx={{ p: 2.5, pt: 0 }}>
             <Box sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
-              <Typography variant="subtitle2" color="primary.dark" sx={{ color: theme.palette.mode === 'dark' ? 'primary.light' : 'primary.dark' }}>
+              <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'primary.light' : 'primary.text' }}>
                 Benapole (BEN) · Live
               </Typography>
               <Typography variant="caption" color="text.secondary">NSW feed healthy · Synced 10:58</Typography>

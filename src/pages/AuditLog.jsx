@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Box, Card, Stack, Typography, Button, TextField, MenuItem, Drawer, IconButton, Divider, Chip } from '@mui/material';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { PageHeader, DetailRow } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { auditEvents } from '../data/mock';
+import { CloseRoundedIcon, FileDownloadOutlinedIcon } from '../components/icons';
 
 const flagColor = { Override: 'warning', 'Recorded offline': 'info', 'Manual pending reconciliation': 'error' };
 const modules = ['All', ...new Set(auditEvents.map((e) => e.module))];

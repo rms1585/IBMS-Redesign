@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Tabs, Tab, Button, Typography, Alert } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { PageHeader } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
+import { AddRoundedIcon } from '../components/icons';
 
 const equipment = [
   { id: 'FL-01', name: 'Forklift 3 t', kind: 'Forklift', facility: 'Shed 5', status: 'Available' },

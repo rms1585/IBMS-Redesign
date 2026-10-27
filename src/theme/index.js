@@ -1,5 +1,7 @@
 import { createTheme, alpha } from '@mui/material/styles';
-import { createPalette, grey } from './palette';
+import { createPalette, grey, overlayBase } from './palette';
+
+const pxToRem = (px) => `${px / 16}rem`;
 
 const fontFamily = '"Public Sans Variable", "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
@@ -13,6 +15,7 @@ const dialogShadow = (mode) => `-40px 40px 80px -8px ${alpha(mode === 'light' ? 
 export function createAppTheme(mode = 'light') {
   const palette = createPalette(mode);
   const light = mode === 'light';
+  const overlay = overlayBase(mode);
 
   return createTheme({
     palette,
@@ -24,26 +27,27 @@ export function createAppTheme(mode = 'light') {
       fontWeightMedium: 500,
       fontWeightSemiBold: 600,
       fontWeightBold: 700,
-      h1: { fontWeight: 800, fontSize: '3rem', lineHeight: 1.25 },
-      h2: { fontWeight: 800, fontSize: '2.5rem', lineHeight: 1.33 },
-      h3: { fontWeight: 700, fontSize: '2rem', lineHeight: 1.5 },
-      h4: { fontWeight: 700, fontSize: '1.5rem', lineHeight: 1.5 },
-      h5: { fontWeight: 700, fontSize: '1.25rem', lineHeight: 1.5 },
-      h6: { fontWeight: 700, fontSize: '1.0625rem', lineHeight: 1.55 },
-      subtitle1: { fontWeight: 600, fontSize: '1rem', lineHeight: 1.5 },
-      subtitle2: { fontWeight: 600, fontSize: '0.875rem', lineHeight: 1.57 },
-      body1: { fontSize: '1rem', lineHeight: 1.5 },
-      body2: { fontSize: '0.875rem', lineHeight: 1.57 },
-      caption: { fontSize: '0.75rem', lineHeight: 1.5 },
-      overline: { fontWeight: 700, fontSize: '0.75rem', lineHeight: 1.5, textTransform: 'uppercase' },
-      button: { fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.71, textTransform: 'none' },
+      // Desktop type scale from the IBMS Figma design system (Public Sans).
+      h1: { fontWeight: 700, fontSize: pxToRem(64), lineHeight: 80 / 64 },
+      h2: { fontWeight: 700, fontSize: pxToRem(48), lineHeight: 64 / 48 },
+      h3: { fontWeight: 700, fontSize: pxToRem(32), lineHeight: 48 / 32 },
+      h4: { fontWeight: 700, fontSize: pxToRem(28), lineHeight: 36 / 28 },
+      h5: { fontWeight: 700, fontSize: pxToRem(24), lineHeight: 32 / 24 },
+      h6: { fontWeight: 700, fontSize: pxToRem(20), lineHeight: 30 / 20 },
+      subtitle1: { fontWeight: 600, fontSize: pxToRem(16), lineHeight: 24 / 16 },
+      subtitle2: { fontWeight: 600, fontSize: pxToRem(14), lineHeight: 20 / 14 },
+      body1: { fontWeight: 400, fontSize: pxToRem(16), lineHeight: 24 / 16 },
+      body2: { fontWeight: 400, fontSize: pxToRem(14), lineHeight: 20 / 14 },
+      caption: { fontWeight: 400, fontSize: pxToRem(12), lineHeight: 16 / 12 },
+      overline: { fontWeight: 700, fontSize: pxToRem(12), lineHeight: 16 / 12, textTransform: 'uppercase' },
+      button: { fontWeight: 600, fontSize: pxToRem(14), lineHeight: 20 / 14, textTransform: 'none' },
     },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           body: { backgroundColor: palette.background.default },
           '*::-webkit-scrollbar': { width: 8, height: 8 },
-          '*::-webkit-scrollbar-thumb': { borderRadius: 8, backgroundColor: alpha(grey[500], 0.32) },
+          '*::-webkit-scrollbar-thumb': { borderRadius: 8, backgroundColor: alpha(overlay, 0.32) },
           '*::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
         },
       },
@@ -59,14 +63,14 @@ export function createAppTheme(mode = 'light') {
             backgroundColor: light ? grey[800] : '#FFFFFF',
             '&:hover': { backgroundColor: light ? grey[700] : grey[400] },
           },
-          outlined: { borderColor: alpha(grey[500], 0.32) },
-          outlinedInherit: { borderColor: alpha(grey[500], 0.32), '&:hover': { backgroundColor: palette.action.hover } },
+          outlined: { borderColor: alpha(overlay, 0.32) },
+          outlinedInherit: { borderColor: alpha(overlay, 0.32), '&:hover': { backgroundColor: palette.action.hover } },
         },
       },
       MuiIconButton: { styleOverrides: { root: { borderRadius: 8 } } },
       MuiPaper: {
         defaultProps: { elevation: 0 },
-        styleOverrides: { root: { backgroundImage: 'none' }, outlined: { borderColor: alpha(grey[500], 0.16) } },
+        styleOverrides: { root: { backgroundImage: 'none' }, outlined: { borderColor: alpha(overlay, 0.16) } },
       },
       MuiCard: {
         styleOverrides: {
@@ -89,7 +93,7 @@ export function createAppTheme(mode = 'light') {
         styleOverrides: {
           root: {
             borderRadius: 8,
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: alpha(grey[500], 0.2) },
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: alpha(overlay, 0.2) },
             '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: light ? grey[800] : '#FFFFFF' },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderWidth: 2, borderColor: light ? grey[800] : '#FFFFFF' },
           },
@@ -100,7 +104,7 @@ export function createAppTheme(mode = 'light') {
       },
       MuiTableCell: {
         styleOverrides: {
-          root: { borderBottomStyle: 'dashed', borderBottomColor: alpha(grey[500], 0.2) },
+          root: { borderBottomStyle: 'dashed', borderBottomColor: alpha(overlay, 0.2) },
           head: {
             fontSize: 14,
             fontWeight: 600,
@@ -145,13 +149,13 @@ export function createAppTheme(mode = 'light') {
         styleOverrides: { tooltip: { backgroundColor: grey[800], borderRadius: 6 }, arrow: { color: grey[800] } },
       },
       MuiAlert: {
-        styleOverrides: { root: { borderRadius: 8 }, standardInfo: { color: light ? '#003768' : '#CAFDF5' } },
+        styleOverrides: { root: { borderRadius: 8 }, standardInfo: { color: light ? palette.info.darker : palette.info.light } },
       },
       MuiStepIcon: {
         styleOverrides: { root: { '&.Mui-completed, &.Mui-active': { color: palette.primary.main } } },
       },
       MuiLinearProgress: {
-        styleOverrides: { root: { borderRadius: 8, height: 6, backgroundColor: alpha(grey[500], 0.16) }, bar: { borderRadius: 8 } },
+        styleOverrides: { root: { borderRadius: 8, height: 6, backgroundColor: alpha(overlay, 0.16) }, bar: { borderRadius: 8 } },
       },
       MuiAvatar: {
         styleOverrides: { root: { fontWeight: 600 } },

@@ -4,11 +4,8 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
-import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 import { Link as RouterLink } from 'react-router-dom';
+import { InboxOutlinedIcon, SearchRoundedIcon, TrendingDownRoundedIcon, TrendingUpRoundedIcon } from './icons';
 
 export function PageHeader({ title, links = [], action, subtitle }) {
   return (
@@ -97,7 +94,8 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
           <Box
             sx={{
               width: 48, height: 48, borderRadius: 1.5, display: 'grid', placeItems: 'center',
-              color: theme.palette[color].dark, bgcolor: alpha(theme.palette[color].main, 0.12),
+              color: theme.palette.mode === 'light' ? theme.palette[color].text ?? theme.palette[color].dark : theme.palette[color].light,
+              bgcolor: alpha(theme.palette[color].main, 0.12),
             }}
           >
             {icon}
@@ -130,7 +128,7 @@ export function UserAvatar({ name, size = 40, sx }) {
   const colors = ['primary', 'info', 'warning', 'secondary', 'error', 'success'];
   const c = colors[name.length % colors.length];
   return (
-    <Avatar sx={{ width: size, height: size, fontSize: size * 0.38, bgcolor: (t) => alpha(t.palette[c].main, 0.16), color: (t) => t.palette[c].dark, ...sx }}>
+    <Avatar sx={{ width: size, height: size, fontSize: size * 0.38, bgcolor: (t) => alpha(t.palette[c].main, 0.16), color: (t) => (t.palette.mode === 'light' ? t.palette[c].text ?? t.palette[c].dark : t.palette[c].light), ...sx }}>
       {initials}
     </Avatar>
   );

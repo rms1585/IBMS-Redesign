@@ -16,9 +16,9 @@ export function useBayColors() {
   return {
     empty: { bg: t.palette.background.paper, border: alpha(t.palette.grey[500], 0.32), color: t.palette.text.secondary },
     occupied: { bg: alpha(t.palette.grey[500], 0.24), border: 'transparent', color: t.palette.text.secondary },
-    same: { bg: alpha(t.palette.info.main, 0.2), border: t.palette.info.main, color: t.palette.info.dark },
+    same: { bg: alpha(t.palette.info.main, 0.2), border: t.palette.info.main, color: t.palette.info.text },
     blocked: { bg: `repeating-linear-gradient(45deg, ${alpha(t.palette.error.main, 0.12)} 0 4px, transparent 4px 8px)`, border: alpha(t.palette.error.main, 0.4), color: t.palette.error.main },
-    disallowed: { bg: alpha(t.palette.warning.main, 0.16), border: alpha(t.palette.warning.main, 0.5), color: t.palette.warning.dark },
+    disallowed: { bg: alpha(t.palette.warning.main, 0.16), border: alpha(t.palette.warning.main, 0.5), color: t.palette.warning.text },
     selected: { bg: t.palette.primary.main, border: t.palette.primary.main, color: '#fff' },
   };
 }

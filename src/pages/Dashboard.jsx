@@ -7,13 +7,9 @@ import { useTheme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
-import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
-import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import { PageHeader, KpiCard, SectionCard, formatBDT } from '../components/common';
 import Label from '../components/Label';
+import { BlockRoundedIcon, FileDownloadOutlinedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, TimerOutlinedIcon } from '../components/icons';
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -60,7 +56,7 @@ function Operations() {
                 innerRadius: 64, outerRadius: 100, paddingAngle: 2, cornerRadius: 4,
                 data: [
                   { id: 0, value: 38, label: 'Foreign loaded', color: theme.palette.primary.main },
-                  { id: 1, value: 11, label: 'Foreign empty', color: theme.palette.primary.light },
+                  { id: 1, value: 11, label: 'Foreign empty', color: theme.palette.primary.dark },
                   { id: 2, value: 14, label: 'Local receiving', color: theme.palette.warning.main },
                   { id: 3, value: 4, label: 'Stone route', color: theme.palette.info.main },
                 ],
@@ -70,7 +66,7 @@ function Operations() {
             />
           </Box>
           <Stack spacing={1.25} sx={{ px: 3, pb: 3 }}>
-            {[['Foreign loaded', 38, 'primary.main'], ['Foreign empty', 11, 'primary.light'], ['Local receiving', 14, 'warning.main'], ['Stone route', 4, 'info.main']].map(([l, v, c]) => (
+            {[['Foreign loaded', 38, 'primary.main'], ['Foreign empty', 11, 'primary.dark'], ['Local receiving', 14, 'warning.main'], ['Stone route', 4, 'info.main']].map(([l, v, c]) => (
               <Stack key={l} direction="row" alignItems="center" spacing={1}>
                 <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: c }} />
                 <Typography variant="body2" sx={{ flex: 1 }}>{l}</Typography>

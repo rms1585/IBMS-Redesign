@@ -3,10 +3,10 @@ import {
   Box, Card, Stack, Typography, Table, TableHead, TableRow, TableCell, TableBody, Drawer, IconButton, Divider,
   Tabs, Tab, LinearProgress, MenuItem, TextField,
 } from '@mui/material';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { PageHeader, SearchField, DetailRow, EmptyState, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
 import { manifests } from '../data/mock';
+import { CloseRoundedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
 

@@ -4,13 +4,10 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, Divider, Alert, Snackbar,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
-import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
 import { PageHeader, KpiCard, SectionCard, SearchField, formatBDT } from '../components/common';
 import Label from '../components/Label';
 import { manifests, alerts } from '../data/mock';
+import { LocalShippingRoundedIcon, NotificationsActiveRoundedIcon, PaymentsRoundedIcon, ReceiptLongRoundedIcon } from '../components/icons';
 
 const AGENCY = 'Rupsha Clearing & Forwarding';
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };

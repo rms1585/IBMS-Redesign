@@ -1,31 +1,5 @@
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
-import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
-import BusinessCenterRoundedIcon from '@mui/icons-material/BusinessCenterRounded';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
-import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import ScaleRoundedIcon from '@mui/icons-material/ScaleRounded';
-import GridViewRoundedIcon from '@mui/icons-material/GridViewRounded';
-import WarehouseRoundedIcon from '@mui/icons-material/WarehouseRounded';
-import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
-import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
-import SignpostRoundedIcon from '@mui/icons-material/SignpostRounded';
-import PublicRoundedIcon from '@mui/icons-material/PublicRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import ViewQuiltRoundedIcon from '@mui/icons-material/ViewQuiltRounded';
-import RuleRoundedIcon from '@mui/icons-material/RuleRounded';
-import AltRouteRoundedIcon from '@mui/icons-material/AltRouteRounded';
-import RvHookupRoundedIcon from '@mui/icons-material/RvHookupRounded';
-import PrecisionManufacturingRoundedIcon from '@mui/icons-material/PrecisionManufacturingRounded';
-import RequestQuoteRoundedIcon from '@mui/icons-material/RequestQuoteRounded';
-import SettingsEthernetRoundedIcon from '@mui/icons-material/SettingsEthernetRounded';
-import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
-import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
-import InboxRoundedIcon from '@mui/icons-material/InboxRounded';
-import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
-import TrainRoundedIcon from '@mui/icons-material/TrainRounded';
-import DirectionsBusRoundedIcon from '@mui/icons-material/DirectionsBusRounded';
 import { inboxRequests } from '../data/mock';
+import { AdminPanelSettingsRoundedIcon, AltRouteRoundedIcon, BusinessCenterRoundedIcon, DirectionsBusRoundedIcon, GridViewRoundedIcon, HistoryRoundedIcon, HomeRoundedIcon, InboxRoundedIcon, InsightsRoundedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, PeopleAltRoundedIcon, PrecisionManufacturingRoundedIcon, PublicRoundedIcon, ReceiptLongRoundedIcon, RequestQuoteRoundedIcon, RuleRoundedIcon, RvHookupRoundedIcon, ScaleRoundedIcon, SettingsEthernetRoundedIcon, SignpostRoundedIcon, StorefrontRoundedIcon, SyncAltRoundedIcon, TrainRoundedIcon, TuneRoundedIcon, ViewQuiltRoundedIcon, WarehouseRoundedIcon } from '../components/icons';
 
 const pendingForMe = inboxRequests.filter((r) => !r.mine).length;
 
