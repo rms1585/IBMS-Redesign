@@ -71,13 +71,21 @@ export function EmptyState({ title = 'No data', description, sx }) {
   );
 }
 
-export function KpiCard({ title, value, change, icon, color = 'primary', caption }) {
+export function KpiCard({ title, value, change, icon, color = 'primary', caption, note, noteTo }) {
   const theme = useTheme();
   const up = change == null ? null : change >= 0;
   return (
     <Card sx={{ p: 3, height: '100%', containerType: 'inline-size' }}>
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ minWidth: 0 }}>{title}</Typography>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
+          {/* Short note under the title, e.g. "(View queue)"; a link when noteTo is given. */}
+          {note && (noteTo ? (
+            <Link component={RouterLink} to={noteTo} variant="caption" underline="hover" sx={{ display: 'block' }}>({note})</Link>
+          ) : (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>({note})</Typography>
+          ))}
+        </Box>
         {icon && (
           <Box
             sx={{
