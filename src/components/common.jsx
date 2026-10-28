@@ -77,19 +77,7 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
   return (
     <Card sx={{ p: 3, height: '100%', containerType: 'inline-size' }}>
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
-          <Typography variant="h3" sx={{ mt: 1.5, mb: 1, fontSize: 'clamp(22px, 12cqi, 32px)', overflowWrap: 'anywhere' }}>{value}</Typography>
-          {change != null ? (
-            <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={0.5}>
-              {up ? <TrendingUpRoundedIcon fontSize="small" color="success" /> : <TrendingDownRoundedIcon fontSize="small" color="error" />}
-              <Typography variant="subtitle2" component="span">{up ? '+' : ''}{change}%</Typography>
-              <Typography variant="body2" color="text.secondary" component="span">{caption ?? 'vs. last period'}</Typography>
-            </Stack>
-          ) : (
-            caption && <Typography variant="body2" color="text.secondary">{caption}</Typography>
-          )}
-        </Box>
+        <Typography variant="subtitle2" color="text.secondary" sx={{ minWidth: 0 }}>{title}</Typography>
         {icon && (
           <Box
             sx={{
@@ -102,6 +90,18 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
           </Box>
         )}
       </Stack>
+      {/* The value spans the card under the title/icon row and stays on one line,
+          shrinking with the card (cqi = 1% of the card's content width). */}
+      <Typography variant="h3" noWrap sx={{ mt: icon ? 0.5 : 1.5, mb: 1, fontSize: 'clamp(16px, 13cqi, 32px)' }}>{value}</Typography>
+      {change != null ? (
+        <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={0.5}>
+          {up ? <TrendingUpRoundedIcon fontSize="small" color="success" /> : <TrendingDownRoundedIcon fontSize="small" color="error" />}
+          <Typography variant="subtitle2" component="span">{up ? '+' : ''}{change}%</Typography>
+          <Typography variant="body2" color="text.secondary" component="span">{caption ?? 'vs. last period'}</Typography>
+        </Stack>
+      ) : (
+        caption && <Typography variant="body2" color="text.secondary">{caption}</Typography>
+      )}
     </Card>
   );
 }
