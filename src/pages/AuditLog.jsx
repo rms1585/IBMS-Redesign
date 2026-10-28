@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Card, Stack, Typography, Button, TextField, MenuItem, Drawer, IconButton, Divider, Chip } from '@mui/material';
+import { Box, Card, Stack, Typography, Button, TextField, MenuItem, Drawer, IconButton, Divider, Checkbox, FormControlLabel } from '@mui/material';
 import { PageHeader, DetailRow } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -11,9 +11,9 @@ const modules = ['All', ...new Set(auditEvents.map((e) => e.module))];
 
 export default function AuditLog() {
   const [module, setModule] = useState('All');
-  const [flag, setFlag] = useState('');
+  const [flags, setFlags] = useState([]);
   const [open, setOpen] = useState(null);
-  const rows = auditEvents.filter((e) => (module === 'All' || e.module === module) && (!flag || e.flags.includes(flag)));
+  const rows = auditEvents.filter((e) => (module === 'All' || e.module === module) && (flags.length === 0 || flags.some((f) => e.flags.includes(f))));
 
   return (
     <>
@@ -30,9 +30,23 @@ export default function AuditLog() {
           </TextField>
           <TextField size="small" label="From" type="date" defaultValue="2026-10-26" slotProps={{ inputLabel: { shrink: true } }} />
           <TextField size="small" label="To" type="date" defaultValue="2026-10-27" slotProps={{ inputLabel: { shrink: true } }} />
-          {Object.keys(flagColor).map((f) => (
-            <Chip key={f} label={f} variant={flag === f ? 'filled' : 'outlined'} color={flag === f ? 'primary' : 'default'} onClick={() => setFlag(flag === f ? '' : f)} />
-          ))}
+          {/* Flag filters combine: an event shows if it carries any ticked flag; none ticked shows all. */}
+          <Stack direction="row" flexWrap="wrap" columnGap={1}>
+            {Object.keys(flagColor).map((f) => (
+              <FormControlLabel
+                key={f}
+                label={f}
+                sx={{ mr: 1, '& .MuiFormControlLabel-label': { typography: 'body2' } }}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={flags.includes(f)}
+                    onChange={(e) => setFlags((cur) => (e.target.checked ? [...cur, f] : cur.filter((x) => x !== f)))}
+                  />
+                }
+              />
+            ))}
+          </Stack>
         </Stack>
         <DataTable
           card={false}
