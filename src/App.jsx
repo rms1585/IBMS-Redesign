@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
+import useAutoHideScrollbars from './hooks/useAutoHideScrollbars';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import CfPortal from './pages/CfPortal';
@@ -26,6 +27,7 @@ import Inbox from './pages/Inbox';
 import AuditLog from './pages/AuditLog';
 
 export default function App() {
+  useAutoHideScrollbars();
   return (
     <Routes>
       <Route element={<DashboardLayout />}>

@@ -46,9 +46,15 @@ export function createAppTheme(mode = 'light') {
       MuiCssBaseline: {
         styleOverrides: {
           body: { backgroundColor: palette.background.default },
-          '*::-webkit-scrollbar': { width: 8, height: 8 },
-          '*::-webkit-scrollbar-thumb': { borderRadius: 8, backgroundColor: alpha(overlay, 0.32) },
-          '*::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+          // Scrollbars stay hidden until their area is scrolled (see useAutoHideScrollbars).
+          '*': { scrollbarWidth: 'thin', scrollbarColor: 'transparent transparent' },
+          '.is-scrolling': { scrollbarColor: `${alpha(overlay, 0.4)} transparent` },
+          // Browsers without scrollbar-color (older Safari) use the WebKit pseudo-elements.
+          '@supports not (scrollbar-color: auto)': {
+            '*::-webkit-scrollbar': { width: 8, height: 8, backgroundColor: 'transparent' },
+            '*::-webkit-scrollbar-thumb': { borderRadius: 8, backgroundColor: 'transparent' },
+            '.is-scrolling::-webkit-scrollbar-thumb': { backgroundColor: alpha(overlay, 0.4) },
+          },
         },
       },
       MuiButton: {
