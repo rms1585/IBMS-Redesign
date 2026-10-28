@@ -62,7 +62,7 @@ function WeighRecord({ truck, onConfirmed }) {
     <Card>
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
+          <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
           <Typography variant="body2" color="text.secondary">{truck.reason} · Scale 1, position A</Typography>
         </Box>
         {captured ? <Label color="info">Captured</Label> : <Label color="success">Ready to weigh</Label>}
@@ -98,7 +98,7 @@ function WeighRecord({ truck, onConfirmed }) {
         </Grid>
       </Grid>
       <Divider sx={{ borderStyle: 'dashed' }} />
-      <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
+      <Stack className="record-actions" direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Button color="inherit" size="large" onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
         <Stack direction="row" spacing={1.5}>
           {captured ? (
@@ -153,7 +153,7 @@ export default function Weighbridge() {
                   <Typography variant="caption" color="text.secondary">{t.admitted}</Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary" component="div">{t.manifest}</Typography>
-                <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
+                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label color={t.reason.startsWith('Loaded') ? 'primary' : 'info'}>{t.reason}</Label>
                   {(!t.tare || t.tareAge.includes('expired')) && <Label color="warning">Tare needed</Label>}
                 </Stack>

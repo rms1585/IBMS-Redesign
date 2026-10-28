@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   Box, Card, Stack, Typography, Button, Tabs, Tab, Divider, Grid2 as Grid, Alert, Snackbar,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Table, TableBody, TableRow, TableCell,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
 } from '@mui/material';
 import { PageHeader, DetailRow, formatBDT, formatKg, EmptyState } from '../components/common';
 import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
@@ -54,7 +54,7 @@ function ArrivingRecord({ truck, side, onAdmit }) {
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="h5" sx={{ fontFamily: 'monospace', letterSpacing: 0.5 }}>{truck.plate}</Typography>
+            <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace', letterSpacing: 0.5 }}>{truck.plate}</Typography>
             {truck.firstVisit && <Label color="info">First visit</Label>}
           </Stack>
           <Typography variant="body2" color="text.secondary">{truck.kind} · {truck.cls} · expected {truck.eta}</Typography>
@@ -94,7 +94,7 @@ function ArrivingRecord({ truck, side, onAdmit }) {
           ))}
         </Stack>
       </Box>
-      <Stack direction="row" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ p: 3, pt: 0 }}>
+      <Stack className="record-actions" direction="row" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ p: 3, pt: 0 }}>
         <Button variant="outlined" color="inherit" size="large">Report problem</Button>
         <Button variant="contained" size="large" onClick={() => setConfirm(true)}>Admit truck</Button>
       </Stack>
@@ -126,7 +126,7 @@ function LeavingRecord({ truck, side }) {
   return (
     <Card>
       <Box sx={{ p: 3 }}>
-        <Typography variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
+        <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
         <Typography variant="body2" color="text.secondary">{truck.kind} · {truck.load} · admitted {truck.admitted}</Typography>
       </Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
@@ -148,7 +148,7 @@ function LeavingRecord({ truck, side }) {
         </Stack>
         {!allOk && <Alert severity="error" sx={{ mt: 2 }}>Departure is blocked. Conditions are checked again when you record departure.</Alert>}
       </Box>
-      <Stack direction="row" justifyContent="flex-end" sx={{ p: 3, pt: 0 }}>
+      <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ p: 3, pt: 0 }}>
         <Button variant="contained" size="large" disabled={!allOk}>
           {side === 'border' ? 'Record departure to India' : 'Record departure'}
         </Button>
@@ -205,7 +205,7 @@ export default function GateWorkbench({ side }) {
                   <Typography variant="caption" color="text.secondary">{t.eta ?? t.admitted}</Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary" component="div" noWrap>{t.manifest}</Typography>
-                <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
+                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label>{t.kind}</Label>
                   {t.customs && <Label color={customsColor[t.customs]}>{t.customs}</Label>}
                   {t.release && <Label color={customsColor[t.release]}>{t.release}</Label>}
@@ -236,19 +236,19 @@ export default function GateWorkbench({ side }) {
         }
         rail={[
           <CameraCard key="cam" lane={side === 'border' ? 'Lane B2' : 'Lane I2'} plate={current ? current.cameraPlate : null} expected={current?.plate} onReread={() => {}} />,
-          <Card key="moves" sx={{ p: 2.5 }}>
+          <Card key="moves" sx={{ p: 2.5, pb: 1.5 }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>Recent movements</Typography>
-            <Table size="small">
-              <TableBody>
-                {[['10:48', 'WB-19-C-0803', 'In'], ['10:31', 'WB-23-K-4390', 'Out'], ['10:12', 'WB-41-B-1150', 'In']].map(([t, p, d]) => (
-                  <TableRow key={p}>
-                    <TableCell sx={{ pl: 0, color: 'text.secondary' }}>{t}</TableCell>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{p}</TableCell>
-                    <TableCell align="right" sx={{ pr: 0 }}><Label color={d === 'In' ? 'success' : 'info'}>{d}</Label></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <Stack divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
+              {[['10:48', 'WB-19-C-0803', 'In'], ['10:31', 'WB-23-K-4390', 'Out'], ['10:12', 'WB-41-B-1150', 'In']].map(([t, p, d]) => (
+                <Stack key={p} direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ py: 1 }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace', fontSize: 12 }}>{p}</Typography>
+                    <Typography variant="caption" color="text.secondary">{t}</Typography>
+                  </Box>
+                  <Label color={d === 'In' ? 'success' : 'info'}>{d}</Label>
+                </Stack>
+              ))}
+            </Stack>
           </Card>,
         ]}
       />

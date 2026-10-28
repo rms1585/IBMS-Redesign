@@ -31,7 +31,7 @@ function Record({ item, onStart, onFinish }) {
     <Card>
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontFamily: 'monospace' }}>{item.plate}</Typography>
+          <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{item.plate}</Typography>
           <Typography variant="body2" color="text.secondary">{item.product} · allocated {item.bay}</Typography>
         </Box>
         {item.stage === 'waiting' ? <Label color="warning">Waiting at shed door</Label> : <Label color="info">Unloading · <Elapsed since={item.startedAt} /></Label>}
@@ -51,37 +51,37 @@ function Record({ item, onStart, onFinish }) {
       {item.stage === 'waiting' ? (
         <Box sx={{ p: 3 }}>
           <Typography variant="subtitle2" sx={{ mb: 2 }}>Confirm arrival at the shed door, then record who unloads</Typography>
-          <Grid container spacing={2}>
-            <Grid size={6}>
+          <Box className="record-fields" sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            <Box>
               <TextField select fullWidth label="Labour gang" value={gang} onChange={(e) => setGang(e.target.value)}>
                 {['Gang 1', 'Gang 2', 'Gang 3', 'Gang 4'].map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
               </TextField>
-            </Grid>
-            <Grid size={6}>
+            </Box>
+            <Box>
               <TextField select fullWidth label="Equipment" value={equipment} onChange={(e) => setEquipment(e.target.value)} helperText={equipment.startsWith('None') ? 'Manual unloading rate applies' : 'Equipment unloading rate applies'}>
                 {['None (manual)', 'Forklift FL-01', 'Forklift FL-02', 'Mobile crane MC-01'].map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
               </TextField>
-            </Grid>
-          </Grid>
-          <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
+            </Box>
+          </Box>
+          <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
             <Button variant="contained" size="large" onClick={() => onStart(item, gang, equipment)}>Start unloading</Button>
           </Stack>
         </Box>
       ) : (
         <Box sx={{ p: 3 }}>
           <Typography variant="subtitle2" sx={{ mb: 2 }}>Record what was received · {item.gang} · {item.equipment}</Typography>
-          <Grid container spacing={2}>
-            <Grid size={6}><TextField fullWidth required label="Unloaded quantity (kg)" value={kg} onChange={(e) => setKg(e.target.value.replace(/\D/g, ''))} helperText={kg ? `${diff >= 0 ? '+' : ''}${diff.toLocaleString()} kg vs declared` : ' '} /></Grid>
-            <Grid size={6}>
+          <Box className="record-fields" sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            <Box><TextField fullWidth required label="Unloaded quantity (kg)" value={kg} onChange={(e) => setKg(e.target.value.replace(/\D/g, ''))} helperText={kg ? `${diff >= 0 ? '+' : ''}${diff.toLocaleString()} kg vs declared` : ' '} /></Box>
+            <Box>
               <TextField select fullWidth label="Measurement method" value={method} onChange={(e) => setMethod(e.target.value)}>
                 {['Scale weight (gross − tare)', 'Package count × unit weight', 'Declared (not measured)'].map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
               </TextField>
-            </Grid>
-            <Grid size={6}><TextField fullWidth label="Actual bay" value={actualBay} onChange={(e) => setActualBay(e.target.value)} /></Grid>
-            <Grid size={6}><TextField fullWidth label="Shortage / damage note" value={note} onChange={(e) => setNote(e.target.value)} /></Grid>
-          </Grid>
+            </Box>
+            <Box><TextField fullWidth label="Actual bay" value={actualBay} onChange={(e) => setActualBay(e.target.value)} /></Box>
+            <Box><TextField fullWidth label="Shortage / damage note" value={note} onChange={(e) => setNote(e.target.value)} /></Box>
+          </Box>
           {actualBay !== item.bay && <Alert severity="warning" sx={{ mt: 2 }}>The actual bay differs from the allocation. Capacity, category and separation rules will be checked again for {actualBay}.</Alert>}
-          <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
+          <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
             <Button variant="contained" size="large" disabled={!kg} onClick={() => onFinish(item, Number(kg))}>Finish and record receipt</Button>
           </Stack>
           <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1, textAlign: 'right' }}>The receipt is locked after recording. Changes need a correction request.</Typography>
@@ -123,7 +123,7 @@ export default function Warehousing() {
               <>
                 <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{i.plate}</Typography>
                 <Typography variant="body2" noWrap>{i.product}</Typography>
-                <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}><Label>{i.bay}</Label></Stack>
+                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}><Label>{i.bay}</Label></Stack>
               </>
             )}
           />

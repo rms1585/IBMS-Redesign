@@ -79,7 +79,7 @@ export default function Posting() {
                   <Typography variant="caption" color="text.secondary">waiting {l.wait}</Typography>
                 </Stack>
                 <Typography variant="body2" noWrap>{l.product}</Typography>
-                <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
+                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label color="primary">{l.category}</Label>
                   <Label>{formatKg(l.outstandingKg)} outstanding</Label>
                 </Stack>

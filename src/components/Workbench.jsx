@@ -5,34 +5,44 @@ import Label from './Label';
 import { VideocamRoundedIcon } from './icons';
 
 // Operational workbench: searchable queue on the left, selected record in the centre,
-// contextual rail (camera, movement, progress) on the right.
-// Breakpoints are container queries on the page content area (see DashboardLayout), so the
-// layout responds to the space actually available whether the navigation is open or collapsed.
-export const WIDE = '@container main (max-width: 1180px)';
-export const NARROW = '@container main (max-width: 760px)';
+// contextual rail (camera, movement, progress) on the right. The three columns always stay
+// side by side; on smaller screens the side columns narrow and the record adapts its content.
+// `main` is the page content container (see DashboardLayout); `record` is the centre column.
+const NARROW = '@container main (max-width: 900px)';
+const RECORD_COMPACT = '@container record (max-width: 520px)';
 
 export function Workbench({ queue, center, rail }) {
+  const queueCol = 'clamp(200px, 27cqi, 296px)';
+  const railCol = 'clamp(196px, 25cqi, 272px)';
   return (
     <Box
       sx={{
         display: 'grid',
         gap: 3,
         alignItems: 'start',
-        gridTemplateColumns: rail ? '296px minmax(0,1fr) 272px' : '296px minmax(0,1fr)',
-        gridTemplateAreas: rail ? '"queue center rail"' : '"queue center"',
-        // Medium: the rail drops under the record, beside the queue.
-        [WIDE]: rail ? { gridTemplateColumns: '280px minmax(0,1fr)', gridTemplateAreas: '"queue center" "queue rail"' } : {},
-        // Narrow (e.g. iPad portrait): everything stacks.
-        [NARROW]: { gridTemplateColumns: 'minmax(0,1fr)', gridTemplateAreas: rail ? '"queue" "center" "rail"' : '"queue" "center"' },
+        gridTemplateColumns: rail ? `${queueCol} minmax(0,1fr) ${railCol}` : `${queueCol} minmax(0,1fr)`,
+        [NARROW]: { gap: 2 },
       }}
     >
-      <Box sx={{ gridArea: 'queue', minWidth: 0 }}>{queue}</Box>
-      <Box sx={{ gridArea: 'center', minWidth: 0 }}>{center}</Box>
-      {rail && (
-        <Box sx={{ gridArea: 'rail', minWidth: 0, display: 'grid', gap: 3, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
-          {rail}
-        </Box>
-      )}
+      <Box sx={{ minWidth: 0 }}>{queue}</Box>
+      <Box
+        sx={{
+          minWidth: 0,
+          containerType: 'inline-size',
+          containerName: 'record',
+          // Compact record: tighter card padding, smaller plate, full-width stacked actions.
+          [RECORD_COMPACT]: {
+            '& .MuiCard-root > .MuiBox-root, & .MuiCard-root > .MuiStack-root, & .MuiCard-root > .MuiGrid-container': { paddingLeft: '16px', paddingRight: '16px' },
+            '& .record-plate': { fontSize: '1.125rem' },
+            '& .record-actions': { flexDirection: 'column-reverse', alignItems: 'stretch' },
+            '& .record-actions > .MuiStack-root': { flexDirection: 'column-reverse', alignItems: 'stretch', gap: '12px' },
+            '& .record-actions .MuiButton-root': { width: '100%', margin: 0 },
+          },
+        }}
+      >
+        {center}
+      </Box>
+      {rail && <Stack useFlexGap sx={{ minWidth: 0, gap: 3, [NARROW]: { gap: 2 } }}>{rail}</Stack>}
     </Box>
   );
 }
@@ -40,8 +50,8 @@ export function Workbench({ queue, center, rail }) {
 export function QueueCard({ title, count, search, onSearch, placeholder, items, selectedKey, onSelect, renderItem, getKey, emptyText, header }) {
   const theme = useTheme();
   return (
-    <Card sx={{ position: 'sticky', top: 88, [NARROW]: { position: 'static' } }}>
-      <Box sx={{ p: 2.5, pb: 2 }}>
+    <Card sx={{ position: 'sticky', top: 88 }}>
+      <Box sx={{ p: 2.5, pb: 2, [NARROW]: { p: 2 } }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
           <Typography variant="h6">{title}</Typography>
           <Label>{count}</Label>
@@ -50,7 +60,7 @@ export function QueueCard({ title, count, search, onSearch, placeholder, items, 
         <SearchField placeholder={placeholder} value={search} onChange={onSearch} sx={{ minWidth: 0, width: '100%' }} />
       </Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
-      <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', p: 1, [NARROW]: { maxHeight: 320 } }}>
+      <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', p: 1 }}>
         {items.length === 0 ? (
           <EmptyState title={emptyText ?? 'Nothing in the queue'} sx={{ py: 4 }} />
         ) : (
@@ -106,7 +116,7 @@ export function CameraCard({ lane, plate, expected, onReread }) {
         )}
       </Box>
       <Stack spacing={1.25} sx={{ p: 2.5 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
           <Typography variant="subtitle2">Plate read</Typography>
           {match === null ? <Label>No read</Label> : match ? <Label color="success">Matches selected truck</Label> : <Label color="error">Does not match</Label>}
         </Stack>
