@@ -114,9 +114,14 @@ export function createAppTheme(mode = 'light') {
       },
       MuiTableCell: {
         styleOverrides: {
-          root: { borderBottomStyle: 'dashed', borderBottomColor: alpha(overlay, 0.2) },
-          // Amounts and other right-aligned figures never break across lines.
-          alignRight: { whiteSpace: 'nowrap' },
+          // Data tables never squeeze columns: cell content stays on one line and the table scrolls
+          // sideways inside its card when it is wider than the screen. Compact (size="small")
+          // tables in side panels and dialogs still wrap.
+          root: ({ ownerState }) => ({
+            borderBottomStyle: 'dashed',
+            borderBottomColor: alpha(overlay, 0.2),
+            ...(ownerState.size !== 'small' && { whiteSpace: 'nowrap' }),
+          }),
           head: {
             fontSize: 14,
             fontWeight: 600,
