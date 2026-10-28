@@ -75,7 +75,7 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
   const theme = useTheme();
   const up = change == null ? null : change >= 0;
   return (
-    <Card sx={{ p: 3, height: '100%', containerType: 'inline-size' }}>
+    <Card sx={{ p: 2, height: '100%', containerType: 'inline-size' }}>
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
@@ -89,7 +89,7 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
         {icon && (
           <Box
             sx={{
-              width: 48, height: 48, borderRadius: 1.5, display: 'grid', placeItems: 'center', flexShrink: 0,
+              width: 40, height: 40, borderRadius: 1.25, display: 'grid', placeItems: 'center', flexShrink: 0,
               color: theme.palette.mode === 'light' ? theme.palette[color].text ?? theme.palette[color].dark : theme.palette[color].light,
               bgcolor: alpha(theme.palette[color].main, 0.12),
             }}
@@ -100,7 +100,7 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
       </Stack>
       {/* The value spans the card under the title/icon row and stays on one line,
           shrinking with the card (cqi = 1% of the card's content width). */}
-      <Typography variant="h3" noWrap sx={{ mt: icon ? 0.5 : 1.5, mb: 1, fontSize: 'clamp(16px, 13cqi, 32px)' }}>{value}</Typography>
+      <Typography variant="h3" noWrap sx={{ mt: icon ? 0.5 : 1, mb: 0.5, fontSize: 'clamp(16px, 13cqi, 32px)' }}>{value}</Typography>
       {change != null ? (
         <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={0.5}>
           {up ? <TrendingUpRoundedIcon fontSize="small" color="success" /> : <TrendingDownRoundedIcon fontSize="small" color="error" />}
