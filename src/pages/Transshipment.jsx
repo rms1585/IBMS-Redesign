@@ -41,12 +41,15 @@ export default function Transshipment() {
                       <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{r.plate}</Typography>
                       <Typography variant="caption" color="text.secondary">Planned share {formatKg(r.planned)} · {r.gang}</Typography>
                     </Box>
-                    <Box sx={{ width: 180 }}>
+                    <Box sx={{ width: 180, flexShrink: 0 }}>
                       <LinearProgress variant="determinate" value={(r.done / r.planned) * 100} color={r.done === r.planned ? 'success' : 'primary'} />
                       <Typography variant="caption" color="text.secondary">{formatKg(r.done)} / {formatKg(r.planned)}</Typography>
                     </Box>
-                    <Label color={r.status === 'Completed' ? 'success' : 'info'}>{r.status}</Label>
-                    {r.status !== 'Completed' && <Button variant="outlined" size="small">Start unloading</Button>}
+                    {/* Fixed-width status and action slots keep every row's columns lined up. */}
+                    <Box sx={{ width: 96, flexShrink: 0 }}><Label color={r.status === 'Completed' ? 'success' : 'info'}>{r.status}</Label></Box>
+                    <Box sx={{ width: 136, flexShrink: 0 }}>
+                      {r.status !== 'Completed' && <Button variant="outlined" size="small">Start unloading</Button>}
+                    </Box>
                   </Stack>
                 ))}
               </Stack>

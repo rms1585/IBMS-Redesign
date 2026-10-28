@@ -67,6 +67,7 @@ export default function CfPortal() {
                   <TableCell>BD vehicles</TableCell>
                   <TableCell>Customs</TableCell>
                   <TableCell>Land-port bill</TableCell>
+                  <TableCell />
                   <TableCell sx={{ pr: 3 }} />
                 </TableRow>
               </TableHead>
@@ -81,8 +82,11 @@ export default function CfPortal() {
                     <TableCell>{m.localTrucks}</TableCell>
                     <TableCell><Label color={customsColor[m.customs]}>{m.customs}</Label></TableCell>
                     <TableCell>{m.balance > 0 ? <Label color="warning">{formatBDT(m.balance)} due</Label> : <Label color="success">Paid</Label>}</TableCell>
-                    <TableCell sx={{ pr: 3, whiteSpace: 'nowrap' }}>
-                      {m.balance > 0 && <Button size="small" variant="contained" onClick={() => setPay(m)} sx={{ mr: 1 }}>Pay now</Button>}
+                    {/* One column per action so each stays in place whether or not the other is shown. */}
+                    <TableCell>
+                      {m.balance > 0 && <Button size="small" variant="contained" onClick={() => setPay(m)}>Pay now</Button>}
+                    </TableCell>
+                    <TableCell sx={{ pr: 3 }}>
                       <Button size="small" color="inherit" onClick={() => navigate('/manifests')}>View details</Button>
                     </TableCell>
                   </TableRow>
