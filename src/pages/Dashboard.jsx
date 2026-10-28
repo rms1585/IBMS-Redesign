@@ -90,7 +90,7 @@ function Operations() {
               ].map(([l, v, c]) => (
                 <TableRow key={l}>
                   <TableCell sx={{ pl: 3 }}>{l}</TableCell>
-                  <TableCell align="right" sx={{ pr: 3 }}><Label color={c}>{v}</Label></TableCell>
+                  <TableCell sx={{ pr: 3 }}><Label color={c}>{v}</Label></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -162,7 +162,7 @@ function Performance() {
             <TableCell sx={{ pl: 3 }}>Measure</TableCell>
             <TableCell>This period</TableCell>
             <TableCell>Preceding period</TableCell>
-            <TableCell align="right" sx={{ pr: 3 }}>Change</TableCell>
+            <TableCell sx={{ pr: 3 }}>Change</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -171,7 +171,7 @@ function Performance() {
               <TableCell sx={{ pl: 3, fontWeight: 600 }}>{m}</TableCell>
               <TableCell>{a}</TableCell>
               <TableCell sx={{ color: 'text.secondary' }}>{b}</TableCell>
-              <TableCell align="right" sx={{ pr: 3 }}><Label color={c >= 0 ? 'success' : 'error'}>{c >= 0 ? 'Faster' : 'Slower'} {Math.abs(c)}%</Label></TableCell>
+              <TableCell sx={{ pr: 3 }}><Label color={c >= 0 ? 'success' : 'error'}>{c >= 0 ? 'Faster' : 'Slower'} {Math.abs(c)}%</Label></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -198,7 +198,7 @@ function Reports() {
           <TableRow>
             <TableCell sx={{ pl: 3 }}>Report</TableCell>
             <TableCell>Contents</TableCell>
-            <TableCell align="right" sx={{ pr: 3 }}>Export</TableCell>
+            <TableCell sx={{ pr: 3 }}>Export</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -206,7 +206,7 @@ function Reports() {
             <TableRow key={r.name} hover>
               <TableCell sx={{ pl: 3, fontWeight: 600, whiteSpace: 'nowrap' }}>{r.name}</TableCell>
               <TableCell sx={{ color: 'text.secondary' }}>{r.desc}</TableCell>
-              <TableCell align="right" sx={{ pr: 3, whiteSpace: 'nowrap' }}>
+              <TableCell sx={{ pr: 3, whiteSpace: 'nowrap' }}>
                 <Button size="small" color="inherit">Preview</Button>
                 <Button size="small" color="inherit">CSV</Button>
                 <Button size="small" color="inherit">Excel</Button>

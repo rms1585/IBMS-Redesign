@@ -143,11 +143,11 @@ export default function Roles() {
         searchPlaceholder="Search roles"
         columns={[
           { key: 'name', label: 'Role', render: (r) => <Stack direction="row" spacing={1} alignItems="center"><Typography variant="subtitle2">{r.name}</Typography>{r.template && <Label>Template</Label>}{r.sensitive && <Label color="error">Sensitive</Label>}</Stack> },
-          { key: 'modules', label: 'Modules', align: 'center' },
+          { key: 'modules', label: 'Modules' },
           { key: 'scope', label: 'Scope' },
           { key: 'org', label: 'Organisation' },
-          { key: 'tasks', label: 'Tasks', align: 'center' },
-          { key: 'act', label: '', align: 'right', render: (r) => <Stack direction="row" spacing={0.5} justifyContent="flex-end"><Button size="small" color="inherit">View access</Button>{r.template ? <Button size="small" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small">Edit</Button>}</Stack> },
+          { key: 'tasks', label: 'Tasks' },
+          { key: 'act', label: '', render: (r) => <Stack direction="row" spacing={0.5}><Button size="small" color="inherit">View access</Button>{r.template ? <Button size="small" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small">Edit</Button>}</Stack> },
         ]}
       />
       <CreateRole open={open} onClose={() => setOpen(false)} onSave={(r) => { setList((l) => [...l, r]); setToast(`Role “${r.name}” created.`); }} />

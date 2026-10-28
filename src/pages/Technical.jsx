@@ -28,9 +28,9 @@ export default function Technical() {
           { key: 'port', label: 'Port', render: (r) => <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{r.port}</Typography> },
           { key: 'station', label: 'Station' },
           { key: 'state', label: 'Node', render: (r) => <Label color={color[r.state]}>{r.state}</Label> },
-          { key: 'held', label: 'Held', align: 'center' },
+          { key: 'held', label: 'Held' },
           { key: 'feeds', label: 'Feed modes' },
-          { key: 'fallback', label: 'Paper fallback', align: 'right', render: (r) => (
+          { key: 'fallback', label: 'Paper fallback', render: (r) => (
             <Switch checked={r.fallback} disabled={r.state === 'Healthy' && !r.fallback} onChange={(e) => (e.target.checked ? setConsent(r) : setToast(`Paper fallback turned off for ${r.port}.`))} />
           ) },
         ]} />

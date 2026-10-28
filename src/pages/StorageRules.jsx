@@ -105,7 +105,7 @@ export default function StorageRules() {
           { key: 'scope', label: 'Scope', render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.scope}{r.scope === 'adjacent' ? ` · gap ${r.gap}` : ''}</span> },
           { key: 'source', label: 'Source', render: (r) => <Label color={r.source === 'National' ? 'default' : 'primary'}>{r.source}</Label> },
           { key: 'reason', label: 'Reason' },
-          { key: 'act', label: '', align: 'right', render: (r) => (r.source === 'National' ? <Typography variant="caption" color="text.disabled">Set by head office</Typography> : r.state === 'Active' ? <Button size="small" color="error">Retire</Button> : r.state === 'Draft' ? <Button size="small" onClick={() => { setRules((rs) => rs.map((x) => (x === r ? { ...x, state: 'Waiting for approval' } : x))); setToast('Sent for approval.'); }}>Submit</Button> : <Label color="warning">With approver</Label>) },
+          { key: 'act', label: '', render: (r) => (r.source === 'National' ? <Typography variant="caption" color="text.disabled">Set by head office</Typography> : r.state === 'Active' ? <Button size="small" color="error">Retire</Button> : r.state === 'Draft' ? <Button size="small" onClick={() => { setRules((rs) => rs.map((x) => (x === r ? { ...x, state: 'Waiting for approval' } : x))); setToast('Sent for approval.'); }}>Submit</Button> : <Label color="warning">With approver</Label>) },
         ]}
       />
       <RuleDialog open={open} onClose={() => setOpen(false)} onSave={(f) => { setRules((rs) => [...rs, { ...f, gap: f.scope === 'adjacent' ? Number(f.gap) : null, source: 'Local · BEN', state: 'Draft' }]); setOpen(false); setTab('Draft'); setToast('Draft saved.'); }} />

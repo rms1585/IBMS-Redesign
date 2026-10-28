@@ -30,7 +30,7 @@ export default function Charges() {
       <DataTable rows={tariffLines} pageSize={25} columns={[
         { key: 'charge', label: 'Charge', render: (r) => <Typography variant="subtitle2">{r.charge}</Typography> },
         { key: 'basis', label: 'Basis' },
-        { key: 'rate', label: 'Rate', align: 'right', render: (r) => formatBDT(r.rate) },
+        { key: 'rate', label: 'Rate', render: (r) => formatBDT(r.rate) },
         { key: 'billedHere', label: 'At this port', render: (r) => (r.billedHere ? <Label color="success">Billed here</Label> : <Label>Priced only</Label>) },
       ]} />
     </>

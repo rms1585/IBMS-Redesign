@@ -63,10 +63,10 @@ export default function CfPortal() {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ pl: 3 }}>Manifest</TableCell>
-                  <TableCell align="center">Indian vehicles</TableCell>
-                  <TableCell align="center">BD vehicles</TableCell>
+                  <TableCell>Indian vehicles</TableCell>
+                  <TableCell>BD vehicles</TableCell>
                   <TableCell>Customs</TableCell>
-                  <TableCell align="right">Land-port bill</TableCell>
+                  <TableCell>Land-port bill</TableCell>
                   <TableCell sx={{ pr: 3 }} />
                 </TableRow>
               </TableHead>
@@ -77,11 +77,11 @@ export default function CfPortal() {
                       <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{m.id}</Typography>
                       <Typography variant="caption" color="text.secondary">{m.product}</Typography>
                     </TableCell>
-                    <TableCell align="center">{m.foreignTrucks}</TableCell>
-                    <TableCell align="center">{m.localTrucks}</TableCell>
+                    <TableCell>{m.foreignTrucks}</TableCell>
+                    <TableCell>{m.localTrucks}</TableCell>
                     <TableCell><Label color={customsColor[m.customs]}>{m.customs}</Label></TableCell>
-                    <TableCell align="right">{m.balance > 0 ? <Label color="warning">{formatBDT(m.balance)} due</Label> : <Label color="success">Paid</Label>}</TableCell>
-                    <TableCell align="right" sx={{ pr: 3, whiteSpace: 'nowrap' }}>
+                    <TableCell>{m.balance > 0 ? <Label color="warning">{formatBDT(m.balance)} due</Label> : <Label color="success">Paid</Label>}</TableCell>
+                    <TableCell sx={{ pr: 3, whiteSpace: 'nowrap' }}>
                       {m.balance > 0 && <Button size="small" variant="contained" onClick={() => setPay(m)} sx={{ mr: 1 }}>Pay now</Button>}
                       <Button size="small" color="inherit" onClick={() => navigate('/manifests')}>View details</Button>
                     </TableCell>

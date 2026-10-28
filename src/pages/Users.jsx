@@ -85,7 +85,7 @@ export default function Users() {
           { key: 'org', label: 'Organisation' },
           { key: 'assignments', label: 'Role @ port', render: (r) => <Stack spacing={0.5} alignItems="flex-start">{r.assignments.map((a) => <Label key={a}>{a}</Label>)}</Stack> },
           { key: 'status', label: 'Status', render: (r) => <Label color={statusColor[r.status]}>{r.status}</Label> },
-          { key: 'm', label: '', align: 'right', render: (r) => <RowMenu user={r} onDeactivate={setDeact} /> },
+          { key: 'm', label: '', render: (r) => <RowMenu user={r} onDeactivate={setDeact} /> },
         ]}
       />
       <InviteDialog

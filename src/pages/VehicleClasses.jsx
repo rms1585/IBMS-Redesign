@@ -18,7 +18,7 @@ export default function VehicleClasses() {
         columns={[
           { key: 'code', label: 'Code' },
           { key: 'name', label: 'Class', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
-          { key: 'wheels', label: 'Wheels', align: 'center' },
+          { key: 'wheels', label: 'Wheels' },
           { key: 'mode', label: 'Mode', render: (r) => <Label color={r.mode === 'Road' ? 'default' : 'warning'}>{r.mode}</Label> },
         ]}
       />

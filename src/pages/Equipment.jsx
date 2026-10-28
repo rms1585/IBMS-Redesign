@@ -39,16 +39,16 @@ export default function Equipment() {
           { key: 'kind', label: 'Kind' },
           { key: 'facility', label: 'Based at' },
           { key: 'status', label: 'Status', render: (r) => <Label color={color[r.status]}>{r.status}</Label> },
-          { key: 'e', label: '', align: 'right', render: () => <Button size="small" color="inherit">Edit</Button> },
+          { key: 'e', label: '', render: () => <Button size="small" color="inherit">Edit</Button> },
         ]} />
       ) : (
         <DataTable rows={gangs} searchKeys={['id', 'name', 'leader']} searchPlaceholder="Search gangs" columns={[
           { key: 'id', label: 'ID' },
           { key: 'name', label: 'Gang', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
-          { key: 'size', label: 'Workers', align: 'center' },
+          { key: 'size', label: 'Workers' },
           { key: 'leader', label: 'Sardar' },
           { key: 'shift', label: 'Shift' },
-          { key: 'e', label: '', align: 'right', render: () => <Button size="small" color="inherit">Edit</Button> },
+          { key: 'e', label: '', render: () => <Button size="small" color="inherit">Edit</Button> },
         ]} />
       )}
     </>

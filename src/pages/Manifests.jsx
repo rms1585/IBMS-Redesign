@@ -87,11 +87,11 @@ function ManifestDrawer({ m, onClose }) {
       )}
       {tab === 'cargo' && (
         <Table size="small">
-          <TableHead><TableRow><TableCell sx={{ pl: 3 }}>Line</TableCell><TableCell>Product</TableCell><TableCell align="right">Declared</TableCell><TableCell align="right" sx={{ pr: 3 }}>Remaining</TableCell></TableRow></TableHead>
+          <TableHead><TableRow><TableCell sx={{ pl: 3 }}>Line</TableCell><TableCell>Product</TableCell><TableCell>Declared</TableCell><TableCell sx={{ pr: 3 }}>Remaining</TableCell></TableRow></TableHead>
           <TableBody>
             <TableRow>
               <TableCell sx={{ pl: 3 }}>1</TableCell><TableCell>{m.product}</TableCell>
-              <TableCell align="right">{formatKg(m.declaredKg)}</TableCell><TableCell align="right" sx={{ pr: 3 }}>{formatKg(m.remainingKg)}</TableCell>
+              <TableCell>{formatKg(m.declaredKg)}</TableCell><TableCell sx={{ pr: 3 }}>{formatKg(m.remainingKg)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -145,9 +145,9 @@ export default function Manifests() {
               <TableCell sx={{ pl: 3 }}>Manifest</TableCell>
               <TableCell>Direction</TableCell>
               <TableCell>Agency</TableCell>
-              <TableCell align="center">Foreign trucks</TableCell>
+              <TableCell>Foreign trucks</TableCell>
               <TableCell>Customs</TableCell>
-              <TableCell align="right">Balance</TableCell>
+              <TableCell>Balance</TableCell>
               <TableCell sx={{ pr: 3 }}>Status</TableCell>
             </TableRow>
           </TableHead>
@@ -160,9 +160,9 @@ export default function Manifests() {
                 </TableCell>
                 <TableCell>{m.direction}</TableCell>
                 <TableCell>{m.agency}</TableCell>
-                <TableCell align="center">{m.foreignTrucks}</TableCell>
+                <TableCell>{m.foreignTrucks}</TableCell>
                 <TableCell><Label color={customsColor[m.customs]}>{m.customs}</Label></TableCell>
-                <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(m.balance)}</TableCell>
+                <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(m.balance)}</TableCell>
                 <TableCell sx={{ pr: 3 }}><Label color={m.status === 'Open' ? 'info' : 'default'}>{m.status}</Label></TableCell>
               </TableRow>
             ))}

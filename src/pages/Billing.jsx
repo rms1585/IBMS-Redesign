@@ -73,7 +73,7 @@ export default function Billing() {
               <TableCell>Recorded</TableCell>
               <TableCell>Tariff</TableCell>
               <TableCell>Calculation</TableCell>
-              <TableCell align="right" sx={{ pr: 3 }}>Amount</TableCell>
+              <TableCell sx={{ pr: 3 }}>Amount</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -83,12 +83,12 @@ export default function Billing() {
                 <TableCell sx={{ color: 'text.secondary' }}>{l.at}</TableCell>
                 <TableCell><Label>{l.tariff}</Label></TableCell>
                 <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{l.calc}</TableCell>
-                <TableCell align="right" sx={{ pr: 3, fontVariantNumeric: 'tabular-nums' }}>{formatBDT(l.amount)}</TableCell>
+                <TableCell sx={{ pr: 3, fontVariantNumeric: 'tabular-nums' }}>{formatBDT(l.amount)}</TableCell>
               </TableRow>
             ))}
             <TableRow>
-              <TableCell colSpan={4} align="right" sx={{ typography: 'subtitle1' }}>Total</TableCell>
-              <TableCell align="right" sx={{ pr: 3, typography: 'subtitle1', fontVariantNumeric: 'tabular-nums' }}>{formatBDT(billed)}</TableCell>
+              <TableCell colSpan={4} sx={{ pl: 3, typography: 'subtitle1' }}>Total</TableCell>
+              <TableCell sx={{ pr: 3, typography: 'subtitle1', fontVariantNumeric: 'tabular-nums' }}>{formatBDT(billed)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -102,9 +102,9 @@ export default function Billing() {
               <TableCell>Reference</TableCell>
               <TableCell>Payer · method</TableCell>
               <TableCell>Recorded by</TableCell>
-              <TableCell align="right">Amount</TableCell>
+              <TableCell>Amount</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell align="right" sx={{ pr: 3 }} />
+              <TableCell sx={{ pr: 3 }} />
             </TableRow>
           </TableHead>
           <TableBody>
@@ -116,9 +116,9 @@ export default function Billing() {
                   <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>{p.ref}</TableCell>
                   <TableCell>{p.payer}<Typography variant="caption" color="text.secondary" component="div">{p.method}</Typography></TableCell>
                   <TableCell>{p.by}</TableCell>
-                  <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(p.amount)}</TableCell>
+                  <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(p.amount)}</TableCell>
                   <TableCell><Label color={statusColor[p.status]}>{p.status}</Label></TableCell>
-                  <TableCell align="right" sx={{ pr: 3 }}>
+                  <TableCell sx={{ pr: 3 }}>
                     {p.status === 'Pending confirmation' && (
                       <Tooltip title={ownRecord ? 'A different officer must confirm a payment you recorded.' : ''}>
                         <span><Button size="small" variant="outlined" disabled={ownRecord} onClick={() => confirm(p)}>Confirm</Button></span>

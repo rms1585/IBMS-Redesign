@@ -27,9 +27,9 @@ export default function TraderPortal() {
               <TableCell sx={{ pl: 3 }}>Manifest</TableCell>
               <TableCell>Goods</TableCell>
               <TableCell>Appointed agency</TableCell>
-              <TableCell align="center">Trucks</TableCell>
+              <TableCell>Trucks</TableCell>
               <TableCell sx={{ width: 200 }}>Progress</TableCell>
-              <TableCell align="right">Balance</TableCell>
+              <TableCell>Balance</TableCell>
               <TableCell sx={{ pr: 3 }} />
             </TableRow>
           </TableHead>
@@ -41,15 +41,15 @@ export default function TraderPortal() {
                   <TableCell sx={{ pl: 3 }}><Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{m.id}</Typography><Typography variant="caption" color="text.secondary">{m.direction}</Typography></TableCell>
                   <TableCell>{m.product}</TableCell>
                   <TableCell>{m.agency}</TableCell>
-                  <TableCell align="center">{m.foreignTrucks + m.localTrucks}</TableCell>
+                  <TableCell>{m.foreignTrucks + m.localTrucks}</TableCell>
                   <TableCell>
                     <Stack direction="row" alignItems="center" spacing={1}>
                       <LinearProgress variant="determinate" value={pct} sx={{ flex: 1 }} />
                       <Typography variant="caption">{Math.round(pct)}%</Typography>
                     </Stack>
                   </TableCell>
-                  <TableCell align="right">{m.balance > 0 ? formatBDT(m.balance) : <Label color="success">Paid</Label>}</TableCell>
-                  <TableCell align="right" sx={{ pr: 3 }}><Button size="small" color="inherit">Open</Button></TableCell>
+                  <TableCell>{m.balance > 0 ? formatBDT(m.balance) : <Label color="success">Paid</Label>}</TableCell>
+                  <TableCell sx={{ pr: 3 }}><Button size="small" color="inherit">Open</Button></TableCell>
                 </TableRow>
               );
             })}
