@@ -100,7 +100,7 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
       </Stack>
       {/* The value spans the card under the title/icon row and stays on one line,
           shrinking with the card (cqi = 1% of the card's content width). */}
-      <Typography variant="h3" noWrap sx={{ mt: icon ? 0.5 : 1, mb: 0.5, fontSize: 'clamp(16px, 13cqi, 32px)' }}>{value}</Typography>
+      <Typography variant="h3" noWrap sx={{ mt: 1.5, mb: 0.5, fontSize: 'clamp(16px, 13cqi, 32px)' }}>{value}</Typography>
       {change != null ? (
         <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={0.5}>
           {up ? <TrendingUpRoundedIcon fontSize="small" color="success" /> : <TrendingDownRoundedIcon fontSize="small" color="error" />}
