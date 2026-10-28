@@ -51,7 +51,7 @@ function ArrivingRecord({ truck, side, onAdmit }) {
   const fee = side === 'border' ? 184.7 : 153.58;
   return (
     <Card>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="h5" sx={{ fontFamily: 'monospace', letterSpacing: 0.5 }}>{truck.plate}</Typography>
@@ -94,7 +94,7 @@ function ArrivingRecord({ truck, side, onAdmit }) {
           ))}
         </Stack>
       </Box>
-      <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ p: 3, pt: 0 }}>
+      <Stack direction="row" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ p: 3, pt: 0 }}>
         <Button variant="outlined" color="inherit" size="large">Report problem</Button>
         <Button variant="contained" size="large" onClick={() => setConfirm(true)}>Admit truck</Button>
       </Stack>

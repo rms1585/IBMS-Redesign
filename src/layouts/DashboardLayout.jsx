@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Box, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
-  Menu, MenuItem, Select, Collapse,
+  Menu, MenuItem, Select, Collapse, Drawer, useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { navConfig } from './navConfig';
@@ -11,7 +11,7 @@ import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
 import blpaLogo from '../assets/blpa-logo.png';
-import { ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
+import { ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
 
 const NAV_WIDTH = 280;
 const NAV_MINI = 88;
@@ -133,7 +133,7 @@ function NavGroup({ group, mini }) {
   );
 }
 
-function Header({ navWidth }) {
+function Header({ navWidth, onOpenNav }) {
   const theme = useTheme();
   const navigate = useNavigate();
   const { mode, toggle } = useColorMode();
@@ -145,18 +145,21 @@ function Header({ navWidth }) {
     <Box
       component="header"
       sx={{
-        position: 'fixed', top: 0, right: 0, left: navWidth, height: HEADER, zIndex: 1100, px: 5,
-        display: 'flex', alignItems: 'center', gap: 1.5,
+        position: 'fixed', top: 0, right: 0, left: navWidth, height: HEADER, zIndex: 1100, px: { xs: 2, sm: 3, lg: 5 },
+        display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 },
         bgcolor: alpha(theme.palette.background.default, 0.8), backdropFilter: 'blur(6px)',
         transition: theme.transitions.create('left', { duration: 200 }),
       }}
     >
+      {onOpenNav && (
+        <IconButton onClick={onOpenNav} aria-label="Open navigation" edge="start"><MenuRoundedIcon /></IconButton>
+      )}
       <Select
         size="small"
         value={port}
         onChange={(e) => setPort(e.target.value)}
         IconComponent={KeyboardArrowDownRoundedIcon}
-        sx={{ minWidth: 220, '& .MuiSelect-select': { py: 0.9, fontWeight: 600, fontSize: 14 } }}
+        sx={{ minWidth: { xs: 150, sm: 220 }, '& .MuiSelect-select': { py: 0.9, fontWeight: 600, fontSize: 14 } }}
         renderValue={(v) => {
           const p = ports.find((x) => x.code === v);
           return `${p.name} (${p.code})`;
@@ -171,12 +174,12 @@ function Header({ navWidth }) {
           </MenuItem>
         ))}
       </Select>
-      <Label color="warning" sx={{ ml: 0.5 }}>DEMO DATA</Label>
+      <Label color="warning" sx={{ ml: 0.5, display: { xs: 'none', sm: 'inline-flex' } }}>DEMO DATA</Label>
 
       <Box sx={{ flex: 1 }} />
 
       <Tooltip title="Live cameras">
-        <IconButton onClick={() => navigate('/border-gate')}><VideocamOutlinedIcon /></IconButton>
+        <IconButton onClick={() => navigate('/border-gate')} sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><VideocamOutlinedIcon /></IconButton>
       </Tooltip>
       <Tooltip title={mode === 'light' ? 'Dark mode' : 'Light mode'}>
         <IconButton onClick={toggle}>{mode === 'light' ? <DarkModeOutlinedIcon /> : <LightModeOutlinedIcon />}</IconButton>
@@ -201,7 +204,7 @@ function Header({ navWidth }) {
 
       <ButtonBase onClick={(e) => setUserAnchor(e.currentTarget)} sx={{ borderRadius: 1.5, p: 0.5, pr: 1, gap: 1.25, '&:hover': { bgcolor: 'action.hover' } }}>
         <UserAvatar name={currentUser.name} size={36} />
-        <Box sx={{ textAlign: 'left' }}>
+        <Box sx={{ textAlign: 'left', display: { xs: 'none', md: 'block' } }}>
           <Typography variant="subtitle2" sx={{ lineHeight: 1.3 }}>{currentUser.name}</Typography>
           <Typography variant="caption" color="text.secondary">{currentUser.role}</Typography>
         </Box>
@@ -221,28 +224,17 @@ function Header({ navWidth }) {
   );
 }
 
-export default function DashboardLayout() {
+function NavContent({ mini, onToggle }) {
   const theme = useTheme();
-  const [mini, setMini] = useState(false);
-  const navWidth = mini ? NAV_MINI : NAV_WIDTH;
-
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Box
-        component="nav"
-        sx={{
-          position: 'fixed', top: 0, left: 0, bottom: 0, width: navWidth, zIndex: 1200,
-          borderRight: `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
-          bgcolor: 'background.default', display: 'flex', flexDirection: 'column',
-          transition: theme.transitions.create('width', { duration: 200 }),
-        }}
-      >
-        <Box sx={{ height: HEADER, display: 'flex', alignItems: 'center', px: mini ? 1 : 2.5, justifyContent: mini ? 'center' : 'flex-start' }}>
-          <Logo mini={mini} />
-        </Box>
+    <>
+      <Box sx={{ height: HEADER, display: 'flex', alignItems: 'center', px: mini ? 1 : 2.5, justifyContent: mini ? 'center' : 'flex-start' }}>
+        <Logo mini={mini} />
+      </Box>
+      {onToggle && (
         <IconButton
           size="small"
-          onClick={() => setMini((m) => !m)}
+          onClick={onToggle}
           aria-label={mini ? 'Expand navigation' : 'Collapse navigation'}
           sx={{
             position: 'absolute', top: 24, right: -13, width: 26, height: 26, p: 0, borderRadius: '50%', zIndex: 1,
@@ -252,24 +244,67 @@ export default function DashboardLayout() {
         >
           {mini ? <ChevronRightRoundedIcon sx={{ fontSize: 18 }} /> : <ChevronLeftRoundedIcon sx={{ fontSize: 18 }} />}
         </IconButton>
-        <Box component="ul" sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: mini ? 0.5 : 2, pb: 3, m: 0 }}>
-          {navConfig.map((g) => (
-            <NavGroup key={g.subheader} group={g} mini={mini} />
-          ))}
-        </Box>
-        {!mini && (
-          <Box sx={{ p: 2.5, pt: 0 }}>
-            <Box sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
-              <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'primary.light' : 'primary.text' }}>
-                Benapole (BEN) · Live
-              </Typography>
-              <Typography variant="caption" color="text.secondary">NSW feed healthy · Synced 10:58</Typography>
-            </Box>
-          </Box>
-        )}
+      )}
+      <Box component="ul" sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: mini ? 0.5 : 2, pb: 3, m: 0 }}>
+        {navConfig.map((g) => (
+          <NavGroup key={g.subheader} group={g} mini={mini} />
+        ))}
       </Box>
+      {!mini && (
+        <Box sx={{ p: 2.5, pt: 0 }}>
+          <Box sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
+            <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'primary.light' : 'primary.text' }}>
+              Benapole (BEN) · Live
+            </Typography>
+            <Typography variant="caption" color="text.secondary">NSW feed healthy · Synced 10:58</Typography>
+          </Box>
+        </Box>
+      )}
+    </>
+  );
+}
 
-      <Header navWidth={navWidth} />
+export default function DashboardLayout() {
+  const theme = useTheme();
+  const { pathname } = useLocation();
+  // ≥1200px: full navigation. 900–1199px (iPad landscape): icon rail by default.
+  // <900px (iPad portrait): navigation slides in from the menu button.
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+  const isTablet = useMediaQuery(theme.breakpoints.up('md'));
+  const [miniChoice, setMiniChoice] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const mini = miniChoice ?? !isDesktop;
+  const navWidth = isTablet ? (mini ? NAV_MINI : NAV_WIDTH) : 0;
+
+  useEffect(() => setDrawerOpen(false), [pathname]);
+  // Re-apply the automatic choice when the window crosses the desktop breakpoint.
+  useEffect(() => setMiniChoice(null), [isDesktop]);
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {isTablet ? (
+        <Box
+          component="nav"
+          sx={{
+            position: 'fixed', top: 0, left: 0, bottom: 0, width: navWidth, zIndex: 1200,
+            borderRight: `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+            bgcolor: 'background.default', display: 'flex', flexDirection: 'column',
+            transition: theme.transitions.create('width', { duration: 200 }),
+          }}
+        >
+          <NavContent mini={mini} onToggle={() => setMiniChoice(!mini)} />
+        </Box>
+      ) : (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          slotProps={{ paper: { sx: { width: NAV_WIDTH, bgcolor: 'background.default', display: 'flex', flexDirection: 'column' } } }}
+        >
+          <NavContent mini={false} />
+        </Drawer>
+      )}
+
+      <Header navWidth={navWidth} onOpenNav={isTablet ? null : () => setDrawerOpen(true)} />
 
       <Box
         component="main"
@@ -278,7 +313,8 @@ export default function DashboardLayout() {
           transition: theme.transitions.create('padding-left', { duration: 200 }),
         }}
       >
-        <Box sx={{ px: 5, pb: 8, maxWidth: 1600, mx: 'auto' }}>
+        {/* Named container: page layouts use @container main queries against this width. */}
+        <Box sx={{ px: { xs: 2, sm: 3, lg: 5 }, pb: 8, maxWidth: 1600, mx: 'auto', containerType: 'inline-size', containerName: 'main' }}>
           <Outlet />
         </Box>
       </Box>

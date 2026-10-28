@@ -7,8 +7,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
-    minWidth: 1200,
-    minHeight: 760,
+    minWidth: 1024,
+    minHeight: 700,
     title: 'IBMS',
     backgroundColor: '#F4F6F8',
     show: false,

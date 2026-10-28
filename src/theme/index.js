@@ -77,7 +77,14 @@ export function createAppTheme(mode = 'light') {
       },
       MuiCard: {
         styleOverrides: {
-          root: { position: 'relative', borderRadius: 16, boxShadow: cardShadow(mode), zIndex: 0 },
+          // overflowX lets wide tables scroll inside the card on tablets instead of squashing.
+          root: { position: 'relative', borderRadius: 16, boxShadow: cardShadow(mode), zIndex: 0, overflowX: 'auto' },
+        },
+      },
+      MuiTable: {
+        styleOverrides: {
+          // Full-size data tables keep a readable width; compact (size="small") side-panel tables flex.
+          root: ({ ownerState }) => (ownerState.size === 'small' ? {} : { minWidth: 680 }),
         },
       },
       MuiCardHeader: {
@@ -108,6 +115,8 @@ export function createAppTheme(mode = 'light') {
       MuiTableCell: {
         styleOverrides: {
           root: { borderBottomStyle: 'dashed', borderBottomColor: alpha(overlay, 0.2) },
+          // Amounts and other right-aligned figures never break across lines.
+          alignRight: { whiteSpace: 'nowrap' },
           head: {
             fontSize: 14,
             fontWeight: 600,

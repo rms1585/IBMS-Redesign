@@ -6,7 +6,7 @@ import {
   ArrowLeft01Icon, ArrowRight01Icon, Briefcase01Icon, Bus01Icon, Cancel01Icon, CancelCircleIcon, CheckListIcon,
   CheckmarkCircle02Icon, Clock01Icon, ContainerTruck02Icon, CreditCardIcon, DashboardSquare01Icon, DeliveryTruck01Icon,
   DocumentValidationIcon, Download01Icon, FileUploadIcon, ForkliftIcon, Globe02Icon, GridViewIcon, Home01Icon, InboxIcon,
-  Invoice01Icon, LockIcon, Moon02Icon, MoreHorizontalIcon, MoreVerticalIcon, Notification01Icon, Notification03Icon,
+  Invoice01Icon, LockIcon, Menu01Icon, Moon02Icon, MoreHorizontalIcon, MoreVerticalIcon, Notification01Icon, Notification03Icon,
   Plug01Icon, Route01Icon, Search01Icon, SignpostIcon, SlidersHorizontalIcon, StopWatchIcon, Store01Icon, Sun03Icon,
   Train01Icon, UnavailableIcon, UserGroupIcon, UserShield01Icon, Video01Icon, WarehouseIcon, WeightScaleIcon,
 } from '@hugeicons/core-free-icons';
@@ -73,6 +73,7 @@ export const KeyboardArrowDownRoundedIcon = createIcon(ArrowDown01Icon, 'Keyboar
 export const LightModeOutlinedIcon = createIcon(Sun03Icon, 'LightModeOutlinedIcon');
 export const LocalShippingRoundedIcon = createIcon(ContainerTruck02Icon, 'LocalShippingRoundedIcon');
 export const LockOutlinedIcon = createIcon(LockIcon, 'LockOutlinedIcon');
+export const MenuRoundedIcon = createIcon(Menu01Icon, 'MenuRoundedIcon');
 export const MoreHorizRoundedIcon = createIcon(MoreHorizontalIcon, 'MoreHorizRoundedIcon');
 export const MoreVertRoundedIcon = createIcon(MoreVerticalIcon, 'MoreVertRoundedIcon');
 export const NotificationsActiveRoundedIcon = createIcon(Notification03Icon, 'NotificationsActiveRoundedIcon');

@@ -24,10 +24,10 @@ function Operations() {
   const theme = useTheme();
   return (
     <Grid container spacing={3}>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Admissions today" value="142" change={8.2} icon={<LocalShippingRoundedIcon />} /></Grid>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Trucks inside" value="67" change={-3.1} icon={<LocalShippingRoundedIcon />} color="info" /></Grid>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Oldest wait" value="4h 12m" caption="WB-23-K-4402 · Shed 5" icon={<TimerOutlinedIcon />} color="warning" /></Grid>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Open holds" value="5" caption="2 Customs · 3 BLPA" icon={<BlockRoundedIcon />} color="error" /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Admissions today" value="142" change={8.2} icon={<LocalShippingRoundedIcon />} /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Trucks inside" value="67" change={-3.1} icon={<LocalShippingRoundedIcon />} color="info" /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Oldest wait" value="4h 12m" caption="WB-23-K-4402 · Shed 5" icon={<TimerOutlinedIcon />} color="warning" /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Open holds" value="5" caption="2 Customs · 3 BLPA" icon={<BlockRoundedIcon />} color="error" /></Grid>
 
       <Grid size={{ xs: 12, lg: 8 }}>
         <SectionCard title="Admissions and departures" subheader="This week compared with the same week last year">
@@ -121,10 +121,10 @@ function Revenue() {
   const theme = useTheme();
   return (
     <Grid container spacing={3}>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Billed this month" value="BDT 3.42 cr" change={5.4} icon={<PaymentsRoundedIcon />} /></Grid>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Collection rate" value="88.6%" change={1.2} icon={<PaymentsRoundedIcon />} color="success" /></Grid>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Outstanding balance" value="BDT 38.9 L" change={-6.0} icon={<PaymentsRoundedIcon />} color="warning" /></Grid>
-      <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Uncleared cheques" value="7" caption="BDT 4.1 L awaiting clearance" icon={<PaymentsRoundedIcon />} color="error" /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Billed this month" value="BDT 3.42 cr" change={5.4} icon={<PaymentsRoundedIcon />} /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Collection rate" value="88.6%" change={1.2} icon={<PaymentsRoundedIcon />} color="success" /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Outstanding balance" value="BDT 38.9 L" change={-6.0} icon={<PaymentsRoundedIcon />} color="warning" /></Grid>
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Uncleared cheques" value="7" caption="BDT 4.1 L awaiting clearance" icon={<PaymentsRoundedIcon />} color="error" /></Grid>
       <Grid size={12}>
         <SectionCard title="Billed vs counted" subheader="Last 12 months (BDT  lakh)">
           <Box sx={{ px: 1 }}>
@@ -184,7 +184,7 @@ function Simple({ items }) {
   return (
     <Grid container spacing={3}>
       {items.map(([t, v, c, col]) => (
-        <Grid key={t} size={{ xs: 12, md: 4 }}><KpiCard title={t} value={v} caption={c} color={col} /></Grid>
+        <Grid key={t} size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title={t} value={v} caption={c} color={col} /></Grid>
       ))}
     </Grid>
   );

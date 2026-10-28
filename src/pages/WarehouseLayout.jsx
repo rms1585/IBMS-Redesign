@@ -73,7 +73,7 @@ export default function WarehouseLayout() {
         action={<Button variant="contained" startIcon={<AddRoundedIcon />}>Create facility</Button>}
       />
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={{ xs: 12, lg: 3 }}>
           <Card sx={{ p: 1.5 }}>
             {storage.map((x) => (
               <ButtonBase
@@ -93,7 +93,7 @@ export default function WarehouseLayout() {
             ))}
           </Card>
         </Grid>
-        <Grid size={{ xs: 12, md: 9 }}>
+        <Grid size={{ xs: 12, lg: 9 }}>
           <SectionCard
             title={f.name}
             subheader={f.kind}

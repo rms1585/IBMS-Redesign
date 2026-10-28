@@ -15,10 +15,10 @@ export default function TraderPortal() {
         subtitle="Progress and charges for your own manifests at this port. Operational actions are done by your appointed C&F agency."
       />
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Balance due" value={formatBDT(own.reduce((s, m) => s + m.balance, 0))} color="warning" /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Active manifests" value={own.filter((m) => m.status === 'Open').length} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Trucks inside" value="3" color="info" /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Alerts" value="2" color="error" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Balance due" value={formatBDT(own.reduce((s, m) => s + m.balance, 0))} color="warning" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Active manifests" value={own.filter((m) => m.status === 'Open').length} /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Trucks inside" value="3" color="info" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Alerts" value="2" color="error" /></Grid>
       </Grid>
       <Card>
         <Table>

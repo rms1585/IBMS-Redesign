@@ -29,7 +29,7 @@ function Record({ item, onStart, onFinish }) {
 
   return (
     <Card>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
           <Typography variant="h5" sx={{ fontFamily: 'monospace' }}>{item.plate}</Typography>
           <Typography variant="body2" color="text.secondary">{item.product} · allocated {item.bay}</Typography>

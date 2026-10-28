@@ -51,10 +51,10 @@ export default function CfPortal() {
     <>
       <PageHeader title="C&F portal" links={[{ name: 'Operations' }, { name: AGENCY }]} subtitle="Your agency's manifests, trucks, bills and alerts at Benapole." />
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Dues across active manifests" value={formatBDT(dues)} icon={<PaymentsRoundedIcon />} color="warning" /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Active manifests" value={own.filter((m) => m.status === 'Open').length} icon={<ReceiptLongRoundedIcon />} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Trucks in port" value="4" icon={<LocalShippingRoundedIcon />} color="info" caption="View queue" /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Unread alerts" value={alerts.length} icon={<NotificationsActiveRoundedIcon />} color="error" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Dues across active manifests" value={formatBDT(dues)} icon={<PaymentsRoundedIcon />} color="warning" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Active manifests" value={own.filter((m) => m.status === 'Open').length} icon={<ReceiptLongRoundedIcon />} /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Trucks in port" value="4" icon={<LocalShippingRoundedIcon />} color="info" caption="View queue" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Unread alerts" value={alerts.length} icon={<NotificationsActiveRoundedIcon />} color="error" /></Grid>
       </Grid>
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 8 }}>

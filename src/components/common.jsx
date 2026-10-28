@@ -9,8 +9,8 @@ import { InboxOutlinedIcon, SearchRoundedIcon, TrendingDownRoundedIcon, Trending
 
 export function PageHeader({ title, links = [], action, subtitle }) {
   return (
-    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2} sx={{ mb: 4 }}>
-      <Box sx={{ minWidth: 0 }}>
+    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2} sx={{ mb: 4 }}>
+      <Box sx={{ minWidth: 0, flex: '1 1 320px' }}>
         <Typography variant="h4" gutterBottom={links.length > 0 || Boolean(subtitle)}>
           {title}
         </Typography>
@@ -35,7 +35,7 @@ export function PageHeader({ title, links = [], action, subtitle }) {
           </Typography>
         )}
       </Box>
-      {action && <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>{action}</Stack>}
+      {action && <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ flexShrink: 0 }}>{action}</Stack>}
     </Stack>
   );
 }
@@ -47,7 +47,7 @@ export function SearchField({ placeholder = 'Search…', value, onChange, sx }) 
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      sx={{ minWidth: 260, ...sx }}
+      sx={{ minWidth: { xs: 0, sm: 260 }, ...sx }}
       slotProps={{
         input: {
           startAdornment: (
@@ -75,13 +75,13 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
   const theme = useTheme();
   const up = change == null ? null : change >= 0;
   return (
-    <Card sx={{ p: 3, height: '100%' }}>
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
-        <Box>
+    <Card sx={{ p: 3, height: '100%', containerType: 'inline-size' }}>
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
+        <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
-          <Typography variant="h3" sx={{ mt: 1.5, mb: 1 }}>{value}</Typography>
+          <Typography variant="h3" sx={{ mt: 1.5, mb: 1, fontSize: 'clamp(22px, 12cqi, 32px)', overflowWrap: 'anywhere' }}>{value}</Typography>
           {change != null ? (
-            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ whiteSpace: 'nowrap' }}>
+            <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={0.5}>
               {up ? <TrendingUpRoundedIcon fontSize="small" color="success" /> : <TrendingDownRoundedIcon fontSize="small" color="error" />}
               <Typography variant="subtitle2" component="span">{up ? '+' : ''}{change}%</Typography>
               <Typography variant="body2" color="text.secondary" component="span">{caption ?? 'vs. last period'}</Typography>
@@ -93,7 +93,7 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
         {icon && (
           <Box
             sx={{
-              width: 48, height: 48, borderRadius: 1.5, display: 'grid', placeItems: 'center',
+              width: 48, height: 48, borderRadius: 1.5, display: 'grid', placeItems: 'center', flexShrink: 0,
               color: theme.palette.mode === 'light' ? theme.palette[color].text ?? theme.palette[color].dark : theme.palette[color].light,
               bgcolor: alpha(theme.palette[color].main, 0.12),
             }}
@@ -110,8 +110,8 @@ export function SectionCard({ title, subheader, action, children, sx, contentSx 
   return (
     <Card sx={sx}>
       {(title || action) && (
-        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ px: 3, pt: 3, pb: 2 }}>
-          <Box>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2} sx={{ px: 3, pt: 3, pb: 2 }}>
+          <Box sx={{ minWidth: 0 }}>
             {title && <Typography variant="h6">{title}</Typography>}
             {subheader && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{subheader}</Typography>}
           </Box>
@@ -136,9 +136,9 @@ export function UserAvatar({ name, size = 40, sx }) {
 
 export function DetailRow({ label, children, labelWidth = 120 }) {
   return (
-    <Stack direction="row" spacing={2} sx={{ py: 0.75 }}>
+    <Stack direction="row" flexWrap="wrap" columnGap={2} sx={{ py: 0.75 }}>
       <Typography variant="body2" color="text.secondary" sx={{ width: labelWidth, flexShrink: 0 }}>{label}</Typography>
-      <Typography variant="body2" component="div" sx={{ flex: 1, minWidth: 0 }}>{children}</Typography>
+      <Typography variant="body2" component="div" sx={{ flex: '1 1 140px', minWidth: 0, overflowWrap: 'anywhere' }}>{children}</Typography>
     </Stack>
   );
 }

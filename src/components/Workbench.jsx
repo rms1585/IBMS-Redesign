@@ -6,12 +6,33 @@ import { VideocamRoundedIcon } from './icons';
 
 // Operational workbench: searchable queue on the left, selected record in the centre,
 // contextual rail (camera, movement, progress) on the right.
+// Breakpoints are container queries on the page content area (see DashboardLayout), so the
+// layout responds to the space actually available whether the navigation is open or collapsed.
+export const WIDE = '@container main (max-width: 1180px)';
+export const NARROW = '@container main (max-width: 760px)';
+
 export function Workbench({ queue, center, rail }) {
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: rail ? '296px minmax(0,1fr) 272px' : '296px minmax(0,1fr)', gap: 3, alignItems: 'start' }}>
-      {queue}
-      <Box sx={{ minWidth: 0 }}>{center}</Box>
-      {rail && <Stack spacing={3}>{rail}</Stack>}
+    <Box
+      sx={{
+        display: 'grid',
+        gap: 3,
+        alignItems: 'start',
+        gridTemplateColumns: rail ? '296px minmax(0,1fr) 272px' : '296px minmax(0,1fr)',
+        gridTemplateAreas: rail ? '"queue center rail"' : '"queue center"',
+        // Medium: the rail drops under the record, beside the queue.
+        [WIDE]: rail ? { gridTemplateColumns: '280px minmax(0,1fr)', gridTemplateAreas: '"queue center" "queue rail"' } : {},
+        // Narrow (e.g. iPad portrait): everything stacks.
+        [NARROW]: { gridTemplateColumns: 'minmax(0,1fr)', gridTemplateAreas: rail ? '"queue" "center" "rail"' : '"queue" "center"' },
+      }}
+    >
+      <Box sx={{ gridArea: 'queue', minWidth: 0 }}>{queue}</Box>
+      <Box sx={{ gridArea: 'center', minWidth: 0 }}>{center}</Box>
+      {rail && (
+        <Box sx={{ gridArea: 'rail', minWidth: 0, display: 'grid', gap: 3, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
+          {rail}
+        </Box>
+      )}
     </Box>
   );
 }
@@ -19,7 +40,7 @@ export function Workbench({ queue, center, rail }) {
 export function QueueCard({ title, count, search, onSearch, placeholder, items, selectedKey, onSelect, renderItem, getKey, emptyText, header }) {
   const theme = useTheme();
   return (
-    <Card sx={{ position: 'sticky', top: 88 }}>
+    <Card sx={{ position: 'sticky', top: 88, [NARROW]: { position: 'static' } }}>
       <Box sx={{ p: 2.5, pb: 2 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
           <Typography variant="h6">{title}</Typography>
@@ -29,7 +50,7 @@ export function QueueCard({ title, count, search, onSearch, placeholder, items, 
         <SearchField placeholder={placeholder} value={search} onChange={onSearch} sx={{ minWidth: 0, width: '100%' }} />
       </Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
-      <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', p: 1 }}>
+      <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', p: 1, [NARROW]: { maxHeight: 320 } }}>
         {items.length === 0 ? (
           <EmptyState title={emptyText ?? 'Nothing in the queue'} sx={{ py: 4 }} />
         ) : (

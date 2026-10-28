@@ -19,9 +19,9 @@ export default function Technical() {
     <>
       <PageHeader title="Technical settings" links={[{ name: 'Administration' }, { name: 'Technical settings' }]} subtitle="National Single Window is the source of IGM, Customs statuses, release, holds and agency statuses." />
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 4 }}><KpiCard title="NSW health (simulated)" value="2 of 3 nodes up" color="warning" /></Grid>
-        <Grid size={{ xs: 12, md: 4 }}><KpiCard title="Messages held" value="20" caption="Delivered when the feed recovers" color="error" /></Grid>
-        <Grid size={{ xs: 12, md: 4 }}><KpiCard title="Online payments today" value="312" caption="Latest 10:58 · BDT 4.8 L" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="NSW health (simulated)" value="2 of 3 nodes up" color="warning" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Messages held" value="20" caption="Delivered when the feed recovers" color="error" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Online payments today" value="312" caption="Latest 10:58 · BDT 4.8 L" /></Grid>
       </Grid>
       <SectionCard title="Ports and stations">
         <DataTable card={false} rows={nodes} columns={[

@@ -59,10 +59,10 @@ export default function Billing() {
       />
       <Alert severity="info" sx={{ mb: 3 }}>Demonstration tariff (TO-2026-03, invented reference). These are not legal rates.</Alert>
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Billed" value={formatBDT(billed)} caption={`${billLines.length} bill lines`} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Counted" value={formatBDT(counted)} caption="Cash, online and cleared cheques" color="success" /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Pending confirmation" value={formatBDT(pending)} caption="Not yet counted" color="warning" /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><KpiCard title="Balance due" value={formatBDT(balance)} caption="Blocks loaded local departure" color="error" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Billed" value={formatBDT(billed)} caption={`${billLines.length} bill lines`} /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Counted" value={formatBDT(counted)} caption="Cash, online and cleared cheques" color="success" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Pending confirmation" value={formatBDT(pending)} caption="Not yet counted" color="warning" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Balance due" value={formatBDT(balance)} caption="Blocks loaded local departure" color="error" /></Grid>
       </Grid>
 
       <SectionCard title="Bill breakdown" subheader="Every line comes from a recorded event and the tariff version in force at that time." sx={{ mb: 3 }}>
@@ -112,8 +112,8 @@ export default function Billing() {
               const ownRecord = p.by === currentUser.name;
               return (
                 <TableRow key={p.receipt} hover>
-                  <TableCell sx={{ pl: 3, fontWeight: 600 }}>{p.receipt}<Typography variant="caption" color="text.disabled" component="div">{p.at}</Typography></TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>{p.ref}</TableCell>
+                  <TableCell sx={{ pl: 3, fontWeight: 600, whiteSpace: 'nowrap' }}>{p.receipt}<Typography variant="caption" color="text.disabled" component="div">{p.at}</Typography></TableCell>
+                  <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>{p.ref}</TableCell>
                   <TableCell>{p.payer}<Typography variant="caption" color="text.secondary" component="div">{p.method}</Typography></TableCell>
                   <TableCell>{p.by}</TableCell>
                   <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(p.amount)}</TableCell>

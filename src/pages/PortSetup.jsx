@@ -196,7 +196,7 @@ export default function PortSetup() {
       <PageHeader title="Port setup" links={[{ name: 'Administration' }, { name: 'Port setup' }, { name: `${port.name} (${port.code})` }]} />
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {ports.map((p) => (
-          <Grid key={p.code} size={{ xs: 12, sm: 6, md: 'grow' }}>
+          <Grid key={p.code} size={{ xs: 12, sm: 6, md: 4, xl: 'grow' }}>
             <Card
               component={ButtonBase}
               onClick={() => { setPortCode(p.code); setStep(0); }}
@@ -217,7 +217,7 @@ export default function PortSetup() {
       </Grid>
 
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={{ xs: 12, lg: 3 }}>
           <Card sx={{ p: 1.5 }}>
             {steps.map((s, i) => {
               const active = i === step;
@@ -248,7 +248,7 @@ export default function PortSetup() {
             })}
           </Card>
         </Grid>
-        <Grid size={{ xs: 12, md: 9 }}>
+        <Grid size={{ xs: 12, lg: 9 }}>
           <SectionCard title={steps[step].title} subheader={steps[step].desc}>
             <Box sx={{ px: 3, pb: 3 }}>
               {step === 0 && <StepPort key={port.code} port={port} />}
@@ -258,7 +258,7 @@ export default function PortSetup() {
               {step === 4 && <StepGoLive port={port} modules={modules} onRequest={() => setToast(`Go-live request for ${port.name} sent to head office.`)} />}
             </Box>
             <Divider sx={{ borderStyle: 'dashed' }} />
-            <Stack direction="row" justifyContent="space-between" sx={{ p: 3 }}>
+            <Stack direction="row" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
               <Button color="inherit" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>Previous</Button>
               <Stack direction="row" spacing={1.5}>
                 {step < 4 && <Button variant="outlined" color="inherit" onClick={() => setToast('Changes saved.')}>Save</Button>}

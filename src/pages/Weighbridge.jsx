@@ -60,7 +60,7 @@ function WeighRecord({ truck, onConfirmed }) {
 
   return (
     <Card>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
           <Typography variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
           <Typography variant="body2" color="text.secondary">{truck.reason} · Scale 1, position A</Typography>
@@ -69,9 +69,9 @@ function WeighRecord({ truck, onConfirmed }) {
       </Stack>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Box sx={{ p: 3 }}>
-        <Box sx={{ p: 4, borderRadius: 2, textAlign: 'center', bgcolor: (t) => alpha(t.palette.primary.main, 0.06), border: (t) => `1px dashed ${alpha(t.palette.primary.main, 0.3)}` }}>
+        <Box sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 2, textAlign: 'center', containerType: 'inline-size', bgcolor: (t) => alpha(t.palette.primary.main, 0.06), border: (t) => `1px dashed ${alpha(t.palette.primary.main, 0.3)}` }}>
           <Typography variant="overline" color="text.secondary">{captured ? `Captured weight (${captured.method})` : 'Live scale reading'}</Typography>
-          <Typography sx={{ fontSize: 56, fontWeight: 800, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums', color: 'text.primary' }}>
+          <Typography sx={{ fontSize: 'clamp(32px, 13cqi, 56px)', fontWeight: 800, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums', color: 'text.primary', whiteSpace: 'nowrap' }}>
             {(captured?.kg ?? live).toLocaleString('en-US')} <Typography component="span" variant="h4" color="text.secondary">kg</Typography>
           </Typography>
           {net != null && <Typography variant="subtitle1" color="primary.main">Net cargo {formatKg(net)} (gross − stored tare)</Typography>}
