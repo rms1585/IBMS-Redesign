@@ -142,6 +142,9 @@ Plates, manifest IDs and references use a monospace font.
   - Detail rows (`DetailRow`) put the label above the value when there's no room beside it.
   - Side columns: queue status labels wrap; "Plate read" and its match label wrap; Recent movements is a compact
     list (plate with the time under it, In/Out label on the right). Nothing may overflow a narrow column.
+- **Cards side by side share a height:** in a grid row, every card takes the height of the tallest card in that row.
+  A global theme rule makes a card that is the only item in its grid cell fill the row (`height: 100%`). Cards
+  stacked inside one column (e.g. C&F portal Billing summary + Alerts) keep their natural heights.
 - **Page and card headers** wrap their action buttons below the title instead of overflowing.
 - Port setup port cards: `xs 12 · sm 6 · md 4 · xl grow`. Side panels in Port setup and Warehouse layout are 3/9
   columns from `lg`, stacked below that.

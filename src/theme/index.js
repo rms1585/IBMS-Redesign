@@ -48,6 +48,9 @@ export function createAppTheme(mode = 'light') {
           body: { backgroundColor: palette.background.default },
           // Scrollbars stay hidden until their area is scrolled (see useAutoHideScrollbars).
           '*': { scrollbarWidth: 'thin', scrollbarColor: 'transparent transparent' },
+          // Side-by-side cards share a height: a card that is the only item in its grid cell fills
+          // the row, so it matches the tallest card beside it.
+          '.MuiGrid2-root > .MuiCard-root:only-child, .MuiGrid-root > .MuiCard-root:only-child': { height: '100%' },
           '.is-scrolling': { scrollbarColor: `${alpha(overlay, 0.4)} transparent` },
           // Browsers without scrollbar-color (older Safari) use the WebKit pseudo-elements.
           '@supports not (scrollbar-color: auto)': {
