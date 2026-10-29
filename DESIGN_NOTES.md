@@ -146,8 +146,7 @@ Plates, manifest IDs and references use a monospace font.
   A global theme rule makes a card that is the only item in its grid cell fill the row (`height: 100%`). Cards
   stacked inside one column (e.g. C&F portal Billing summary + Alerts) keep their natural heights.
 - **Page and card headers** wrap their action buttons below the title instead of overflowing.
-- Port setup port cards: `xs 12 · sm 6 · md 4 · xl grow`. Side panels in Port setup and Warehouse layout are 3/9
-  columns from `lg`, stacked below that.
+- Side panels in Port setup and Warehouse layout are 3/9 columns from `lg`, stacked below that.
 - Checked sizes: iPad portrait 768 / 820, iPad landscape 1024 / 1180, iPad Pro 1366, laptop 1440, wide 1920.
   No page may scroll sideways; only tables scroll, inside their cards.
 - Desktop app (Electron) minimum window: 1024×700.
@@ -167,6 +166,10 @@ Plates, manifest IDs and references use a monospace font.
 - **Inbox:** you can't approve your own request ("Your request" label instead of buttons). Approve/Reject require a reason.
 - **Posting:** bays that break an active (symmetric) separation rule or zone category are marked "not allowed".
 - **Warehouse layout:** remove/shrink/re-grid is refused while a zone holds cargo, with the reason shown.
+- **Port setup:** ports are **compact tabs** (status dot · name · code), not cards, so the page focuses on the selected
+  port's details. The tab row scrolls sideways when ports don't fit. Status dot colours: green Live, blue Awaiting
+  approval, amber Setting up. The selected port's status label, readiness % and progress bar sit at the top of the
+  steps panel. Switching tabs returns to step 1.
 - **Gates:** departure checklists block exit on holds, unpaid balance or an invalid pass. Admitting asks for confirmation.
 
 ## 13. Working on this repo

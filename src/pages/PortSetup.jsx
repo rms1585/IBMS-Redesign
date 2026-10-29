@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Box, Card, Stack, Typography, Button, Grid2 as Grid, TextField, Switch, Divider, Alert, Snackbar,
   Table, TableHead, TableRow, TableCell, TableBody, ButtonBase,
-  LinearProgress, Checkbox,
+  LinearProgress, Checkbox, Tabs, Tab,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { PageHeader, SectionCard, UserAvatar } from '../components/common';
@@ -184,6 +184,8 @@ function StepGoLive({ port, modules, onRequest }) {
   );
 }
 
+const stateColor = (state) => (state === 'Live' ? 'success' : state.startsWith('Awaiting') ? 'info' : 'warning');
+
 export default function PortSetup() {
   const [portCode, setPortCode] = useState('SON');
   const [step, setStep] = useState(0);
@@ -194,31 +196,40 @@ export default function PortSetup() {
   return (
     <>
       <PageHeader title="Port setup" links={[{ name: 'Administration' }, { name: 'Port setup' }, { name: `${port.name} (${port.code})` }]} />
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      {/* Ports as compact tabs; the selected port's status and readiness show in the steps panel. */}
+      <Tabs
+        value={portCode}
+        onChange={(e, v) => { setPortCode(v); setStep(0); }}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+      >
         {ports.map((p) => (
-          <Grid key={p.code} size={{ xs: 12, sm: 6, md: 4, xl: 'grow' }}>
-            <Card
-              component={ButtonBase}
-              onClick={() => { setPortCode(p.code); setStep(0); }}
-              sx={{
-                width: '100%', p: 2, display: 'block', textAlign: 'left',
-                outline: (t) => (p.code === portCode ? `2px solid ${t.palette.primary.main}` : 'none'),
-              }}
-            >
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="subtitle2">{p.name}</Typography>
-                <Typography variant="caption" sx={{ fontFamily: 'monospace' }} color="text.secondary">{p.code}</Typography>
+          <Tab
+            key={p.code}
+            value={p.code}
+            label={
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: `${stateColor(p.state)}.main` }} />
+                <span>{p.name}</span>
+                <Typography component="span" variant="caption" color="text.disabled" sx={{ fontFamily: 'monospace' }}>{p.code}</Typography>
               </Stack>
-              <LinearProgress variant="determinate" value={p.readiness} sx={{ my: 1.25 }} color={p.readiness === 100 ? 'success' : 'primary'} />
-              <Label color={p.state === 'Live' ? 'success' : p.state.startsWith('Awaiting') ? 'info' : 'warning'}>{p.state}</Label>
-            </Card>
-          </Grid>
+            }
+          />
         ))}
-      </Grid>
+      </Tabs>
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 3 }}>
           <Card sx={{ p: 1.5 }}>
+            <Box sx={{ p: 1.5, pb: 2 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1} flexWrap="wrap" sx={{ mb: 1.25 }}>
+                <Label color={stateColor(port.state)}>{port.state}</Label>
+                <Typography variant="caption" color="text.secondary">{port.readiness}% ready</Typography>
+              </Stack>
+              <LinearProgress variant="determinate" value={port.readiness} color={port.readiness === 100 ? 'success' : 'primary'} />
+            </Box>
+            <Divider sx={{ borderStyle: 'dashed', mx: 1.5, mb: 1 }} />
             {steps.map((s, i) => {
               const active = i === step;
               const done = i < step;
