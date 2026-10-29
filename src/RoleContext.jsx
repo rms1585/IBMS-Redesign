@@ -1,10 +1,11 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 
-// Demo role switcher. `paths` lists the screens a role can open; null means every screen.
+// Demo role switcher. `paths` lists the screens a role can open (null means every screen);
+// `hidden` lists screens taken away from that set.
 // More roles (Border Gate Manager, Warehouse Manager, …) will be added here later.
 export const roles = [
   { id: 'super-admin', name: 'Super-Admin', paths: null },
-  { id: 'admin', name: 'Admin', paths: null },
+  { id: 'admin', name: 'Admin', paths: null, hidden: ['/port-setup'] },
   { id: 'blpa-manager', name: 'BLPA Manager', paths: ['/', '/dashboard', '/border-gate'] },
 ];
 
@@ -32,7 +33,7 @@ export function RoleProvider({ children }) {
         setRoleId(id);
         try { localStorage.setItem(STORAGE_KEY, id); } catch { /* storage unavailable */ }
       },
-      canOpen: (path) => !role.paths || role.paths.includes(path),
+      canOpen: (path) => (!role.paths || role.paths.includes(path)) && !role.hidden?.includes(path),
     };
   }, [roleId]);
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;

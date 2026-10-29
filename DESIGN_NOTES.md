@@ -168,8 +168,8 @@ Plates, manifest IDs and references use a monospace font.
 - **Warehouse layout:** remove/shrink/re-grid is refused while a zone holds cargo, with the reason shown.
 - **Roles (demo switcher):** the profile menu in the top right has a *Role* section (Super-Admin, Admin, BLPA
   Manager) with a tick on the current role; the role's name replaces the job title under the user's name. Roles and
-  the screens each one can open live in `src/RoleContext.jsx` (`paths: null` = every screen). Super-Admin is the
-  default and sees everything; Admin also sees everything for now; BLPA Manager sees only Home, Dashboard and
+  the screens each one can open live in `src/RoleContext.jsx` (`paths: null` = every screen, `hidden` = screens taken
+  away). Super-Admin is the default and sees everything; Admin sees everything except Port setup; BLPA Manager sees only Home, Dashboard and
   Border gate. The left navigation, the Home shortcut tiles and Home's "Review inbox" button hide what the role can't
   open, and empty nav groups disappear. Opening a hidden screen by URL goes back to Home. The choice is remembered in
   the browser. Add future roles (Border Gate Manager, Warehouse Manager, …) to the `roles` list.
