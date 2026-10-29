@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Box, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
-  Menu, MenuItem, Select, Collapse, Drawer, useMediaQuery,
+  Menu, MenuItem, ListItemText, Select, Collapse, Drawer, useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { navConfig } from './navConfig';
@@ -10,8 +10,9 @@ import { currentUser, ports, alerts } from '../data/mock';
 import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
+import { roles, useRole } from '../RoleContext';
 import blpaLogo from '../assets/blpa-logo.png';
-import { ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
+import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
 
 const NAV_WIDTH = 280;
 const NAV_MINI = 88;
@@ -140,6 +141,7 @@ function Header({ navWidth, onOpenNav }) {
   const [port, setPort] = useState(currentUser.port);
   const [anchor, setAnchor] = useState(null);
   const [userAnchor, setUserAnchor] = useState(null);
+  const { role, setRole } = useRole();
 
   return (
     <Box
@@ -206,7 +208,7 @@ function Header({ navWidth, onOpenNav }) {
         <UserAvatar name={currentUser.name} size={36} />
         <Box sx={{ textAlign: 'left', display: { xs: 'none', md: 'block' } }}>
           <Typography variant="subtitle2" sx={{ lineHeight: 1.3 }}>{currentUser.name}</Typography>
-          <Typography variant="caption" color="text.secondary">{currentUser.role}</Typography>
+          <Typography variant="caption" color="text.secondary">{role.name}</Typography>
         </Box>
       </ButtonBase>
       <Menu anchorEl={userAnchor} open={Boolean(userAnchor)} onClose={() => setUserAnchor(null)} slotProps={{ paper: { sx: { width: 220 } } }}>
@@ -214,6 +216,15 @@ function Header({ navWidth, onOpenNav }) {
           <Typography variant="subtitle2">{currentUser.name}</Typography>
           <Typography variant="body2" color="text.secondary" noWrap>{currentUser.email}</Typography>
         </Box>
+        <Divider sx={{ borderStyle: 'dashed' }} />
+        {/* Demo role switcher: the left navigation shows only the modules the chosen role can use. */}
+        <Typography variant="overline" color="text.disabled" sx={{ display: 'block', px: 1, pt: 1, pb: 0.5 }}>Role</Typography>
+        {roles.map((r) => (
+          <MenuItem key={r.id} selected={r.id === role.id} onClick={() => { setRole(r.id); setUserAnchor(null); }}>
+            <ListItemText primary={r.name} primaryTypographyProps={{ variant: 'body2', fontWeight: r.id === role.id ? 600 : 400 }} />
+            {r.id === role.id && <CheckRoundedIcon fontSize="small" color="primary" />}
+          </MenuItem>
+        ))}
         <Divider sx={{ borderStyle: 'dashed' }} />
         <MenuItem onClick={() => setUserAnchor(null)}>Profile</MenuItem>
         <MenuItem onClick={() => setUserAnchor(null)}>Language: English</MenuItem>
@@ -226,6 +237,10 @@ function Header({ navWidth, onOpenNav }) {
 
 function NavContent({ mini, onToggle }) {
   const theme = useTheme();
+  const { canOpen } = useRole();
+  const groups = navConfig
+    .map((g) => ({ ...g, items: g.items.filter((item) => canOpen(item.path)) }))
+    .filter((g) => g.items.length > 0);
   return (
     <>
       <Box sx={{ height: HEADER, display: 'flex', alignItems: 'center', px: mini ? 1 : 2.5, justifyContent: mini ? 'center' : 'flex-start' }}>
@@ -246,7 +261,7 @@ function NavContent({ mini, onToggle }) {
         </IconButton>
       )}
       <Box component="ul" sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: mini ? 0.5 : 2, pb: 3, m: 0 }}>
-        {navConfig.map((g) => (
+        {groups.map((g) => (
           <NavGroup key={g.subheader} group={g} mini={mini} />
         ))}
       </Box>
@@ -267,6 +282,7 @@ function NavContent({ mini, onToggle }) {
 export default function DashboardLayout() {
   const theme = useTheme();
   const { pathname } = useLocation();
+  const { canOpen } = useRole();
   // ≥1200px: full navigation. 900–1199px (iPad landscape): icon rail by default.
   // <900px (iPad portrait): navigation slides in from the menu button.
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
@@ -315,7 +331,8 @@ export default function DashboardLayout() {
       >
         {/* Named container: page layouts use @container main queries against this width. */}
         <Box sx={{ px: { xs: 2, sm: 3, lg: 5 }, pb: 8, maxWidth: 1600, mx: 'auto', containerType: 'inline-size', containerName: 'main' }}>
-          <Outlet />
+          {/* Screens outside the current role's modules send the user back to Home. */}
+          {canOpen(pathname) ? <Outlet /> : <Navigate to="/" replace />}
         </Box>
       </Box>
     </Box>

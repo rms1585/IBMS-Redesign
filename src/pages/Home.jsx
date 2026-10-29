@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { navConfig } from '../layouts/navConfig';
 import { currentUser, manifests, arrivingTrucks, inboxRequests } from '../data/mock';
 import Label from '../components/Label';
+import { useRole } from '../RoleContext';
 
 const homeGroups = [
   { title: 'Operations', paths: ['/cf-portal', '/trader-portal', '/manifests', '/border-gate', '/weighbridge', '/posting', '/warehousing', '/transshipment', '/billing', '/inland-gate'] },
@@ -16,6 +17,11 @@ const allItems = navConfig.flatMap((g) => g.items);
 
 export default function Home() {
   const navigate = useNavigate();
+  const { canOpen } = useRole();
+  // Shortcuts follow the current role, like the left navigation; empty groups are dropped.
+  const groups = homeGroups
+    .map((g) => ({ ...g, paths: g.paths.filter(canOpen) }))
+    .filter((g) => g.paths.length > 0);
   const open = manifests.filter((m) => m.status === 'Open').length;
   const waiting = inboxRequests.filter((r) => !r.mine).length;
 
@@ -36,9 +42,11 @@ export default function Home() {
           {arrivingTrucks.length} trucks are expected at the border gate, {open} manifests are open and {waiting} requests are waiting for your decision.
         </Typography>
         <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
-          <ButtonBase onClick={() => navigate('/inbox')} sx={{ px: 2, py: 1, borderRadius: 1, fontWeight: 700, bgcolor: '#fff', color: 'primary.dark', fontSize: 14 }}>
-            Review inbox ({waiting})
-          </ButtonBase>
+          {canOpen('/inbox') && (
+            <ButtonBase onClick={() => navigate('/inbox')} sx={{ px: 2, py: 1, borderRadius: 1, fontWeight: 700, bgcolor: '#fff', color: 'primary.dark', fontSize: 14 }}>
+              Review inbox ({waiting})
+            </ButtonBase>
+          )}
           <ButtonBase onClick={() => navigate('/dashboard')} sx={{ px: 2, py: 1, borderRadius: 1, fontWeight: 700, color: '#fff', border: `1px solid ${alpha('#fff', 0.4)}`, fontSize: 14 }}>
             Open dashboard
           </ButtonBase>
@@ -46,7 +54,7 @@ export default function Home() {
       </Card>
 
       <Stack spacing={5}>
-        {homeGroups.map((g) => (
+        {groups.map((g) => (
           <Box key={g.title}>
             <Typography variant="h6" sx={{ mb: 2 }}>{g.title}</Typography>
             <Grid container spacing={2.5}>

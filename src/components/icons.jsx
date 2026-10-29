@@ -8,7 +8,7 @@ import {
   DocumentValidationIcon, Download01Icon, FileUploadIcon, ForkliftIcon, Globe02Icon, GridViewIcon, Home01Icon, InboxIcon,
   Invoice01Icon, LockIcon, Menu01Icon, Moon02Icon, MoreHorizontalIcon, MoreVerticalIcon, Notification01Icon, Notification03Icon,
   Plug01Icon, Route01Icon, Search01Icon, SignpostIcon, SlidersHorizontalIcon, StopWatchIcon, Store01Icon, Sun03Icon,
-  Train01Icon, UnavailableIcon, UserGroupIcon, UserShield01Icon, Video01Icon, WarehouseIcon, WeightScaleIcon,
+  Tick02Icon, Train01Icon, UnavailableIcon, UserGroupIcon, UserShield01Icon, Video01Icon, WarehouseIcon, WeightScaleIcon,
 } from '@hugeicons/core-free-icons';
 
 // Icons follow the IBMS Figma design system: Hugeicons, Stroke Rounded, 1.5px stroke.
@@ -56,6 +56,7 @@ export const AltRouteRoundedIcon = createIcon(Route01Icon, 'AltRouteRoundedIcon'
 export const BlockRoundedIcon = createIcon(UnavailableIcon, 'BlockRoundedIcon');
 export const BusinessCenterRoundedIcon = createIcon(Briefcase01Icon, 'BusinessCenterRoundedIcon');
 export const CancelRoundedIcon = createIcon(CancelCircleIcon, 'CancelRoundedIcon');
+export const CheckRoundedIcon = createIcon(Tick02Icon, 'CheckRoundedIcon');
 export const CheckCircleRoundedIcon = createIcon(CheckmarkCircle02Icon, 'CheckCircleRoundedIcon');
 export const ChevronLeftRoundedIcon = createIcon(ArrowLeft01Icon, 'ChevronLeftRoundedIcon');
 export const ChevronRightRoundedIcon = createIcon(ArrowRight01Icon, 'ChevronRightRoundedIcon');
