@@ -6,6 +6,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { InboxOutlinedIcon, SearchRoundedIcon, TrendingDownRoundedIcon, TrendingUpRoundedIcon } from './icons';
+import Label from './Label';
 
 export function PageHeader({ title, links = [], action, subtitle }) {
   return (
@@ -147,6 +148,18 @@ export function DetailRow({ label, children, labelWidth = 120 }) {
     <Stack direction="row" flexWrap="wrap" columnGap={2} sx={{ py: 0.75 }}>
       <Typography variant="body2" color="text.secondary" sx={{ width: labelWidth, flexShrink: 0 }}>{label}</Typography>
       <Typography variant="body2" component="div" sx={{ flex: '1 1 140px', minWidth: 0, overflowWrap: 'anywhere' }}>{children}</Typography>
+    </Stack>
+  );
+}
+
+// Marks a design choice that rests on an open stakeholder decision (F-numbers refer to the
+// feedback register in the 28–29 Oct 2026 consultation minutes), so reviewers can tell it apart
+// from agreed behaviour.
+export function AssumptionNote({ code, children, sx }) {
+  return (
+    <Stack direction="row" alignItems="flex-start" gap={1} sx={sx}>
+      <Label color="warning" sx={{ flexShrink: 0 }}>Assumption · {code}</Label>
+      <Typography variant="caption" color="text.secondary" sx={{ pt: 0.5 }}>{children}</Typography>
     </Stack>
   );
 }

@@ -178,11 +178,26 @@ Plates, manifest IDs and references use a monospace font.
   approval, amber Setting up. The selected port's status label, readiness % and progress bar sit at the top of the
   steps panel. Switching tabs returns to step 1.
 - **Gates:** departure checklists block exit on holds, unpaid balance or an invalid pass. Admitting asks for confirmation.
+- **Phase 1, pre-arrival and IGM** (from the 28–29 Oct 2026 stakeholder minutes; report: *IBMS Phase 1 — Pre-arrival
+  and IGM: Design Report*):
+  - At land ports Customs usually keys the IGM only when the goods reach zero point. A consignment expected before
+    its IGM uses an IBMS **pre-arrival reference** (`PA-…`) and shows **No IGM yet**.
+  - **C&F portal → Trucks:** the agency adds, edits and removes foreign trucks (vehicle number, driver, truck class)
+    per manifest or pre-arrival reference. A truck is locked once it enters the port. A new or edited truck is
+    **Entered by C&F** until Customs validates it; editing a validated truck sends it back for validation.
+  - **Border gate:** admission is blocked until the IGM is received *and* Customs has validated the truck details.
+    "Check again" stands in for the BNSW status update in the demo. A camera mismatch still only warns.
+  - **Perishable** trucks carry an amber label with a timer icon, in the queue and on the record.
+  - Behaviour that rests on an open decision carries an `AssumptionNote` (amber "Assumption · F-number" label +
+    one line), so reviewers can tell it from agreed behaviour. Remove the note once the decision is made.
 
 ## 13. Working on this repo
 
 - After a change, verify in a browser at the sizes above (no page-level sideways scroll, nothing spilling out of
   cards, main flows still work: admit truck, weigh, approve in Inbox, record bank fallback).
-- Commit, then push to `main`. GitHub Pages redeploys automatically
-  (https://rms1585.github.io/IBMS-Redesign/); pushing a `v*` tag builds desktop installers into a GitHub Release.
+- **Redesign work goes to the `redesign-v02` branch only. `main` stays frozen** at the version the live site serves
+  (https://rms1585.github.io/IBMS-Redesign/); don't push or merge to it without the product owner's explicit go-ahead.
+- `redesign-v02` is previewed at https://rms1585.github.io/IBMS-Redesign-v02-preview/. That repo holds only the
+  built files: run `npm run build` and push `dist/` to its `main` branch after each change.
+- Pushing a `v*` tag builds desktop installers into a GitHub Release (from `main` only).
 - After a deploy, hard-refresh (Ctrl/Cmd + Shift + R) to see changes.

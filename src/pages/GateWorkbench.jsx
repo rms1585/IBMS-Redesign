@@ -3,13 +3,36 @@ import {
   Box, Card, Stack, Typography, Button, Tabs, Tab, Divider, Grid2 as Grid, Alert, Snackbar,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
 } from '@mui/material';
-import { PageHeader, DetailRow, formatBDT, formatKg, EmptyState } from '../components/common';
+import { PageHeader, DetailRow, formatBDT, formatKg, EmptyState, AssumptionNote } from '../components/common';
 import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
 import Label from '../components/Label';
-import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes } from '../data/mock';
-import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon } from '../components/icons';
+import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes, truckDataStatus } from '../data/mock';
+import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, TimerOutlinedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
+const awaitingIgm = (t) => t.igm === 'Awaiting';
+const reference = (t) => t.manifest ?? t.preArrival;
+
+function PerishableLabel() {
+  return <Label color="warning" startIcon={<TimerOutlinedIcon />}>Perishable</Label>;
+}
+
+// Border-gate checks before admission (Phase 1). The IGM may not exist yet when the truck
+// arrives, and C&F-entered truck details count only once Customs has validated them.
+function borderChecks(truck) {
+  return [
+    {
+      label: awaitingIgm(truck) ? 'No IGM yet: Customs keys it when the goods reach zero point' : `IGM ${truck.manifest} received from NSW and matched to this station`,
+      ok: !awaitingIgm(truck),
+      blocks: true,
+    },
+    {
+      label: truck.truckData === truckDataStatus.validated ? 'Truck details validated by Customs' : 'Truck details entered by the C&F agency, not yet validated by Customs',
+      ok: truck.truckData === truckDataStatus.validated,
+      blocks: true,
+    },
+  ];
+}
 
 function ManualRegistration({ open, onClose, onDone }) {
   const [form, setForm] = useState({ plate: '', purpose: 'Delivery', manifest: '', driver: '', cls: '' });
@@ -46,26 +69,41 @@ function ManualRegistration({ open, onClose, onDone }) {
   );
 }
 
-function ArrivingRecord({ truck, side, onAdmit }) {
+function ArrivingRecord({ truck, side, onAdmit, onRefresh }) {
   const [confirm, setConfirm] = useState(false);
   const fee = side === 'border' ? 184.7 : 153.58;
+  const cameraCheck = {
+    label: truck.cameraPlate ? 'Camera plate matches the selected truck' : 'No camera plate read: check the vehicle manually',
+    ok: truck.cameraPlate === truck.plate,
+    blocks: false,
+  };
+  const checks = side === 'border'
+    ? [...borderChecks(truck), cameraCheck]
+    : [{ label: 'Manifest received from NSW and matched to this station', ok: true }, { label: 'Truck assigned by the C&F agency', ok: true }, cameraCheck];
+  const blocked = checks.some((c) => c.blocks && !c.ok);
+
   return (
     <Card>
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" flexWrap="wrap" gap={1} alignItems="center">
             <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace', letterSpacing: 0.5 }}>{truck.plate}</Typography>
             {truck.firstVisit && <Label color="info">First visit</Label>}
+            {truck.perishable && <PerishableLabel />}
           </Stack>
           <Typography variant="body2" color="text.secondary">{truck.kind} · {truck.cls} · expected {truck.eta}</Typography>
         </Box>
-        <Label color={customsColor[truck.customs]}>Customs: {truck.customs}</Label>
+        {awaitingIgm(truck) ? <Label color="error">No IGM yet</Label> : <Label color={customsColor[truck.customs]}>Customs: {truck.customs}</Label>}
       </Stack>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Grid container spacing={4} sx={{ p: 3 }}>
         <Grid size={{ xs: 12, xl: 6 }}>
           <Typography variant="overline" color="text.disabled">Shipment</Typography>
-          <DetailRow label="Manifest">{truck.manifest}</DetailRow>
+          {awaitingIgm(truck) ? (
+            <DetailRow label="Pre-arrival ref.">{truck.preArrival}</DetailRow>
+          ) : (
+            <DetailRow label="Manifest">{truck.manifest}</DetailRow>
+          )}
           <DetailRow label="Direction">Import</DetailRow>
           <DetailRow label="Agency">{truck.agency}</DetailRow>
           <DetailRow label="Cargo">{truck.cargo}</DetailRow>
@@ -82,21 +120,32 @@ function ArrivingRecord({ truck, side, onAdmit }) {
       <Box sx={{ p: 3 }}>
         <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Before admitting</Typography>
         <Stack spacing={1}>
-          {[
-            ['Manifest received from NSW and matched to this station', true],
-            ['Truck assigned by the C&F agency', true],
-            [truck.cameraPlate ? 'Camera plate matches the selected truck' : 'No camera plate read: check the vehicle manually', truck.cameraPlate === truck.plate],
-          ].map(([l, ok]) => (
-            <Stack key={l} direction="row" spacing={1} alignItems="center">
+          {checks.map(({ label, ok }) => (
+            <Stack key={label} direction="row" spacing={1} alignItems="flex-start">
               {ok ? <CheckCircleRoundedIcon color="success" fontSize="small" /> : <CancelRoundedIcon color="error" fontSize="small" />}
-              <Typography variant="body2" color={ok ? 'text.primary' : 'error.main'}>{l}</Typography>
+              <Typography variant="body2" color={ok ? 'text.primary' : 'error.main'}>{label}</Typography>
             </Stack>
           ))}
         </Stack>
+        {blocked && (
+          <Alert
+            severity="warning"
+            sx={{ mt: 2 }}
+            action={<Button color="inherit" size="small" onClick={() => onRefresh(truck)}>Check again</Button>}
+          >
+            {awaitingIgm(truck) ? 'Keep the truck at zero point until Customs keys its IGM.' : 'Keep the truck at zero point until Customs validates its details.'} Customs updates arrive through BNSW.
+          </Alert>
+        )}
+        {side === 'border' && awaitingIgm(truck) && (
+          <AssumptionNote code="F4" sx={{ mt: 2 }}>An IGM may reach IBMS only after the truck arrives. When BNSW sends IGM data is not yet confirmed.</AssumptionNote>
+        )}
+        {side === 'border' && truck.truckData !== truckDataStatus.validated && (
+          <AssumptionNote code="F6" sx={{ mt: 1.5 }}>How Customs validates C&amp;F-entered truck details is not designed yet.</AssumptionNote>
+        )}
       </Box>
       <Stack className="record-actions" direction="row" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ p: 3, pt: 0 }}>
         <Button variant="outlined" color="inherit" size="large">Report problem</Button>
-        <Button variant="contained" size="large" onClick={() => setConfirm(true)}>Admit truck</Button>
+        <Button variant="contained" size="large" disabled={blocked} onClick={() => setConfirm(true)}>Admit truck</Button>
       </Stack>
       <Dialog open={confirm} onClose={() => setConfirm(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Admit {truck.plate}?</DialogTitle>
@@ -167,7 +216,7 @@ export default function GateWorkbench({ side }) {
 
   const list = tab === 'arriving' ? arriving : leavingTrucks;
   const filtered = useMemo(
-    () => list.filter((t) => `${t.plate} ${t.manifest}`.toLowerCase().includes(search.toLowerCase())),
+    () => list.filter((t) => `${t.plate} ${reference(t)}`.toLowerCase().includes(search.toLowerCase())),
     [list, search],
   );
   const current = list.find((t) => t.plate === selected) ?? null;
@@ -204,10 +253,11 @@ export default function GateWorkbench({ side }) {
                   <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{t.plate}</Typography>
                   <Typography variant="caption" color="text.secondary">{t.eta ?? t.admitted}</Typography>
                 </Stack>
-                <Typography variant="caption" color="text.secondary" component="div" noWrap>{t.manifest}</Typography>
+                <Typography variant="caption" color="text.secondary" component="div" noWrap>{reference(t)}</Typography>
                 <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label>{t.kind}</Label>
-                  {t.customs && <Label color={customsColor[t.customs]}>{t.customs}</Label>}
+                  {t.perishable && <PerishableLabel />}
+                  {awaitingIgm(t) ? <Label color="error">No IGM yet</Label> : t.customs && <Label color={customsColor[t.customs]}>{t.customs}</Label>}
                   {t.release && <Label color={customsColor[t.release]}>{t.release}</Label>}
                 </Stack>
               </>
@@ -225,6 +275,15 @@ export default function GateWorkbench({ side }) {
                   setArriving((a) => a.filter((x) => x.plate !== t.plate));
                   setSelected(null);
                   setToast(`${t.plate} admitted and routed. Entrance fee added to ${t.manifest}.`);
+                }}
+                onRefresh={(t) => {
+                  // Demo stand-in for a BNSW update: Customs keys the IGM and validates the truck at zero point.
+                  setArriving((a) => a.map((x) => (x.plate === t.plate
+                    ? { ...x, igm: 'Received', manifest: x.manifest ?? x.igmOnKey, truckData: truckDataStatus.validated }
+                    : x)));
+                  setToast(awaitingIgm(t)
+                    ? `Customs keyed ${t.igmOnKey} and validated ${t.plate}. The truck can be admitted.`
+                    : `Customs validated ${t.plate}. The truck can be admitted.`);
                 }}
               />
             ) : (

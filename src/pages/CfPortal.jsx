@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import {
-  Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Grid2 as Grid,
-  Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, Divider, Alert, Snackbar,
+  Box, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Grid2 as Grid,
+  Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, Divider, Alert, Snackbar, Drawer,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader, KpiCard, SectionCard, SearchField, formatBDT } from '../components/common';
 import Label from '../components/Label';
-import { manifests, alerts } from '../data/mock';
+import ForeignTrucksDrawer from '../components/ForeignTrucksDrawer';
+import { manifests, alerts, preArrivals, registeredTrucks } from '../data/mock';
 import { LocalShippingRoundedIcon, NotificationsActiveRoundedIcon, PaymentsRoundedIcon, ReceiptLongRoundedIcon } from '../components/icons';
 
 const AGENCY = 'Rupsha Clearing & Forwarding';
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
+
+// Expected consignments with no IGM yet sit above the agency's manifests, so their trucks can be added in advance.
+const preArrivalRows = preArrivals
+  .filter((p) => p.agency === AGENCY)
+  .map((p) => ({ ...p, preArrival: true, status: 'Open', balance: 0, localTrucks: 0 }));
 
 function PayDialog({ open, amount, onClose, onPaid }) {
   const [method, setMethod] = useState('bkash');
@@ -43,8 +49,14 @@ export default function CfPortal() {
   const [search, setSearch] = useState('');
   const [pay, setPay] = useState(null);
   const [toast, setToast] = useState('');
+  const [trucks, setTrucks] = useState(registeredTrucks);
+  const [trucksFor, setTrucksFor] = useState(null);
   const own = manifests.filter((m) => m.agency === AGENCY);
-  const rows = own.filter((m) => m.id.toLowerCase().includes(search.toLowerCase()));
+  const consignments = [...preArrivalRows, ...own];
+  const rows = consignments.filter((m) => {
+    const plates = (trucks[m.id] ?? []).map((t) => t.plate).join(' ');
+    return `${m.id} ${plates}`.toLowerCase().includes(search.toLowerCase());
+  });
   const dues = own.reduce((s, m) => s + m.balance, 0);
 
   return (
@@ -76,18 +88,29 @@ export default function CfPortal() {
                   <TableRow key={m.id} hover>
                     <TableCell sx={{ pl: 3 }}>
                       <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{m.id}</Typography>
-                      <Typography variant="caption" color="text.secondary">{m.product}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {m.product}{m.preArrival && ` · expected ${m.expected}`}
+                      </Typography>
                     </TableCell>
-                    <TableCell>{m.foreignTrucks}</TableCell>
+                    <TableCell>
+                      {/* The count opens the agency's truck list for this consignment. */}
+                      <Button size="small" variant="outlined" color="inherit" onClick={() => setTrucksFor(m)}>
+                        {(trucks[m.id] ?? []).length} {(trucks[m.id] ?? []).length === 1 ? 'truck' : 'trucks'}
+                      </Button>
+                    </TableCell>
                     <TableCell>{m.localTrucks}</TableCell>
-                    <TableCell><Label color={customsColor[m.customs]}>{m.customs}</Label></TableCell>
-                    <TableCell>{m.balance > 0 ? <Label color="warning">{formatBDT(m.balance)} due</Label> : <Label color="success">Paid</Label>}</TableCell>
-                    {/* One column per action so each stays in place whether or not the other is shown. */}
+                    <TableCell>{m.preArrival ? <Label color="error">No IGM yet</Label> : <Label color={customsColor[m.customs]}>{m.customs}</Label>}</TableCell>
+                    <TableCell>
+                      {m.preArrival ? (
+                        <Typography variant="body2" color="text.disabled">Not billed yet</Typography>
+                      ) : m.balance > 0 ? <Label color="warning">{formatBDT(m.balance)} due</Label> : <Label color="success">Paid</Label>}
+                    </TableCell>
+                    {/* One column per action so each stays in place whether or not the others are shown. */}
                     <TableCell>
                       {m.balance > 0 && <Button size="small" variant="contained" onClick={() => setPay(m)}>Pay now</Button>}
                     </TableCell>
                     <TableCell sx={{ pr: 3 }}>
-                      <Button size="small" color="inherit" onClick={() => navigate('/manifests')}>View details</Button>
+                      {!m.preArrival && <Button size="small" color="inherit" onClick={() => navigate('/manifests')}>View details</Button>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -118,6 +141,14 @@ export default function CfPortal() {
           </SectionCard>
         </Grid>
       </Grid>
+      <Drawer anchor="right" open={Boolean(trucksFor)} onClose={() => setTrucksFor(null)}>
+        <ForeignTrucksDrawer
+          consignment={trucksFor}
+          trucks={trucksFor ? trucks[trucksFor.id] ?? [] : []}
+          onChange={(next, message) => { setTrucks((all) => ({ ...all, [trucksFor.id]: next })); setToast(message); }}
+          onClose={() => setTrucksFor(null)}
+        />
+      </Drawer>
       <PayDialog open={Boolean(pay)} amount={pay?.balance ?? 0} onClose={() => setPay(null)} onPaid={() => { setPay(null); setToast('Payment sent to the gateway. You will get an alert when it is confirmed.'); }} />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="info" variant="filled" onClose={() => setToast('')}>{toast}</Alert>

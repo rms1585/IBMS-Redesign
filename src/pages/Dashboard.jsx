@@ -84,12 +84,15 @@ function Operations() {
               {[
                 ['Loaded, awaiting exit pass', 9, 'warning'],
                 ['Unlinked admissions (no manifest)', 2, 'error'],
-                ['Expected arrivals in next 2 h', 14, 'info'],
+                ['Expected arrivals in next 2 h', 14, 'info', 'Only trucks known in advance. Most IGMs are keyed when the truck arrives.'],
                 ['Scales due for calibration', 1, 'warning'],
                 ['Manual statuses awaiting reconciliation', 3, 'error'],
-              ].map(([l, v, c]) => (
+              ].map(([l, v, c, note]) => (
                 <TableRow key={l}>
-                  <TableCell sx={{ pl: 3 }}>{l}</TableCell>
+                  <TableCell sx={{ pl: 3 }}>
+                    {l}
+                    {note && <Typography variant="caption" color="text.secondary" component="div" sx={{ whiteSpace: 'normal' }}>{note}</Typography>}
+                  </TableCell>
                   <TableCell sx={{ pr: 3 }}><Label color={c}>{v}</Label></TableCell>
                 </TableRow>
               ))}
