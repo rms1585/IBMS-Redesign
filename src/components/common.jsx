@@ -4,40 +4,63 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Link as RouterLink } from 'react-router-dom';
-import { InboxOutlinedIcon, SearchRoundedIcon, TrendingDownRoundedIcon, TrendingUpRoundedIcon } from './icons';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronLeftRoundedIcon, InboxOutlinedIcon, SearchRoundedIcon, TrendingDownRoundedIcon, TrendingUpRoundedIcon } from './icons';
 import Label from './Label';
+
+function GoBackLink() {
+  const navigate = useNavigate();
+  const { key } = useLocation();
+  // 'default' means this page was opened directly (a shared link or bookmark),
+  // so there is no earlier page in the app to return to.
+  const goBack = () => (key === 'default' ? navigate('/', { replace: true }) : navigate(-1));
+  return (
+    <Button
+      color="inherit"
+      size="small"
+      onClick={goBack}
+      startIcon={<ChevronLeftRoundedIcon />}
+      // The negative margin lines the arrow up with the page title's left edge.
+      sx={{ mb: 1, ml: -1, px: 1, color: 'text.secondary' }}
+    >
+      Go back
+    </Button>
+  );
+}
 
 export function PageHeader({ title, links = [], action, subtitle }) {
   return (
-    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2} sx={{ mb: 4 }}>
-      <Box sx={{ minWidth: 0, flex: '1 1 320px' }}>
-        <Typography variant="h4" gutterBottom={links.length > 0 || Boolean(subtitle)}>
-          {title}
-        </Typography>
-        {links.length > 0 && (
-          <Breadcrumbs separator={<Box component="span" sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'text.disabled' }} />}>
-            {links.map((l, i) =>
-              l.href ? (
-                <Link key={l.name} component={RouterLink} to={l.href} underline="hover" color="text.primary" variant="body2">
-                  {l.name}
-                </Link>
-              ) : (
-                <Typography key={l.name} variant="body2" color={i === links.length - 1 ? 'text.disabled' : 'text.primary'}>
-                  {l.name}
-                </Typography>
-              ),
-            )}
-          </Breadcrumbs>
-        )}
-        {subtitle && (
-          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720 }}>
-            {subtitle}
+    <Box sx={{ mb: 4 }}>
+      <GoBackLink />
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2}>
+        <Box sx={{ minWidth: 0, flex: '1 1 320px' }}>
+          <Typography variant="h4" gutterBottom={links.length > 0 || Boolean(subtitle)}>
+            {title}
           </Typography>
-        )}
-      </Box>
-      {action && <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ flexShrink: 0 }}>{action}</Stack>}
-    </Stack>
+          {links.length > 0 && (
+            <Breadcrumbs separator={<Box component="span" sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'text.disabled' }} />}>
+              {links.map((l, i) =>
+                l.href ? (
+                  <Link key={l.name} component={RouterLink} to={l.href} underline="hover" color="text.primary" variant="body2">
+                    {l.name}
+                  </Link>
+                ) : (
+                  <Typography key={l.name} variant="body2" color={i === links.length - 1 ? 'text.disabled' : 'text.primary'}>
+                    {l.name}
+                  </Typography>
+                ),
+              )}
+            </Breadcrumbs>
+          )}
+          {subtitle && (
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720 }}>
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
+        {action && <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ flexShrink: 0 }}>{action}</Stack>}
+      </Stack>
+    </Box>
   );
 }
 
