@@ -3,7 +3,7 @@ import {
   Box, Stack, Typography, Button, IconButton, Divider, Drawer, Table, TableHead, TableRow, TableCell, TableBody,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Alert, Grid2 as Grid,
 } from '@mui/material';
-import { AssumptionNote, EmptyState, formatBDT } from './common';
+import { AssumptionNote, EmptyState, TableScroll, formatBDT } from './common';
 import Label from './Label';
 import { truckDataStatus, vehicleTypes, tariffLines } from '../data/mock';
 import { AddRoundedIcon, CloseRoundedIcon } from './icons';
@@ -16,6 +16,10 @@ const statusColor = {
 const roadClasses = vehicleTypes.filter((v) => v.mode === 'Road');
 const emptyTruck = { plate: '', driver: '', driverCard: '', cls: '' };
 const fields = ['plate', 'driver', 'driverCard', 'cls'];
+// Row actions sit side by side in a narrow column, so they drop the usual minimum width.
+const compactAction = { minWidth: 0, px: 1 };
+// Narrower gaps between columns so all four fit the drawer without scrolling at full width.
+const tightColumns = { '& .MuiTableCell-root': { px: 1 }, '& .MuiTableCell-root:first-of-type': { pl: 3 }, '& .MuiTableCell-root:last-of-type': { pr: 3 } };
 const rate = (charge) => tariffLines.find((t) => t.charge === charge)?.rate ?? 0;
 
 // The demo tariff charges every truck class the same; the minutes say class should drive the rate (F8).
@@ -122,42 +126,44 @@ export default function ForeignTrucksDrawer({ consignment, trucks, onChange, onC
       {trucks.length === 0 ? (
         <EmptyState title="No trucks yet" description="Add the trucks that will carry this consignment." />
       ) : (
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ pl: 3 }}>Truck</TableCell>
-              <TableCell>Class</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell sx={{ pr: 3 }} />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {trucks.map((t) => {
-              const locked = closed || t.status === truckDataStatus.inPort;
-              return (
-                <TableRow key={t.plate}>
-                  <TableCell sx={{ pl: 3 }}>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{t.plate}</Typography>
-                    <Typography variant="caption" color="text.secondary">{t.driver}</Typography>
-                  </TableCell>
-                  <TableCell>{t.cls}</TableCell>
-                  <TableCell><Label color={statusColor[t.status]}>{t.status}</Label></TableCell>
-                  {/* Fixed-width slot so rows line up whether or not the truck can still be changed. */}
-                  <TableCell sx={{ pr: 3, width: 148 }}>
-                    {locked ? (
-                      <Typography variant="caption" color="text.disabled">Locked</Typography>
-                    ) : (
-                      <Stack direction="row" gap={0.5}>
-                        <Button size="small" color="inherit" onClick={() => setForm({ truck: t })}>Edit</Button>
-                        <Button size="small" color="error" onClick={() => setRemoving(t)}>Remove</Button>
-                      </Stack>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <TableScroll>
+          <Table size="small" sx={tightColumns}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ pl: 3 }}>Truck</TableCell>
+                <TableCell>Class</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell sx={{ pr: 3 }} />
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {trucks.map((t) => {
+                const locked = closed || t.status === truckDataStatus.inPort;
+                return (
+                  <TableRow key={t.plate}>
+                    <TableCell sx={{ pl: 3 }}>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{t.plate}</Typography>
+                      <Typography variant="caption" color="text.secondary">{t.driver}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{t.cls}</TableCell>
+                    <TableCell><Label color={statusColor[t.status]}>{t.status}</Label></TableCell>
+                    {/* Fixed-width slot so rows line up whether or not the truck can still be changed. */}
+                    <TableCell sx={{ pr: 3 }}>
+                      {locked ? (
+                        <Typography variant="caption" color="text.disabled">Locked</Typography>
+                      ) : (
+                        <Stack direction="row" gap={0.5}>
+                          <Button size="small" color="inherit" sx={compactAction} onClick={() => setForm({ truck: t })}>Edit</Button>
+                          <Button size="small" color="error" sx={compactAction} onClick={() => setRemoving(t)}>Remove</Button>
+                        </Stack>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableScroll>
       )}
       {form && (
         <TruckForm

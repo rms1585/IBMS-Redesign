@@ -65,7 +65,7 @@ export default function AuditLog() {
       </Card>
       <Drawer anchor="right" open={Boolean(open)} onClose={() => setOpen(null)}>
         {open && (
-          <Box sx={{ width: 480 }}>
+          <Box sx={{ width: 480, maxWidth: '100vw' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 3 }}>
               <Typography variant="h6">{open.id}</Typography>
               <IconButton onClick={() => setOpen(null)}><CloseRoundedIcon /></IconButton>

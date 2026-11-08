@@ -107,7 +107,8 @@ export function createAppTheme(mode = 'light') {
       MuiDialogTitle: { styleOverrides: { root: { padding: 24, fontSize: '1.125rem', fontWeight: 700 } } },
       MuiDialogContent: { styleOverrides: { root: { padding: '0 24px' } } },
       MuiDialogActions: { styleOverrides: { root: { padding: 24, gap: 8, '& > :not(:first-of-type)': { marginLeft: 0 } } } },
-      MuiDrawer: { styleOverrides: { paper: { backgroundImage: 'none' } } },
+      // A drawer never scrolls sideways; a wide table scrolls inside its own TableScroll instead.
+      MuiDrawer: { styleOverrides: { paper: { backgroundImage: 'none', overflowX: 'hidden' } } },
       MuiOutlinedInput: {
         styleOverrides: {
           root: {

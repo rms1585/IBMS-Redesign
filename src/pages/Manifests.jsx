@@ -3,7 +3,7 @@ import {
   Box, Card, Stack, Typography, Table, TableHead, TableRow, TableCell, TableBody, Drawer, IconButton, Divider,
   Tabs, Tab, LinearProgress, MenuItem, TextField,
 } from '@mui/material';
-import { PageHeader, SearchField, DetailRow, EmptyState, formatBDT, formatKg } from '../components/common';
+import { PageHeader, SearchField, DetailRow, EmptyState, TableScroll, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
 import { manifests } from '../data/mock';
 import { CloseRoundedIcon } from '../components/icons';
@@ -30,7 +30,7 @@ function ManifestDrawer({ m, onClose }) {
   ].filter(Boolean);
 
   return (
-    <Box sx={{ width: 560 }}>
+    <Box sx={{ width: 560, maxWidth: '100vw' }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 3, pb: 2 }}>
         <Box>
           <Typography variant="h6" sx={{ fontFamily: 'monospace' }}>{m.id}</Typography>
@@ -71,30 +71,34 @@ function ManifestDrawer({ m, onClose }) {
       </Tabs>
       <Divider />
       {tab === 'trucks' && (
-        <Table size="small">
-          <TableHead><TableRow><TableCell sx={{ pl: 3 }}>Truck</TableCell><TableCell>Status</TableCell><TableCell>Where</TableCell><TableCell sx={{ pr: 3 }}>Pass</TableCell></TableRow></TableHead>
-          <TableBody>
-            {[['WB-19-C-0803', 'Foreign', 'Weighed', 'Scale 1', '—'], ['WB-19-C-0791', 'Foreign', 'Empty, leaving', 'Yard T1', '—'], ['JESSORE-TA-11-2034', 'Local', 'Loaded', 'Inland gate', 'BEN-PASS-004412']].map(([p, k, s, w, pass]) => (
-              <TableRow key={p}>
-                <TableCell sx={{ pl: 3 }}><Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{p}</Typography><Typography variant="caption" color="text.secondary">{k}</Typography></TableCell>
-                <TableCell><Label color="info">{s}</Label></TableCell>
-                <TableCell>{w}</TableCell>
-                <TableCell sx={{ pr: 3, fontFamily: 'monospace', fontSize: 12 }}>{pass}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <TableScroll>
+          <Table size="small">
+            <TableHead><TableRow><TableCell sx={{ pl: 3 }}>Truck</TableCell><TableCell>Status</TableCell><TableCell>Where</TableCell><TableCell sx={{ pr: 3 }}>Pass</TableCell></TableRow></TableHead>
+            <TableBody>
+              {[['WB-19-C-0803', 'Foreign', 'Weighed', 'Scale 1', '—'], ['WB-19-C-0791', 'Foreign', 'Empty, leaving', 'Yard T1', '—'], ['JESSORE-TA-11-2034', 'Local', 'Loaded', 'Inland gate', 'BEN-PASS-004412']].map(([p, k, s, w, pass]) => (
+                <TableRow key={p}>
+                  <TableCell sx={{ pl: 3 }}><Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{p}</Typography><Typography variant="caption" color="text.secondary">{k}</Typography></TableCell>
+                  <TableCell><Label color="info">{s}</Label></TableCell>
+                  <TableCell>{w}</TableCell>
+                  <TableCell sx={{ pr: 3, fontFamily: 'monospace', fontSize: 12 }}>{pass}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableScroll>
       )}
       {tab === 'cargo' && (
-        <Table size="small">
-          <TableHead><TableRow><TableCell sx={{ pl: 3 }}>Line</TableCell><TableCell>Product</TableCell><TableCell>Declared</TableCell><TableCell sx={{ pr: 3 }}>Remaining</TableCell></TableRow></TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ pl: 3 }}>1</TableCell><TableCell>{m.product}</TableCell>
-              <TableCell>{formatKg(m.declaredKg)}</TableCell><TableCell sx={{ pr: 3 }}>{formatKg(m.remainingKg)}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <TableScroll>
+          <Table size="small">
+            <TableHead><TableRow><TableCell sx={{ pl: 3 }}>Line</TableCell><TableCell>Product</TableCell><TableCell>Declared</TableCell><TableCell sx={{ pr: 3 }}>Remaining</TableCell></TableRow></TableHead>
+            <TableBody>
+              <TableRow>
+                <TableCell sx={{ pl: 3 }}>1</TableCell><TableCell>{m.product}</TableCell>
+                <TableCell>{formatKg(m.declaredKg)}</TableCell><TableCell sx={{ pr: 3 }}>{formatKg(m.remainingKg)}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableScroll>
       )}
       {tab === 'timeline' && (
         <Stack sx={{ p: 3 }}>

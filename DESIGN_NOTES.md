@@ -105,6 +105,8 @@ Plates, manifest IDs and references use a monospace font.
   the theme for every non-`small` table). When a table is wider than its card, it **scrolls sideways inside the card**
   (cards have `overflow-x: auto`). Full-size tables have a minimum width of 680px.
 - Compact tables (`size="small"`) in side panels and dialogs may wrap.
+- **A drawer never scrolls sideways.** Only a table may, inside its own area: wrap any table in a drawer in
+  `TableScroll` (`src/components/common.jsx`). Drawers keep `maxWidth: '100vw'` so they fit a phone.
 - **All columns are left-aligned:** headers and cells, including amounts, counts, statuses and action buttons.
   Don't use `align="right"` / `align="center"` on table cells or DataTable columns.
 - Two-line cells are intentional where used: an ID with a secondary line under it (manifest + product,

@@ -85,6 +85,11 @@ export function SearchField({ placeholder = 'Search…', value, onChange, sx }) 
   );
 }
 
+// Keeps sideways scrolling inside a table's own area, for tables in drawers and other panels.
+export function TableScroll({ children }) {
+  return <Box sx={{ overflowX: 'auto' }}>{children}</Box>;
+}
+
 export function EmptyState({ title = 'No data', description, sx }) {
   return (
     <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ py: 6, px: 3, textAlign: 'center', color: 'text.disabled', ...sx }}>
