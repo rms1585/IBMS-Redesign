@@ -184,7 +184,9 @@ Plates, manifest IDs and references use a monospace font.
     its IGM uses an IBMS **pre-arrival reference** (`PA-…`) and shows **No IGM yet**.
   - **C&F portal → Trucks:** the agency adds, edits and removes foreign trucks (vehicle number, driver, truck class)
     per manifest or pre-arrival reference. A truck is locked once it enters the port. A new or edited truck is
-    **Entered by C&F** until Customs validates it; editing a validated truck sends it back for validation.
+    **Entered by C&F** until Customs validates it; changing a validated truck sends it back for validation, and
+    "Save changes" stays disabled until a field actually changes. The truck class field shows the demo entrance and
+    weighing rates once a class is picked; the demo tariff charges every class the same (F8 says class should set it).
   - **Border gate:** admission is blocked until the IGM is received *and* Customs has validated the truck details.
     "Check again" stands in for the BNSW status update in the demo. A camera mismatch still only warns.
   - **Perishable** trucks carry an amber label with a timer icon, in the queue and on the record.

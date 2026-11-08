@@ -3,9 +3,9 @@ import {
   Box, Stack, Typography, Button, IconButton, Divider, Drawer, Table, TableHead, TableRow, TableCell, TableBody,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Alert, Grid2 as Grid,
 } from '@mui/material';
-import { AssumptionNote, EmptyState } from './common';
+import { AssumptionNote, EmptyState, formatBDT } from './common';
 import Label from './Label';
-import { truckDataStatus, vehicleTypes } from '../data/mock';
+import { truckDataStatus, vehicleTypes, tariffLines } from '../data/mock';
 import { AddRoundedIcon, CloseRoundedIcon } from './icons';
 
 const statusColor = {
@@ -15,14 +15,24 @@ const statusColor = {
 };
 const roadClasses = vehicleTypes.filter((v) => v.mode === 'Road');
 const emptyTruck = { plate: '', driver: '', driverCard: '', cls: '' };
+const fields = ['plate', 'driver', 'driverCard', 'cls'];
+const rate = (charge) => tariffLines.find((t) => t.charge === charge)?.rate ?? 0;
+
+// The demo tariff charges every truck class the same; the minutes say class should drive the rate (F8).
+function classCharges(cls) {
+  if (!cls) return 'Sets the entrance and weighing charges';
+  return `Entrance ${formatBDT(rate('Entrance fee (border gate)'))} · weighing ${formatBDT(rate('Weighment'))} (demo rates)`;
+}
 
 function TruckForm({ open, truck, takenPlates, onClose, onSave }) {
   const [f, setF] = useState(truck ?? emptyTruck);
   const set = (k) => (e) => setF({ ...f, [k]: k === 'plate' ? e.target.value.toUpperCase() : e.target.value });
   const editing = Boolean(truck);
   const duplicate = f.plate.trim() && takenPlates.includes(f.plate.trim()) && f.plate.trim() !== truck?.plate;
-  const valid = f.plate.trim() && f.driver.trim() && f.cls && !duplicate;
-  const resetsValidation = editing && truck.status === truckDataStatus.validated;
+  const changed = !editing || fields.some((k) => f[k].trim() !== truck[k].trim());
+  const valid = f.plate.trim() && f.driver.trim() && f.cls && !duplicate && changed;
+  // Only a real change sends a validated truck back to Customs.
+  const resetsValidation = editing && changed && truck.status === truckDataStatus.validated;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -39,7 +49,7 @@ function TruckForm({ open, truck, takenPlates, onClose, onSave }) {
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField select fullWidth required label="Truck class" value={f.cls} onChange={set('cls')} helperText="Sets the entrance and weighing charges">
+            <TextField select fullWidth required label="Truck class" value={f.cls} onChange={set('cls')} helperText={classCharges(f.cls)}>
               {roadClasses.map((v) => <MenuItem key={v.code} value={v.name}>{v.name}</MenuItem>)}
             </TextField>
           </Grid>
