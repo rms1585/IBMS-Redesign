@@ -179,9 +179,8 @@ Plates, manifest IDs and references use a monospace font.
   port's details. The tab row scrolls sideways when ports don't fit. Status dot colours: green Live, blue Awaiting
   approval, amber Setting up. The selected port's status label, readiness % and progress bar sit at the top of the
   steps panel. Switching tabs returns to step 1.
-- **Go back:** every inner page has a "Go back" link above its title, built into `PageHeader`, so new pages get it
-  automatically. It returns to the previous page; on a page opened directly (shared link or bookmark) it goes to Home.
-  Home has none.
+- **Go back:** only on inner (detail) pages opened from a main page, and it returns to that page (e.g. C&F portal →
+  manifest detail → Go back → C&F portal). Main pages, meaning everything in the left navigation, never have one.
 - **Gates:** departure checklists block exit on holds, unpaid balance or an invalid pass. Admitting asks for confirmation.
 - **Phase 1, pre-arrival and IGM** (from the 28–29 Oct 2026 stakeholder minutes; report: *IBMS Phase 1 — Pre-arrival
   and IGM: Design Report*):
