@@ -112,6 +112,9 @@ export default function ForeignTrucksDrawer({ consignment, trucks, onChange, onC
         <Typography variant="body2" color="text.secondary">
           Add each Indian truck before it reaches the border gate. The gate admits a truck only after Customs validates its details.
         </Typography>
+        <Typography variant="body2" color="text.secondary">
+          This list doesn&rsquo;t replace the paper Car Pass. Where the port uses one, it reaches BLPA through Customs.
+        </Typography>
         <AssumptionNote code="F6">How Customs validates truck details is not designed yet. Here it is a status only.</AssumptionNote>
         {consignment.preArrival && (
           <AssumptionNote code="F4">
