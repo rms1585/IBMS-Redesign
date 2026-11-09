@@ -214,6 +214,7 @@ export const payments = [
 ];
 
 export const inboxRequests = [
+  { id: 'REQ-1047', kind: 'Truck change after loading', summary: 'Replace JESSORE-TA-11-2034 on BEN-IGM-2026-08841: axle failure after loading', requester: 'Ayesha Siddiqua', port: 'BEN', at: '27 Oct, 10:41', mine: false },
   { id: 'REQ-1042', kind: 'Port go-live', summary: 'Akhaura (AKH) ready for go-live — all blocking checks pass', requester: 'Tanvir Alam', port: 'AKH', at: '27 Oct, 09:14', mine: false },
   { id: 'REQ-1043', kind: 'Sensitive role assignment', summary: 'Assign "Bill approver" to Rakib Hasan at BEN', requester: 'Imran Hossain', port: 'BEN', at: '27 Oct, 09:40', mine: false },
   { id: 'REQ-1044', kind: 'Bill adjustment', summary: 'Reduce documentation charge on BEN-IGM-2026-08841 (duplicate document)', requester: 'Farhana Rahman', port: 'BEN', at: '27 Oct, 10:02', mine: true },
@@ -274,6 +275,22 @@ export const alerts = [
   { at: '08:40', manifest: 'BEN-IGM-2026-08841', text: 'JESSORE-TA-11-2034 admitted at inland gate.' },
   { at: 'Yesterday', manifest: 'BEN-IGM-2026-08860', text: 'Customs hold placed. Departure is blocked until released.' },
 ];
+
+// Local (Bangladeshi) trucks a C&F agency books against a manifest.
+export const localBookingStatus = { booked: 'Booked', entered: 'Entered', loaded: 'Loaded', changeRequested: 'Change requested' };
+export const localBookings = {
+  'BEN-IGM-2026-08841': [
+    { plate: 'JESSORE-TA-11-2034', driver: 'Harun Mia', cls: '10-wheel truck', trips: 2, status: localBookingStatus.loaded },
+    { plate: 'JESSORE-TA-11-2101', driver: 'Abdul Malek', cls: '10-wheel truck', trips: 1, status: localBookingStatus.booked },
+    { plate: 'JESSORE-TA-11-1987', driver: 'Sohel Rana', cls: '6-wheel truck', trips: 1, status: localBookingStatus.entered },
+  ],
+  'BEN-IGM-2026-08799': [
+    { plate: 'KHULNA-DA-14-0412', driver: 'Rubel Hossain', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },
+    { plate: 'KHULNA-DA-14-0433', driver: 'Faruk Ahmed', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },
+    { plate: 'JESSORE-TA-11-1760', driver: 'Mizanur Rahman', cls: '6-wheel truck', trips: 1, status: localBookingStatus.loaded },
+    { plate: 'JESSORE-TA-11-1802', driver: 'Alamgir Kabir', cls: '6-wheel truck', trips: 1, status: localBookingStatus.loaded },
+  ],
+};
 
 export const inlandArriving = [
   { plate: 'JESSORE-TA-11-2101', kind: 'Local', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Abdul Malek', driverCard: 'DC-BD-30211', declaredKg: 16000, eta: '11:10', firstVisit: false, cargo: 'Rice (non-basmati)', customs: 'Released', fee: 153.58, cameraPlate: 'JESSORE-TA-11-2101' },

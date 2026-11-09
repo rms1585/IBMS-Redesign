@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { PageHeader, KpiCard, SectionCard, SearchField, formatBDT } from '../components/common';
 import Label from '../components/Label';
 import ForeignTrucksDrawer from '../components/ForeignTrucksDrawer';
-import { manifests, alerts, preArrivals, registeredTrucks } from '../data/mock';
+import LocalTrucksDrawer from '../components/LocalTrucksDrawer';
+import { manifests, alerts, preArrivals, registeredTrucks, localBookings } from '../data/mock';
 import { LocalShippingRoundedIcon, NotificationsActiveRoundedIcon, PaymentsRoundedIcon, ReceiptLongRoundedIcon } from '../components/icons';
 
 const AGENCY = 'Rupsha Clearing & Forwarding';
@@ -51,6 +52,8 @@ export default function CfPortal() {
   const [toast, setToast] = useState('');
   const [trucks, setTrucks] = useState(registeredTrucks);
   const [trucksFor, setTrucksFor] = useState(null);
+  const [locals, setLocals] = useState(localBookings);
+  const [localsFor, setLocalsFor] = useState(null);
   const own = manifests.filter((m) => m.agency === AGENCY);
   const consignments = [...preArrivalRows, ...own];
   const rows = consignments.filter((m) => {
@@ -98,7 +101,11 @@ export default function CfPortal() {
                         {(trucks[m.id] ?? []).length} {(trucks[m.id] ?? []).length === 1 ? 'truck' : 'trucks'}
                       </Button>
                     </TableCell>
-                    <TableCell>{m.localTrucks}</TableCell>
+                    <TableCell>
+                      <Button size="small" variant="outlined" color="inherit" onClick={() => setLocalsFor(m)}>
+                        {(locals[m.id] ?? []).length} {(locals[m.id] ?? []).length === 1 ? 'truck' : 'trucks'}
+                      </Button>
+                    </TableCell>
                     <TableCell>{m.preArrival ? <Label color="error">No IGM yet</Label> : <Label color={customsColor[m.customs]}>{m.customs}</Label>}</TableCell>
                     <TableCell>
                       {m.preArrival ? (
@@ -150,6 +157,17 @@ export default function CfPortal() {
           onChange={(next, message) => { setTrucks((all) => ({ ...all, [trucksFor.id]: next })); setToast(message); }}
           onClose={() => setTrucksFor(null)}
         />
+      </Drawer>
+      <Drawer anchor="right" open={Boolean(localsFor)} onClose={() => setLocalsFor(null)}>
+        {localsFor && (
+          <LocalTrucksDrawer
+            key={localsFor.id}
+            consignment={localsFor}
+            trucks={locals[localsFor.id] ?? []}
+            onChange={(next, message) => { setLocals((all) => ({ ...all, [localsFor.id]: next })); setToast(message); }}
+            onClose={() => setLocalsFor(null)}
+          />
+        )}
       </Drawer>
       <PayDialog open={Boolean(pay)} amount={pay?.balance ?? 0} onClose={() => setPay(null)} onPaid={() => { setPay(null); setToast('Payment sent to the gateway. You will get an alert when it is confirmed.'); }} />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
