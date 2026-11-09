@@ -55,16 +55,9 @@ export default function Auction() {
         <DataTable rows={inStock} searchKeys={['id', 'product', 'manifest']} searchPlaceholder="Search lot, goods or manifest" rowKey={(r) => r.id} columns={[
           ...lotColumns,
           { key: 'notice', label: 'Auction notice', render: (r) => (r.notice ? <Label color="success">Sent</Label> : r.ageDays >= TWO_MONTHS ? <Label color="error">Due</Label> : <Label>Not due</Label>) },
-          {
-            key: 'a',
-            label: '',
-            render: (r) => (
-              <Stack direction="row" spacing={1}>
-                {r.ageDays >= TWO_MONTHS && !r.notice && <Button size="small" variant="outlined" onClick={() => { update(r.id, { notice: true }); setToast(`Auction notice sent for ${r.id}.`); }}>Send notice</Button>}
-                <Button size="small" color="inherit" onClick={() => setListing(r)}>Add to destruction list</Button>
-              </Stack>
-            ),
-          },
+          // Reserved width keeps the destruction column still once the last notice has been sent.
+          { key: 'sendNotice', label: '', width: 132, render: (r) => r.ageDays >= TWO_MONTHS && !r.notice && <Button size="small" variant="outlined" onClick={() => { update(r.id, { notice: true }); setToast(`Auction notice sent for ${r.id}.`); }}>Send notice</Button> },
+          { key: 'addToDestruction', label: '', render: (r) => <Button size="small" color="inherit" onClick={() => setListing(r)}>Add to destruction list</Button> },
         ]} />
       ) : (
         <DataTable rows={listed} searchKeys={['id', 'product']} searchPlaceholder="Search lot or goods" rowKey={(r) => r.id} columns={[
