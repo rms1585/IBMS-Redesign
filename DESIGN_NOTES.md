@@ -204,6 +204,8 @@ Plates, manifest IDs and references use a monospace font.
   - India's Car Pass and manifest data stays a future option, with no placeholder screen until an agreement exists.
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
+- **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate
+  and the camera plate matches. "Re-read plate" stands in for a corrected camera read in the demo.
 
 ## 13. Working on this repo
 

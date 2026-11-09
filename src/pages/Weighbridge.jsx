@@ -42,7 +42,14 @@ function ManualWeight({ open, onClose, onConfirm }) {
   );
 }
 
-function WeighRecord({ truck, onConfirmed }) {
+// Weighing needs a truck that has passed the entry gate and whose plate matches the camera read (F17).
+function weighingBlock(truck, plateRead) {
+  if (!truck.admitted) return 'This truck has not been admitted at the entry gate. It can be weighed only after entry.';
+  if (plateRead !== truck.plate) return `The camera read ${plateRead}, which doesn't match this truck. Weight capture stays stopped until the plate matches.`;
+  return null;
+}
+
+function WeighRecord({ truck, plateRead, onConfirmed }) {
   const [live, setLive] = useState(truck.live);
   const [captured, setCaptured] = useState(null);
   const [manual, setManual] = useState(false);
@@ -54,6 +61,7 @@ function WeighRecord({ truck, onConfirmed }) {
     return () => clearInterval(id);
   }, [captured, truck.live]);
 
+  const block = weighingBlock(truck, plateRead);
   const loaded = truck.reason.startsWith('Loaded');
   const tareValid = truck.tare && !truck.tareAge.includes('expired');
   const net = captured && loaded && tareValid ? captured.kg - truck.tare : null;
@@ -65,7 +73,7 @@ function WeighRecord({ truck, onConfirmed }) {
           <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
           <Typography variant="body2" color="text.secondary">{truck.reason} · Scale 1, position A</Typography>
         </Box>
-        {captured ? <Label color="info">Captured</Label> : <Label color="success">Ready to weigh</Label>}
+        {block ? <Label color="error">Weighing stopped</Label> : captured ? <Label color="info">Captured</Label> : <Label color="success">Ready to weigh</Label>}
       </Stack>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Box sx={{ p: 3 }}>
@@ -76,6 +84,7 @@ function WeighRecord({ truck, onConfirmed }) {
           </Typography>
           {net != null && <Typography variant="subtitle1" color="primary.main">Net cargo {formatKg(net)} (gross − stored tare)</Typography>}
         </Box>
+        {block && <Alert severity="error" sx={{ mt: 2 }}>{block}</Alert>}
         {!tareValid && loaded && (
           <Alert severity="warning" sx={{ mt: 2 }}>
             Stored tare: {truck.tareAge}. This truck must be weighed empty before it leaves, so net weight is not calculated yet.
@@ -99,15 +108,15 @@ function WeighRecord({ truck, onConfirmed }) {
       </Grid>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Stack className="record-actions" direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
-        <Button color="inherit" size="large" onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
+        <Button color="inherit" size="large" disabled={Boolean(block)} onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
         <Stack direction="row" spacing={1.5}>
           {captured ? (
             <>
               <Button variant="outlined" color="inherit" size="large" onClick={() => setCaptured(null)}>Re-weigh</Button>
-              <Button variant="contained" size="large" onClick={() => onConfirmed(truck, captured)}>Confirm weight</Button>
+              <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => onConfirmed(truck, captured)}>Confirm weight</Button>
             </>
           ) : (
-            <Button variant="contained" size="large" onClick={() => setCaptured({ kg: live, method: 'scale' })}>Capture weight</Button>
+            <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => setCaptured({ kg: live, method: 'scale' })}>Capture weight</Button>
           )}
         </Stack>
       </Stack>
@@ -122,6 +131,8 @@ export default function Weighbridge() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(weighQueue[0].plate);
   const [toast, setToast] = useState('');
+  const [rereadPlates, setRereadPlates] = useState([]);
+  const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate ?? t.plate);
 
   const tabQueue = queue.filter((t) => (tab === 'entry' ? t.reason.startsWith('Loaded') : !t.reason.startsWith('Loaded')));
   const filtered = tabQueue.filter((t) => `${t.plate} ${t.manifest}`.toLowerCase().includes(search.toLowerCase()));
@@ -150,12 +161,13 @@ export default function Weighbridge() {
               <>
                 <Stack direction="row" justifyContent="space-between">
                   <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{t.plate}</Typography>
-                  <Typography variant="caption" color="text.secondary">{t.admitted}</Typography>
+                  <Typography variant="caption" color="text.secondary">{t.admitted ?? 'Not admitted'}</Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary" component="div">{t.manifest}</Typography>
                 <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label color={t.reason.startsWith('Loaded') ? 'primary' : 'info'}>{t.reason}</Label>
                   {(!t.tare || t.tareAge.includes('expired')) && <Label color="warning">Tare needed</Label>}
+                  {weighingBlock(t, plateReadFor(t)) && <Label color="error">Stopped</Label>}
                 </Stack>
               </>
             )}
@@ -166,6 +178,7 @@ export default function Weighbridge() {
             <WeighRecord
               key={current.plate}
               truck={current}
+              plateRead={plateReadFor(current)}
               onConfirmed={(t, c) => {
                 setQueue((q) => q.filter((x) => x.plate !== t.plate));
                 setSelected(null);
@@ -176,7 +189,7 @@ export default function Weighbridge() {
             <Card><EmptyState title="Select a truck to weigh" sx={{ py: 12 }} /></Card>
           )
         }
-        rail={[<CameraCard key="cam" lane="Scale 1" plate={current?.plate} expected={current?.plate} />]}
+        rail={[<CameraCard key="cam" lane="Scale 1" plate={current ? plateReadFor(current) : null} expected={current?.plate} onReread={() => current && setRereadPlates((p) => [...p, current.plate])} />]}
       />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
