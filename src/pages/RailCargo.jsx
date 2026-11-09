@@ -8,7 +8,7 @@ const stages = ['Awaiting entry', 'Entered', 'Weighed', 'Unloaded'];
 const stageColor = { 'Awaiting entry': 'default', Entered: 'info', Weighed: 'primary', Unloaded: 'success' };
 const nextAction = { 'Awaiting entry': 'Record entry', Entered: 'Record weight', Weighed: 'Record unloading' };
 const initialWagons = [
-  { wagon: 'WGN-40217', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 58240, stage: 'Weighed' },
+  { wagon: 'WGN-40217', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 58240, measuredKg: 58240, stage: 'Weighed' },
   { wagon: 'WGN-40218', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 57910, stage: 'Entered' },
   { wagon: 'WGN-40219', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 58120, stage: 'Awaiting entry' },
   { wagon: 'WGN-40220', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 57990, stage: 'Awaiting entry' },
