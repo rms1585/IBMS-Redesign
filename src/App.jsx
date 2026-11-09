@@ -30,6 +30,7 @@ import PartDelivery from './pages/PartDelivery';
 import VehicleTerminal from './pages/VehicleTerminal';
 import Auction from './pages/Auction';
 import ExportCargo from './pages/ExportCargo';
+import RailCargo from './pages/RailCargo';
 import AuditLog from './pages/AuditLog';
 
 export default function App() {
@@ -68,6 +69,7 @@ export default function App() {
         <Route path="vehicle-terminal" element={<VehicleTerminal />} />
         <Route path="auction" element={<Auction />} />
         <Route path="export" element={<ExportCargo />} />
+        <Route path="rail" element={<RailCargo />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

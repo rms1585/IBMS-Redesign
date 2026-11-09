@@ -43,7 +43,7 @@ export const vehicleTypes = [
   { code: 'VT-10', name: '10-wheel truck', wheels: 10, mode: 'Road' },
   { code: 'VT-14', name: '14-wheel trailer', wheels: 14, mode: 'Road' },
   { code: 'VT-VP', name: 'Van / pick-up', wheels: 4, mode: 'Road' },
-  { code: 'VT-RW', name: 'Rail wagon', wheels: 8, mode: 'Rail (coming soon)' },
+  { code: 'VT-RW', name: 'Rail wagon', wheels: 8, mode: 'Rail' },
 ];
 
 export const holidays = [

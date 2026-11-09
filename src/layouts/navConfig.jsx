@@ -30,6 +30,7 @@ export const navConfig = [
       { title: 'Exit pass', path: '/exit-pass', icon: <LockOutlinedIcon /> },
       { title: 'Inland gate', path: '/inland-gate', icon: <SignpostRoundedIcon /> },
       { title: 'Export', path: '/export', icon: <PublicRoundedIcon /> },
+      { title: 'Rail cargo', path: '/rail', icon: <TrainRoundedIcon /> },
     ],
   },
   {
@@ -53,7 +54,6 @@ export const navConfig = [
   {
     subheader: 'Coming soon',
     items: [
-      { title: 'Rail cargo', path: '/rail', icon: <TrainRoundedIcon />, disabled: true },
       { title: 'Passenger', path: '/passenger', icon: <DirectionsBusRoundedIcon />, disabled: true },
     ],
   },
