@@ -1,5 +1,5 @@
 import { Card, Stack, Typography, Grid2 as Grid, Alert, Box } from '@mui/material';
-import { PageHeader, formatBDT, DetailRow } from '../components/common';
+import { PageHeader, formatBDT, DetailRow, AssumptionNote } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { tariffLines, truckClassRates } from '../data/mock';
@@ -29,6 +29,9 @@ export default function Charges() {
         </Grid>
       </Grid>
       <Alert severity="info" sx={{ mb: 3 }}>Demonstration values, not legal rates.</Alert>
+      <AssumptionNote code="F40" sx={{ mb: 3 }}>
+        Haltage on a shared truck is under review. Today each importer is charged, so one truck can be billed many times. BLPA still has to approve one rule for all ports.
+      </AssumptionNote>
       <DataTable rows={tariffLines} pageSize={25} columns={[
         { key: 'charge', label: 'Charge', render: (r) => <Typography variant="subtitle2">{r.charge}</Typography> },
         { key: 'basis', label: 'Basis' },
