@@ -188,7 +188,8 @@ Plates, manifest IDs and references use a monospace font.
     per manifest or pre-arrival reference. A truck is locked once it enters the port. A new or edited truck is
     **Entered by C&F** until Customs validates it; changing a validated truck sends it back for validation, and
     "Save changes" stays disabled until a field actually changes. The truck class field shows the demo entrance and
-    weighing rates once a class is picked; the demo tariff charges every class the same (F8 says class should set it).
+    weighing rates for that class once one is picked. Class sets the entrance and weighing charges (F8); the rates are
+    demo values in `truckClassRates` and the classes themselves still need BLPA's confirmation.
   - **Border gate:** admission is blocked until the IGM is received *and* Customs has validated the truck details.
     "Check again" stands in for the BNSW status update in the demo. A camera mismatch still only warns.
   - **Perishable** trucks carry an amber label with a timer icon, in the queue and on the record.

@@ -6,7 +6,7 @@ import {
 import { PageHeader, DetailRow, formatBDT, formatKg, EmptyState, AssumptionNote } from '../components/common';
 import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
 import Label from '../components/Label';
-import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes, truckDataStatus } from '../data/mock';
+import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes, truckDataStatus, truckClassRates } from '../data/mock';
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, TimerOutlinedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
@@ -71,7 +71,7 @@ function ManualRegistration({ open, onClose, onDone }) {
 
 function ArrivingRecord({ truck, side, onAdmit, onRefresh }) {
   const [confirm, setConfirm] = useState(false);
-  const fee = side === 'border' ? 184.7 : 153.58;
+  const fee = truckClassRates[truck.cls][side === 'border' ? 'borderEntrance' : 'inlandEntrance'];
   const cameraCheck = {
     label: truck.cameraPlate ? 'Camera plate matches the selected truck' : 'No camera plate read: check the vehicle manually',
     ok: truck.cameraPlate === truck.plate,

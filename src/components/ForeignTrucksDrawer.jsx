@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { AssumptionNote, EmptyState, TableScroll, formatBDT } from './common';
 import Label from './Label';
-import { truckDataStatus, vehicleTypes, tariffLines } from '../data/mock';
+import { truckDataStatus, vehicleTypes, truckClassRates } from '../data/mock';
 import { AddRoundedIcon, CloseRoundedIcon } from './icons';
 
 const statusColor = {
@@ -20,12 +20,11 @@ const fields = ['plate', 'driver', 'driverCard', 'cls'];
 const compactAction = { minWidth: 0, px: 1 };
 // Narrower gaps between columns so all four fit the drawer without scrolling at full width.
 const tightColumns = { '& .MuiTableCell-root': { px: 1 }, '& .MuiTableCell-root:first-of-type': { pl: 3 }, '& .MuiTableCell-root:last-of-type': { pr: 3 } };
-const rate = (charge) => tariffLines.find((t) => t.charge === charge)?.rate ?? 0;
 
-// The demo tariff charges every truck class the same; the minutes say class should drive the rate (F8).
 function classCharges(cls) {
   if (!cls) return 'Sets the entrance and weighing charges';
-  return `Entrance ${formatBDT(rate('Entrance fee (border gate)'))} · weighing ${formatBDT(rate('Weighment'))} (demo rates)`;
+  const rates = truckClassRates[cls];
+  return `Entrance ${formatBDT(rates.borderEntrance)} · weighing ${formatBDT(rates.weighing)} (demo rates)`;
 }
 
 function TruckForm({ open, truck, takenPlates, onClose, onSave }) {

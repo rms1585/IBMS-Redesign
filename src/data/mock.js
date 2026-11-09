@@ -55,9 +55,9 @@ export const holidays = [
 
 // Demonstration tariff snapshot: not legal rates.
 export const tariffLines = [
-  { charge: 'Entrance fee (border gate)', rate: 184.7, basis: 'per vehicle, by gate of entry', billedHere: true },
-  { charge: 'Entrance fee (inland gate)', rate: 153.58, basis: 'per vehicle, by gate of entry', billedHere: true },
-  { charge: 'Weighment', rate: 76.83, basis: 'per weighing', billedHere: true },
+  { charge: 'Entrance fee (border gate)', rate: 184.7, basis: 'per vehicle, by gate and truck class', billedHere: true },
+  { charge: 'Entrance fee (inland gate)', rate: 153.58, basis: 'per vehicle, by gate and truck class', billedHere: true },
+  { charge: 'Weighment', rate: 76.83, basis: 'per weighing, by truck class', billedHere: true },
   { charge: 'Shed storage, days 1–10', rate: 21.5, basis: 'per tonne, slab by stay length', billedHere: true },
   { charge: 'Shed storage, days 11–20', rate: 43.04, basis: 'per tonne, slab by stay length', billedHere: true },
   { charge: 'Shed storage, day 21+', rate: 64.52, basis: 'per tonne, slab by stay length', billedHere: true },
@@ -69,6 +69,14 @@ export const tariffLines = [
   { charge: 'Carpenter', rate: 20.46, basis: 'per package', billedHere: true },
   { charge: 'Night', rate: 1316.4, basis: 'per Bill of Entry', billedHere: true },
 ];
+
+// Truck class sets the entrance and weighing charges (F8). The tariff lines above show the 10-wheel rate.
+export const truckClassRates = {
+  'Van / pick-up': { borderEntrance: 92.35, inlandEntrance: 76.79, weighing: 38.42 },
+  '6-wheel truck': { borderEntrance: 138.53, inlandEntrance: 115.19, weighing: 57.62 },
+  '10-wheel truck': { borderEntrance: 184.7, inlandEntrance: 153.58, weighing: 76.83 },
+  '14-wheel trailer': { borderEntrance: 240.11, inlandEntrance: 199.65, weighing: 99.88 },
+};
 
 export const manifests = [
   {

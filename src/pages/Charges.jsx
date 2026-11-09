@@ -2,7 +2,9 @@ import { Card, Stack, Typography, Grid2 as Grid, Alert, Box } from '@mui/materia
 import { PageHeader, formatBDT, DetailRow } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
-import { tariffLines } from '../data/mock';
+import { tariffLines, truckClassRates } from '../data/mock';
+
+const classRows = Object.entries(truckClassRates).map(([cls, rates]) => ({ cls, ...rates }));
 
 export default function Charges() {
   const billed = tariffLines.filter((t) => t.billedHere);
@@ -32,6 +34,13 @@ export default function Charges() {
         { key: 'basis', label: 'Basis' },
         { key: 'rate', label: 'Rate', render: (r) => formatBDT(r.rate) },
         { key: 'billedHere', label: 'At this port', render: (r) => (r.billedHere ? <Label color="success">Billed here</Label> : <Label>Priced only</Label>) },
+      ]} />
+      <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Rates by truck class</Typography>
+      <DataTable rows={classRows} pageSize={25} columns={[
+        { key: 'cls', label: 'Truck class', render: (r) => <Typography variant="subtitle2">{r.cls}</Typography> },
+        { key: 'borderEntrance', label: 'Entrance, border gate', render: (r) => formatBDT(r.borderEntrance) },
+        { key: 'inlandEntrance', label: 'Entrance, inland gate', render: (r) => formatBDT(r.inlandEntrance) },
+        { key: 'weighing', label: 'Weighment', render: (r) => formatBDT(r.weighing) },
       ]} />
     </>
   );
