@@ -31,7 +31,7 @@ function HomeTile({ item, onOpen }) {
         onMouseEnter={checkClipped}
         onFocus={checkClipped}
         sx={{
-          width: '100%', p: 2.5, display: 'flex', justifyContent: 'flex-start', gap: 2, textAlign: 'left',
+          width: '100%', py: 2.5, px: { xs: 1.5, sm: 2.5 }, display: 'flex', justifyContent: 'flex-start', gap: { xs: 1.5, sm: 2 }, textAlign: 'left',
           transition: (t) => t.transitions.create(['transform', 'box-shadow']),
           '&:hover': { transform: 'translateY(-2px)', boxShadow: (t) => t.customShadows.dialog },
         }}
