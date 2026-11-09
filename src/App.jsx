@@ -24,6 +24,7 @@ import Technical from './pages/Technical';
 import Roles from './pages/Roles';
 import Users from './pages/Users';
 import Inbox from './pages/Inbox';
+import Labour from './pages/Labour';
 import AuditLog from './pages/AuditLog';
 
 export default function App() {
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="users" element={<Users />} />
         <Route path="inbox" element={<Inbox />} />
         <Route path="audit" element={<AuditLog />} />
+        <Route path="labour" element={<Labour />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

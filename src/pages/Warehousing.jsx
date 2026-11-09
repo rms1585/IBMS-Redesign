@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  Box, Card, Stack, Typography, Button, Divider, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Tabs, Tab,
+  Box, Card, Stack, Typography, Button, Divider, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Tabs, Tab, Link,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { PageHeader, DetailRow, formatKg, EmptyState } from '../components/common';
 import { Workbench, QueueCard } from '../components/Workbench';
 import Label from '../components/Label';
@@ -50,7 +51,8 @@ function Record({ item, onStart, onFinish }) {
       <Divider sx={{ borderStyle: 'dashed' }} />
       {item.stage === 'waiting' ? (
         <Box sx={{ p: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 2 }}>Confirm arrival at the shed door, then record who unloads</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Confirm arrival at the shed door, then record who unloads</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>The gang comes from a <Link component={RouterLink} to="/labour">labour requisition</Link>.</Typography>
           <Box className="record-fields" sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
             <Box>
               <TextField select fullWidth label="Labour gang" value={gang} onChange={(e) => setGang(e.target.value)}>

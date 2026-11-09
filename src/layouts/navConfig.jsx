@@ -21,6 +21,7 @@ export const navConfig = [
       { title: 'Weighbridge', path: '/weighbridge', icon: <ScaleRoundedIcon /> },
       { title: 'Posting', path: '/posting', icon: <GridViewRoundedIcon /> },
       { title: 'Warehousing', path: '/warehousing', icon: <WarehouseRoundedIcon /> },
+      { title: 'Labour requisitions', path: '/labour', icon: <PeopleAltRoundedIcon /> },
       { title: 'Transshipment', path: '/transshipment', icon: <SyncAltRoundedIcon /> },
       { title: 'Billing & payment', path: '/billing', icon: <PaymentsRoundedIcon /> },
       { title: 'Inland gate', path: '/inland-gate', icon: <SignpostRoundedIcon /> },
