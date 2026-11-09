@@ -1,4 +1,5 @@
-import { Box, Card, Stack, Typography, ButtonBase, Grid2 as Grid } from '@mui/material';
+import { useRef, useState } from 'react';
+import { Box, Card, Stack, Typography, ButtonBase, Tooltip, Grid2 as Grid } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { navConfig } from '../layouts/navConfig';
@@ -14,6 +15,38 @@ const homeGroups = [
 ];
 
 const allItems = navConfig.flatMap((g) => g.items);
+
+const twoLineTitle = { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', overflowWrap: 'anywhere' };
+
+function HomeTile({ item, onOpen }) {
+  const titleRef = useRef(null);
+  const [clipped, setClipped] = useState(false);
+  // Measured on hover because whether a title clips depends on the current tile width.
+  const checkClipped = () => setClipped(titleRef.current.scrollHeight > titleRef.current.clientHeight);
+  return (
+    <Tooltip title={clipped ? item.title : ''} arrow disableInteractive describeChild>
+      <Card
+        component={ButtonBase}
+        onClick={onOpen}
+        onMouseEnter={checkClipped}
+        onFocus={checkClipped}
+        sx={{
+          width: '100%', p: 2.5, display: 'flex', justifyContent: 'flex-start', gap: 2, textAlign: 'left',
+          transition: (t) => t.transitions.create(['transform', 'box-shadow']),
+          '&:hover': { transform: 'translateY(-2px)', boxShadow: (t) => t.customShadows.dialog },
+        }}
+      >
+        <Box sx={{ width: 44, height: 44, borderRadius: 1.5, display: 'grid', placeItems: 'center', flexShrink: 0, color: 'primary.main', bgcolor: (t) => alpha(t.palette.primary.main, 0.08) }}>
+          {item.icon}
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography ref={titleRef} variant="subtitle2" sx={twoLineTitle}>{item.title}</Typography>
+        </Box>
+        {item.badge ? <Label color="error">{item.badge}</Label> : null}
+      </Card>
+    </Tooltip>
+  );
+}
 
 export default function Home() {
   const navigate = useNavigate();
@@ -62,23 +95,7 @@ export default function Home() {
                 const item = allItems.find((i) => i.path === p);
                 return (
                   <Grid key={p} size={{ xs: 6, md: 4, lg: 3 }}>
-                    <Card
-                      component={ButtonBase}
-                      onClick={() => navigate(p)}
-                      sx={{
-                        width: '100%', p: 2.5, display: 'flex', justifyContent: 'flex-start', gap: 2, textAlign: 'left',
-                        transition: (t) => t.transitions.create(['transform', 'box-shadow']),
-                        '&:hover': { transform: 'translateY(-2px)', boxShadow: (t) => t.customShadows.dialog },
-                      }}
-                    >
-                      <Box sx={{ width: 44, height: 44, borderRadius: 1.5, display: 'grid', placeItems: 'center', flexShrink: 0, color: 'primary.main', bgcolor: (t) => alpha(t.palette.primary.main, 0.08) }}>
-                        {item.icon}
-                      </Box>
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="subtitle2" noWrap>{item.title}</Typography>
-                      </Box>
-                      {item.badge ? <Label color="error">{item.badge}</Label> : null}
-                    </Card>
+                    <HomeTile item={item} onOpen={() => navigate(p)} />
                   </Grid>
                 );
               })}
