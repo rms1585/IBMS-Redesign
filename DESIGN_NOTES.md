@@ -206,6 +206,10 @@ Plates, manifest IDs and references use a monospace font.
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 - **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate
   and the camera plate matches. "Re-read plate" stands in for a corrected camera read in the demo.
+- **Screens added from the consultation backlog:** Labour requisitions (F24), Exit pass (F45), Part delivery (F39, F40),
+  Cargo vehicle terminal (F23), Auction and destruction (F28, F29), Export (F49, F50), Rail cargo (F51), Passenger
+  (F52–F54), Exception catalogue (F62), Truck queue (F34), and local truck booking in the C&F portal (F32, F33, F35).
+  Anything resting on an open decision carries an `AssumptionNote`.
 
 ## 13. Working on this repo
 

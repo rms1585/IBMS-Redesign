@@ -33,6 +33,7 @@ import ExportCargo from './pages/ExportCargo';
 import RailCargo from './pages/RailCargo';
 import Passenger from './pages/Passenger';
 import Exceptions from './pages/Exceptions';
+import TruckQueue from './pages/TruckQueue';
 import AuditLog from './pages/AuditLog';
 
 export default function App() {
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="rail" element={<RailCargo />} />
         <Route path="passenger" element={<Passenger />} />
         <Route path="exceptions" element={<Exceptions />} />
+        <Route path="truck-queue" element={<TruckQueue />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
