@@ -18,6 +18,7 @@ export const navConfig = [
       { title: 'Importer / exporter', path: '/trader-portal', icon: <StorefrontRoundedIcon /> },
       { title: 'Manifest tracking', path: '/manifests', icon: <ReceiptLongRoundedIcon /> },
       { title: 'Border gate', path: '/border-gate', icon: <LocalShippingRoundedIcon /> },
+      { title: 'Cargo vehicle terminal', path: '/vehicle-terminal', icon: <RvHookupRoundedIcon /> },
       { title: 'Weighbridge', path: '/weighbridge', icon: <ScaleRoundedIcon /> },
       { title: 'Posting', path: '/posting', icon: <GridViewRoundedIcon /> },
       { title: 'Warehousing', path: '/warehousing', icon: <WarehouseRoundedIcon /> },

@@ -27,6 +27,7 @@ import Inbox from './pages/Inbox';
 import Labour from './pages/Labour';
 import ExitPass from './pages/ExitPass';
 import PartDelivery from './pages/PartDelivery';
+import VehicleTerminal from './pages/VehicleTerminal';
 import AuditLog from './pages/AuditLog';
 
 export default function App() {
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="labour" element={<Labour />} />
         <Route path="exit-pass" element={<ExitPass />} />
         <Route path="part-delivery" element={<PartDelivery />} />
+        <Route path="vehicle-terminal" element={<VehicleTerminal />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
