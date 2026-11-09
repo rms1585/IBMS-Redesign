@@ -29,6 +29,7 @@ export const navConfig = [
       { title: 'Billing & payment', path: '/billing', icon: <PaymentsRoundedIcon /> },
       { title: 'Exit pass', path: '/exit-pass', icon: <LockOutlinedIcon /> },
       { title: 'Inland gate', path: '/inland-gate', icon: <SignpostRoundedIcon /> },
+      { title: 'Export', path: '/export', icon: <PublicRoundedIcon /> },
     ],
   },
   {
