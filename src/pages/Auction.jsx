@@ -1,0 +1,98 @@
+import { useState } from 'react';
+import { Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Grid } from '@mui/material';
+import { PageHeader, KpiCard, AssumptionNote, ReasonDialog, formatKg } from '../components/common';
+import DataTable from '../components/DataTable';
+import Label from '../components/Label';
+
+const ONE_MONTH = 30;
+const TWO_MONTHS = 60;
+const initialLots = [
+  { id: 'LOT-3381', product: 'Cotton fabric', manifest: 'BEN-IGM-2026-07412', location: 'Shed 5 · S5A-R3', kg: 8400, ageDays: 74, stage: 'stock', notice: false },
+  { id: 'LOT-3374', product: 'Truck tyres', manifest: 'BEN-IGM-2026-07655', location: 'Open yard 1 · OY1A-R1', kg: 5200, ageDays: 63, stage: 'stock', notice: true },
+  { id: 'LOT-3402', product: 'Detergent', manifest: 'BEN-IGM-2026-07980', location: 'Shed 5 · S5B-R2', kg: 3100, ageDays: 41, stage: 'stock', notice: false },
+  { id: 'LOT-3410', product: 'Infant cereal', manifest: 'BEN-IGM-2026-08102', location: 'Shed 9 · S9A-R1', kg: 1900, ageDays: 33, stage: 'stock', notice: false },
+  { id: 'LOT-3433', product: 'Rice (non-basmati)', manifest: 'BEN-IGM-2026-08510', location: 'Shed 5 · S5A-R1', kg: 16000, ageDays: 12, stage: 'stock', notice: false },
+  { id: 'LOT-3290', product: 'Onion (spoiled)', manifest: 'BEN-IGM-2026-06988', location: 'Shed 9 · S9A-R4', kg: 2700, ageDays: 96, stage: 'listed', notice: true },
+];
+
+function AgeLabel({ days }) {
+  if (days >= TWO_MONTHS) return <Label color="error">{days} days</Label>;
+  if (days >= ONE_MONTH) return <Label color="warning">{days} days</Label>;
+  return <Label>{days} days</Label>;
+}
+
+export default function Auction() {
+  const [lots, setLots] = useState(initialLots);
+  const [tab, setTab] = useState('ageing');
+  const [listing, setListing] = useState(null);
+  const [destroying, setDestroying] = useState(null);
+  const [toast, setToast] = useState('');
+  const update = (id, change) => setLots((ls) => ls.map((l) => (l.id === id ? { ...l, ...change } : l)));
+  const inStock = lots.filter((l) => l.stage === 'stock');
+  const listed = lots.filter((l) => l.stage !== 'stock');
+
+  const lotColumns = [
+    { key: 'id', label: 'Lot', render: (r) => <><Typography variant="subtitle2">{r.id}</Typography><Typography variant="caption" color="text.secondary">{r.manifest}</Typography></> },
+    { key: 'product', label: 'Goods', render: (r) => <>{r.product}<Typography variant="caption" color="text.secondary" component="div">{formatKg(r.kg)}</Typography></> },
+    { key: 'location', label: 'Location' },
+    { key: 'ageDays', label: 'Age', render: (r) => <AgeLabel days={r.ageDays} /> },
+  ];
+
+  return (
+    <>
+      <PageHeader title="Auction and destruction" links={[{ name: 'Operations' }, { name: 'Auction and destruction' }]} subtitle="Uncleared goods turn yellow at one month and red at two months." />
+      <AssumptionNote code="F28" sx={{ mb: 3 }}>The minutes don't state the auction-list age. Here the notice is due at two months.</AssumptionNote>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="One month or more" value={inStock.filter((l) => l.ageDays >= ONE_MONTH && l.ageDays < TWO_MONTHS).length} color="warning" /></Grid>
+        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="Two months or more" value={inStock.filter((l) => l.ageDays >= TWO_MONTHS).length} color="error" /></Grid>
+        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="Notices due" value={inStock.filter((l) => l.ageDays >= TWO_MONTHS && !l.notice).length} color="primary" /></Grid>
+      </Grid>
+      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
+        <Tab value="ageing" label="Ageing stock" />
+        <Tab value="destruction" label={<Stack direction="row" spacing={1} alignItems="center"><span>Destruction list</span><Label>{listed.filter((l) => l.stage === 'listed').length}</Label></Stack>} />
+      </Tabs>
+      {tab === 'ageing' ? (
+        <DataTable rows={inStock} searchKeys={['id', 'product', 'manifest']} searchPlaceholder="Search lot, goods or manifest" rowKey={(r) => r.id} columns={[
+          ...lotColumns,
+          { key: 'notice', label: 'Auction notice', render: (r) => (r.notice ? <Label color="success">Sent</Label> : r.ageDays >= TWO_MONTHS ? <Label color="error">Due</Label> : <Label>Not due</Label>) },
+          {
+            key: 'a',
+            label: '',
+            render: (r) => (
+              <Stack direction="row" spacing={1}>
+                {r.ageDays >= TWO_MONTHS && !r.notice && <Button size="small" variant="outlined" onClick={() => { update(r.id, { notice: true }); setToast(`Auction notice sent for ${r.id}.`); }}>Send notice</Button>}
+                <Button size="small" color="inherit" onClick={() => setListing(r)}>Add to destruction list</Button>
+              </Stack>
+            ),
+          },
+        ]} />
+      ) : (
+        <DataTable rows={listed} searchKeys={['id', 'product']} searchPlaceholder="Search lot or goods" rowKey={(r) => r.id} columns={[
+          ...lotColumns,
+          { key: 'stage', label: 'Status', render: (r) => (r.stage === 'destroyed' ? <Label color="error">Destroyed</Label> : <Label color="warning">Listed</Label>) },
+          { key: 'a', label: '', render: (r) => (r.stage === 'listed' ? <Button size="small" variant="outlined" color="error" onClick={() => setDestroying(r)}>Record as destroyed</Button> : <Typography variant="caption" color="text.secondary">Removed from stock</Typography>) },
+        ]} />
+      )}
+      <ReasonDialog
+        open={Boolean(listing)}
+        title={`Add ${listing?.id ?? ''} to the destruction list?`}
+        description="The lot leaves ageing stock and waits to be recorded as destroyed."
+        confirmLabel="Add to list"
+        onClose={() => setListing(null)}
+        onConfirm={() => { update(listing.id, { stage: 'listed' }); setToast(`${listing.id} added to the destruction list.`); setListing(null); }}
+      />
+      <ReasonDialog
+        open={Boolean(destroying)}
+        title={`Record ${destroying?.id ?? ''} as destroyed?`}
+        description="The goods are removed from stock. The record stays in this list."
+        confirmLabel="Record as destroyed"
+        confirmColor="error"
+        onClose={() => setDestroying(null)}
+        onConfirm={() => { update(destroying.id, { stage: 'destroyed' }); setToast(`${destroying.id} recorded as destroyed and removed from stock.`); setDestroying(null); }}
+      />
+      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
+      </Snackbar>
+    </>
+  );
+}

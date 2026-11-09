@@ -25,6 +25,7 @@ export const navConfig = [
       { title: 'Labour requisitions', path: '/labour', icon: <PeopleAltRoundedIcon /> },
       { title: 'Transshipment', path: '/transshipment', icon: <SyncAltRoundedIcon /> },
       { title: 'Part delivery', path: '/part-delivery', icon: <SyncAltRoundedIcon /> },
+      { title: 'Auction and destruction', path: '/auction', icon: <HistoryRoundedIcon /> },
       { title: 'Billing & payment', path: '/billing', icon: <PaymentsRoundedIcon /> },
       { title: 'Exit pass', path: '/exit-pass', icon: <LockOutlinedIcon /> },
       { title: 'Inland gate', path: '/inland-gate', icon: <SignpostRoundedIcon /> },
