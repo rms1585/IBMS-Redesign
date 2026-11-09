@@ -68,6 +68,15 @@ export function createAppTheme(mode = 'light') {
           sizeLarge: { height: 48, padding: '0 20px', fontSize: pxToRem(16), lineHeight: 24 / 16 },
           sizeMedium: { height: 40, padding: '0 16px' },
           sizeSmall: { height: 36, padding: '0 16px', fontSize: pxToRem(14) },
+          // A full-width button can sit in a column narrower than its label, so it wraps and grows
+          // instead of overflowing. The minimum heights keep one-line labels at the CTA sizes above.
+          fullWidth: ({ ownerState }) => ({
+            whiteSpace: 'normal',
+            height: 'auto',
+            minHeight: { small: 36, medium: 40, large: 48 }[ownerState.size ?? 'medium'],
+            paddingTop: 6,
+            paddingBottom: 6,
+          }),
           startIcon: { marginRight: 8 },
           endIcon: { marginLeft: 8 },
           containedInherit: {

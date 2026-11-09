@@ -90,7 +90,7 @@ function ProposalCard({ line, bay, onClearBay, onChange, onSend }) {
       <Typography variant="subtitle2" sx={{ mb: 1 }}>Selected bay</Typography>
       <Typography variant="h6" sx={{ fontFamily: 'monospace', mb: 2 }}>{bay ?? '—'}</Typography>
       <TextField
-        fullWidth size="small" label="Volume for this bay" value={m3}
+        fullWidth size="small" label="Volume" value={m3}
         onChange={(e) => setM3(e.target.value.replace(/\D/g, ''))}
         helperText={`${remaining} m³ still to place`}
         slotProps={{ input: { endAdornment: <InputAdornment position="end">m³</InputAdornment> } }}
