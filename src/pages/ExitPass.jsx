@@ -60,10 +60,10 @@ function PassRecord({ pass, onSign, onIssue }) {
       </Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Box sx={{ p: 3 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Approvals</Typography>
-        <Stack spacing={1.5} divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
+        <Typography variant="subtitle2">Approvals</Typography>
+        <Stack divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
           {approvers.map((a) => (
-            <Stack key={a.key} direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
+            <Stack key={a.key} direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1} sx={{ py: 1.5 }}>
               <Box>
                 <Typography variant="subtitle2">{a.role}</Typography>
                 <Typography variant="body2" color="text.secondary">{a.name}</Typography>
@@ -79,7 +79,7 @@ function PassRecord({ pass, onSign, onIssue }) {
             </Stack>
           ))}
         </Stack>
-        <AssumptionNote code="F45" sx={{ mt: 2.5 }}>Whether Customs officers sign in IBMS is still to be confirmed with NBR.</AssumptionNote>
+        <AssumptionNote code="F45" sx={{ mt: 1 }}>Whether Customs officers sign in IBMS is still to be confirmed with NBR.</AssumptionNote>
       </Box>
       {!pass.issued && (
         <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ p: 3, pt: 0 }}>
