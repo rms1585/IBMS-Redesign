@@ -202,6 +202,8 @@ Plates, manifest IDs and references use a monospace font.
     only carry a one-line note.
   - No screen asks for the immigration paper or token.
   - India's Car Pass and manifest data stays a future option, with no placeholder screen until an agreement exists.
+- **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
+  in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 
 ## 13. Working on this repo
 
