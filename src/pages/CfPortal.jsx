@@ -69,7 +69,7 @@ export default function CfPortal() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Unread alerts" value={alerts.length} icon={<NotificationsActiveRoundedIcon />} color="error" /></Grid>
       </Grid>
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid size={12}>
           <SectionCard title="Manifests" action={<SearchField placeholder="Search manifest or vehicle" value={search} onChange={setSearch} />}>
             <Table>
               <TableHead>
@@ -118,8 +118,8 @@ export default function CfPortal() {
             </Table>
           </SectionCard>
         </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <SectionCard title="Billing summary" sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SectionCard title="Billing summary">
             <Stack spacing={1.25} sx={{ px: 3, pb: 3 }}>
               {[['Billed', 8790.2], ['Paid', 4494.74], ['Due', 4295.46], ['Overdue', 0]].map(([l, v]) => (
                 <Stack key={l} direction="row" justifyContent="space-between">
@@ -129,6 +129,8 @@ export default function CfPortal() {
               ))}
             </Stack>
           </SectionCard>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard title="Alerts" subheader="Newest first">
             <Stack sx={{ px: 3, pb: 2 }} divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
               {alerts.map((a) => (

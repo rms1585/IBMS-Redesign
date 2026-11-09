@@ -146,7 +146,7 @@ Plates, manifest IDs and references use a monospace font.
     list (plate with the time under it, In/Out label on the right). Nothing may overflow a narrow column.
 - **Cards side by side share a height:** in a grid row, every card takes the height of the tallest card in that row.
   A global theme rule makes a card that is the only item in its grid cell fill the row (`height: 100%`). Cards
-  stacked inside one column (e.g. C&F portal Billing summary + Alerts) keep their natural heights.
+  stacked inside one column keep their natural heights.
 - **Page and card headers** wrap their action buttons below the title instead of overflowing.
 - Side panels in Port setup and Warehouse layout are 3/9 columns from `lg`, stacked below that.
 - Checked sizes: iPad portrait 768 / 820, iPad landscape 1024 / 1180, iPad Pro 1366, laptop 1440, wide 1920.
