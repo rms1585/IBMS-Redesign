@@ -1,5 +1,5 @@
 import { inboxRequests } from '../data/mock';
-import { AdminPanelSettingsRoundedIcon, AltRouteRoundedIcon, BusinessCenterRoundedIcon, DirectionsBusRoundedIcon, GridViewRoundedIcon, HistoryRoundedIcon, HomeRoundedIcon, InboxRoundedIcon, InsightsRoundedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, PeopleAltRoundedIcon, PrecisionManufacturingRoundedIcon, PublicRoundedIcon, ReceiptLongRoundedIcon, RequestQuoteRoundedIcon, RuleRoundedIcon, RvHookupRoundedIcon, ScaleRoundedIcon, SettingsEthernetRoundedIcon, SignpostRoundedIcon, StorefrontRoundedIcon, SyncAltRoundedIcon, TrainRoundedIcon, TuneRoundedIcon, ViewQuiltRoundedIcon, WarehouseRoundedIcon } from '../components/icons';
+import { LockOutlinedIcon, AdminPanelSettingsRoundedIcon, AltRouteRoundedIcon, BusinessCenterRoundedIcon, DirectionsBusRoundedIcon, GridViewRoundedIcon, HistoryRoundedIcon, HomeRoundedIcon, InboxRoundedIcon, InsightsRoundedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, PeopleAltRoundedIcon, PrecisionManufacturingRoundedIcon, PublicRoundedIcon, ReceiptLongRoundedIcon, RequestQuoteRoundedIcon, RuleRoundedIcon, RvHookupRoundedIcon, ScaleRoundedIcon, SettingsEthernetRoundedIcon, SignpostRoundedIcon, StorefrontRoundedIcon, SyncAltRoundedIcon, TrainRoundedIcon, TuneRoundedIcon, ViewQuiltRoundedIcon, WarehouseRoundedIcon } from '../components/icons';
 
 const pendingForMe = inboxRequests.filter((r) => !r.mine).length;
 
@@ -24,6 +24,7 @@ export const navConfig = [
       { title: 'Labour requisitions', path: '/labour', icon: <PeopleAltRoundedIcon /> },
       { title: 'Transshipment', path: '/transshipment', icon: <SyncAltRoundedIcon /> },
       { title: 'Billing & payment', path: '/billing', icon: <PaymentsRoundedIcon /> },
+      { title: 'Exit pass', path: '/exit-pass', icon: <LockOutlinedIcon /> },
       { title: 'Inland gate', path: '/inland-gate', icon: <SignpostRoundedIcon /> },
     ],
   },

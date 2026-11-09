@@ -174,7 +174,7 @@ function ArrivingRecord({ truck, side, onAdmit, onRefresh }) {
 function LeavingRecord({ truck, side }) {
   const local = truck.kind === 'Local';
   const checks = local
-    ? [['Customs released', truck.release === 'Released'], ['No Customs or BLPA hold', truck.release !== 'Hold'], ['BLPA charges paid in full', true], ['Valid exit pass (expires end of operating day)', truck.pass !== '—']]
+    ? [['Customs released', truck.release === 'Released'], ['No Customs or BLPA hold', truck.release !== 'Hold'], ['BLPA charges paid in full', true], ['Exit pass signed by all three approvers (expires end of operating day)', truck.pass !== '—']]
     : [['Truck is empty', truck.load === 'Empty'], ['No Customs or BLPA hold', truck.release !== 'Hold']];
   const allOk = checks.every(([, ok]) => ok);
   return (
