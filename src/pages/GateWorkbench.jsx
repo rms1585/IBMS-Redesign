@@ -127,6 +127,11 @@ function ArrivingRecord({ truck, side, onAdmit, onRefresh }) {
             </Stack>
           ))}
         </Stack>
+        {side === 'border' && truck.kind === 'Foreign' && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Where the port uses a Car Pass, accept it from Customs, not the C&amp;F agent.
+          </Typography>
+        )}
         {blocked && (
           <Alert
             severity="warning"
