@@ -19,7 +19,7 @@ const initialCargo = [
 const initialTrucks = [
   { plate: 'JESSORE-TA-11-2240', manifest: 'BEN-EGM-2026-01204', driver: 'Nazmul Haque', location: 'Border gate lane B1', status: 'At the border' },
   { plate: 'KHULNA-DA-14-0520', manifest: 'BEN-EGM-2026-01198', driver: 'Shafiq Uddin', location: 'Export yard', status: 'At the border' },
-  { plate: 'JESSORE-TA-11-2199', manifest: 'BEN-EGM-2026-01176', driver: 'Liton Das', location: 'Returned inland', status: 'Returned', returnCharge: 534.34, remark: 'Goods refused at the Indian side' },
+  { plate: 'JESSORE-TA-11-2199', manifest: 'BEN-EGM-2026-01176', driver: 'Liton Das', location: 'Returned inland', status: 'Returned', returnCharge: 533.92, remark: 'Goods refused at the Indian side' },
 ];
 const storageCharge = (c) => (c.kg / 1000) * SHED_RATE_PER_TONNE;
 

@@ -31,6 +31,7 @@ export const navConfig = [
       { title: 'Inland gate', path: '/inland-gate', icon: <SignpostRoundedIcon /> },
       { title: 'Export', path: '/export', icon: <PublicRoundedIcon /> },
       { title: 'Rail cargo', path: '/rail', icon: <TrainRoundedIcon /> },
+      { title: 'Passenger', path: '/passenger', icon: <DirectionsBusRoundedIcon /> },
     ],
   },
   {
@@ -49,12 +50,6 @@ export const navConfig = [
       { title: 'Users', path: '/users', icon: <PeopleAltRoundedIcon /> },
       { title: 'Inbox', path: '/inbox', icon: <InboxRoundedIcon />, badge: pendingForMe },
       { title: 'Audit log', path: '/audit', icon: <HistoryRoundedIcon /> },
-    ],
-  },
-  {
-    subheader: 'Coming soon',
-    items: [
-      { title: 'Passenger', path: '/passenger', icon: <DirectionsBusRoundedIcon />, disabled: true },
     ],
   },
 ];
