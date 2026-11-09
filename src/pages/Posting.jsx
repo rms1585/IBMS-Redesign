@@ -106,7 +106,8 @@ function ProposalCard({ line, bay, onClearBay, onChange, onSend }) {
           ))}
         </Stack>
       )}
-      <Button fullWidth variant="contained" size="large" sx={{ mt: 2 }} disabled={remaining !== 0} onClick={onSend}>Send to warehouse in-charge</Button>
+      <Typography id="send-proposal-note" variant="body2" color="text.secondary" sx={{ mt: 2 }}>Send proposal to warehouse manager for approval</Typography>
+      <Button fullWidth variant="contained" size="large" sx={{ mt: 1 }} disabled={remaining !== 0} aria-describedby="send-proposal-note" onClick={onSend}>Send</Button>
     </Card>
   );
 }
