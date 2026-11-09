@@ -194,6 +194,13 @@ Plates, manifest IDs and references use a monospace font.
   - **Perishable** trucks carry an amber label with a timer icon, in the queue and on the record.
   - Behaviour that rests on an open decision carries an `AssumptionNote` (amber "Assumption · F-number" label +
     one line), so reviewers can tell it from agreed behaviour. Remove the note once the decision is made.
+- **Phase 2, Car Pass and foreign dispatch** (consultation minutes, item 4 and F11):
+  - The Car Pass stays on paper. IBMS has no digital Car Pass.
+  - C&F agents never upload or photograph a Car Pass. BLPA receives it from Customs.
+  - A missing Car Pass never blocks Admit, because Bhomra doesn't fully use one. The C&F drawer and the border gate
+    only carry a one-line note.
+  - No screen asks for the immigration paper or token.
+  - India's Car Pass and manifest data stays a future option, with no placeholder screen until an agreement exists.
 
 ## 13. Working on this repo
 
