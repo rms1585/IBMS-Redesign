@@ -41,6 +41,7 @@ export const navConfig = [
       { title: 'Port setup', path: '/port-setup', icon: <TuneRoundedIcon /> },
       { title: 'Warehouse layout', path: '/warehouse-layout', icon: <ViewQuiltRoundedIcon /> },
       { title: 'Storage rules', path: '/storage-rules', icon: <RuleRoundedIcon /> },
+      { title: 'Exception catalogue', path: '/exceptions', icon: <RuleRoundedIcon /> },
       { title: 'Products & routing', path: '/routing', icon: <AltRouteRoundedIcon /> },
       { title: 'Vehicle classes', path: '/vehicle-classes', icon: <RvHookupRoundedIcon /> },
       { title: 'Equipment & labour', path: '/equipment', icon: <PrecisionManufacturingRoundedIcon /> },
