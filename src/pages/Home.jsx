@@ -16,7 +16,7 @@ const homeGroups = [
 
 const allItems = navConfig.flatMap((g) => g.items);
 
-const twoLineTitle = { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', overflowWrap: 'anywhere' };
+const twoLineTitle = { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', overflowWrap: 'anywhere', hyphens: 'auto' };
 
 function HomeTile({ item, onOpen }) {
   const titleRef = useRef(null);
