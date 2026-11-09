@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Grid } from '@mui/material';
+import { Box, Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Grid } from '@mui/material';
 import { PageHeader, KpiCard, AssumptionNote, ReasonDialog, formatKg } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 
 const ONE_MONTH = 30;
 const TWO_MONTHS = 60;
+// Width of the Send notice button, in px.
+const SEND_NOTICE_WIDTH = 113;
 const initialLots = [
   { id: 'LOT-3381', product: 'Cotton fabric', manifest: 'BEN-IGM-2026-07412', location: 'Shed 5 · S5A-R3', kg: 8400, ageDays: 74, stage: 'stock', notice: false },
   { id: 'LOT-3374', product: 'Truck tyres', manifest: 'BEN-IGM-2026-07655', location: 'Open yard 1 · OY1A-R1', kg: 5200, ageDays: 63, stage: 'stock', notice: true },
@@ -55,8 +57,8 @@ export default function Auction() {
         <DataTable rows={inStock} searchKeys={['id', 'product', 'manifest']} searchPlaceholder="Search lot, goods or manifest" rowKey={(r) => r.id} columns={[
           ...lotColumns,
           { key: 'notice', label: 'Auction notice', render: (r) => (r.notice ? <Label color="success">Sent</Label> : r.ageDays >= TWO_MONTHS ? <Label color="error">Due</Label> : <Label>Not due</Label>) },
-          // Reserved width keeps the destruction column still once the last notice has been sent.
-          { key: 'sendNotice', label: '', width: 132, render: (r) => r.ageDays >= TWO_MONTHS && !r.notice && <Button size="small" variant="outlined" onClick={() => { update(r.id, { notice: true }); setToast(`Auction notice sent for ${r.id}.`); }}>Send notice</Button> },
+          // The header spacer keeps the destruction column still once the last notice has been sent.
+          { key: 'sendNotice', label: <Box sx={{ width: SEND_NOTICE_WIDTH }} />, render: (r) => r.ageDays >= TWO_MONTHS && !r.notice && <Button size="small" variant="outlined" onClick={() => { update(r.id, { notice: true }); setToast(`Auction notice sent for ${r.id}.`); }}>Send notice</Button> },
           { key: 'addToDestruction', label: '', render: (r) => <Button size="small" color="inherit" onClick={() => setListing(r)}>Add to destruction list</Button> },
         ]} />
       ) : (
