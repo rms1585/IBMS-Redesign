@@ -36,6 +36,10 @@ const initialReceipts = [
   { id: 'PF-BEN-55102', name: 'Mita Rani Das', phone: '', passport: 'T6631954', country: 'IND-India', port: ports[0], date: today(), category: 'Disabled', method: 'Cash at counter', at: 'Today, 10:36', by: 'Counter 1' },
   { id: 'PF-BEN-55101', name: 'Sabina Yasmin', phone: '01819876543', passport: 'B01277364', country: 'BGD-Bangladesh', port: ports[0], date: today(), category: 'Standard', method: 'Nagad', at: 'Today, 10:21', by: 'Counter 2' },
 ];
+const initialBuses = [
+  { id: 'BT-BEN-2210', plate: 'DHAKA-METRO-BA-14-2207', operator: 'Green Line', at: 'Today, 09:50' },
+  { id: 'BT-BEN-2209', plate: 'JESSORE-BA-11-0482', operator: 'Sohag Paribahan', at: 'Today, 09:15' },
+];
 
 const ones = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
 const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
