@@ -46,8 +46,9 @@ export default function App() {
         <Route path="cf-portal" element={<CfPortal />} />
         <Route path="trader-portal" element={<TraderPortal />} />
         <Route path="manifests" element={<Manifests />} />
-        <Route path="border-gate" element={<GateWorkbench side="border" />} />
-        <Route path="inland-gate" element={<GateWorkbench side="inland" />} />
+        {/* Keys give each gate its own state; without them the inland gate kept the border queue. */}
+        <Route path="border-gate" element={<GateWorkbench key="border" side="border" />} />
+        <Route path="inland-gate" element={<GateWorkbench key="inland" side="inland" />} />
         <Route path="weighbridge" element={<Weighbridge />} />
         <Route path="posting" element={<Posting />} />
         <Route path="warehousing" element={<Warehousing />} />
