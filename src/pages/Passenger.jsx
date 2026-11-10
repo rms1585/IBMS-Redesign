@@ -3,7 +3,6 @@ import {
   Box, Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
   Autocomplete, Table, TableHead, TableRow, TableCell, TableBody, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import { PageHeader, KpiCard, AssumptionNote, formatBDT } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -108,11 +107,13 @@ function ChargeTable() {
   );
 }
 
-// Every tile is sized from the largest logo (Nagad, 73×32 at display size) plus 16px top, right and bottom,
-// so all tiles match whatever the logo's shape. The left gap is small because the radio already has its own padding.
+// Every tile is sized from the largest logo (Nagad, 73×32 at display size) plus 16px on each side,
+// so all tiles match whatever the logo's shape.
 const LOGO_BOX = { width: 73, height: 32 };
+// The radio stays for keyboard and screen-reader use but is not drawn; the tile's border shows the choice.
+const hiddenRadio = { position: 'absolute', opacity: 0, width: 1, height: 1, p: 0, m: 0, overflow: 'hidden' };
 
-// Logo tiles with a radio each, like BLPA's passenger site: easier to recognise than a list of names.
+// Logo tiles like BLPA's passenger site: easier to recognise than a list of names. One can be selected.
 function PaymentMethodPicker({ value, onChange }) {
   return (
     <FormControl component="fieldset" fullWidth>
@@ -125,7 +126,7 @@ function PaymentMethodPicker({ value, onChange }) {
           const selected = m.name === value;
           return (
             <FormControlLabel
-              key={m.name} value={m.name} control={<Radio size="small" />}
+              key={m.name} value={m.name} control={<Radio sx={hiddenRadio} />}
               label={(
                 <Box sx={{ ...LOGO_BOX, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
                   {m.logo
@@ -134,11 +135,13 @@ function PaymentMethodPicker({ value, onChange }) {
                 </Box>
               )}
               sx={{
-                m: 0, borderRadius: 1.5, border: 1,
-                '& .MuiFormControlLabel-label': { py: 2, pr: 2, pl: 0.5 },
+                position: 'relative', m: 0, p: 2, borderRadius: 1.5, border: 1, cursor: 'pointer',
+                '& .MuiFormControlLabel-label': { display: 'block' },
                 borderColor: selected ? 'primary.main' : 'divider',
-                bgcolor: (t) => (selected ? alpha(t.palette.primary.main, 0.08) : 'transparent'),
+                // A second ring drawn inside the border makes the selection 2px thick without moving the logo.
+                boxShadow: (t) => (selected ? `inset 0 0 0 1px ${t.palette.primary.main}` : 'none'),
                 '&:hover': { borderColor: selected ? 'primary.main' : 'text.disabled' },
+                '&:has(input:focus-visible)': { outline: 2, outlineColor: 'primary.main', outlineOffset: 2 },
               }}
             />
           );
