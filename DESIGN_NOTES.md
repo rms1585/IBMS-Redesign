@@ -202,6 +202,13 @@ Plates, manifest IDs and references use a monospace font.
     only carry a one-line note.
   - No screen asks for the immigration paper or token.
   - India's Car Pass and manifest data stays a future option, with no placeholder screen until an agreement exists.
+- **Phase 3, zero point and entry** (consultation minutes, item 5 and F13):
+  - Customs enters before BLPA. The border gate's Admit stays blocked until Customs has keyed the IGM and validated
+    the truck.
+  - BLPA does not re-key truck or cargo details at entry. Admit confirms data that arrives through BNSW and from the
+    C&F agent. The only hand entry is *Register unexpected truck*, which is flagged for management review.
+  - No truck is weighed before it has passed the entry gate; each checkpoint needs the previous one complete.
+  - No screen asks for the LC number at entry.
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 - **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate
