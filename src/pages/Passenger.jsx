@@ -108,6 +108,10 @@ function ChargeTable() {
   );
 }
 
+// Every tile is sized from the largest logo (Nagad, 73×32 at display size) plus 16px on each side,
+// so all tiles match whatever the logo's shape.
+const LOGO_BOX = { width: 73, height: 32 };
+
 // Logo tiles with a radio each, like BLPA's passenger site: easier to recognise than a list of names.
 function PaymentMethodPicker({ value, onChange }) {
   return (
@@ -115,18 +119,23 @@ function PaymentMethodPicker({ value, onChange }) {
       <FormLabel component="legend" sx={{ mb: 1, typography: 'body2' }}>Payment method</FormLabel>
       <RadioGroup
         value={value} onChange={(e) => onChange(e.target.value)}
-        sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: 1 }}
+        sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}
       >
         {paymentMethods.map((m) => {
           const selected = m.name === value;
           return (
             <FormControlLabel
               key={m.name} value={m.name} control={<Radio size="small" />}
-              label={m.logo
-                ? <Box component="img" src={m.logo} alt={m.name} sx={{ display: 'block', height: 32, maxWidth: 80, objectFit: 'contain' }} />
-                : <Stack direction="row" alignItems="center" gap={0.75}><CashRoundedIcon fontSize="small" /><Typography variant="body2">Cash</Typography></Stack>}
+              label={(
+                <Box sx={{ ...LOGO_BOX, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+                  {m.logo
+                    ? <Box component="img" src={m.logo} alt={m.name} sx={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    : <><CashRoundedIcon fontSize="small" /><Typography variant="body2">Cash</Typography></>}
+                </Box>
+              )}
               sx={{
-                m: 0, pr: 1.5, py: 0.5, minHeight: 52, borderRadius: 1.5, border: 1,
+                m: 0, borderRadius: 1.5, border: 1,
+                '& .MuiFormControlLabel-label': { p: 2 },
                 borderColor: selected ? 'primary.main' : 'divider',
                 bgcolor: (t) => (selected ? alpha(t.palette.primary.main, 0.08) : 'transparent'),
                 '&:hover': { borderColor: selected ? 'primary.main' : 'text.disabled' },
