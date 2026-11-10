@@ -69,12 +69,12 @@ function ManualRegistration({ open, onClose, onDone }) {
   );
 }
 
-function ArrivingRecord({ truck, side, onAdmit, onRefresh }) {
+function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
   const [confirm, setConfirm] = useState(false);
   const fee = truckClassRates[truck.cls][side === 'border' ? 'borderEntrance' : 'inlandEntrance'];
   const cameraCheck = {
-    label: truck.cameraPlate ? 'Camera plate matches the selected truck' : 'No camera plate read: check the vehicle manually',
-    ok: truck.cameraPlate === truck.plate,
+    label: plateRead ? 'Camera plate matches the selected truck' : 'No camera plate read: check the vehicle manually',
+    ok: plateRead === truck.plate,
     blocks: false,
   };
   const checks = side === 'border'
@@ -158,8 +158,8 @@ function ArrivingRecord({ truck, side, onAdmit, onRefresh }) {
           <Typography variant="body2" color="text.secondary">
             This records admission at {side === 'border' ? 'Border gate 1, lane B2' : 'Inland gate, lane 2'}, locks the truck assignment and adds an entrance fee of {formatBDT(fee)} to {truck.manifest}.
           </Typography>
-          {truck.cameraPlate !== truck.plate && (
-            <Alert severity="error" sx={{ mt: 2 }}>{truck.cameraPlate ? `The camera read ${truck.cameraPlate}.` : 'The camera could not read a plate.'} Confirm only after checking the vehicle yourself.</Alert>
+          {plateRead !== truck.plate && (
+            <Alert severity="error" sx={{ mt: 2 }}>{plateRead ? `The camera read ${plateRead}.` : 'The camera could not read a plate.'} Confirm only after checking the vehicle yourself.</Alert>
           )}
         </DialogContent>
         <DialogActions>
@@ -218,6 +218,9 @@ export default function GateWorkbench({ side }) {
   const [selected, setSelected] = useState((side === 'border' ? arrivingTrucks : inlandArriving)[0].plate);
   const [manual, setManual] = useState(false);
   const [toast, setToast] = useState('');
+  const [rereadPlates, setRereadPlates] = useState([]);
+  // Demo stand-in for the camera: a re-read returns a clean read of the expected plate.
+  const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate);
 
   const list = tab === 'arriving' ? arriving : leavingTrucks;
   const filtered = useMemo(
@@ -275,6 +278,7 @@ export default function GateWorkbench({ side }) {
               <ArrivingRecord
                 key={current.plate}
                 truck={current}
+                plateRead={plateReadFor(current)}
                 side={side}
                 onAdmit={(t) => {
                   setArriving((a) => a.filter((x) => x.plate !== t.plate));
@@ -299,7 +303,7 @@ export default function GateWorkbench({ side }) {
           )
         }
         rail={[
-          <CameraCard key="cam" lane={side === 'border' ? 'Lane B2' : 'Lane I2'} plate={current ? current.cameraPlate : null} expected={current?.plate} onReread={() => {}} />,
+          <CameraCard key="cam" lane={side === 'border' ? 'Lane B2' : 'Lane I2'} plate={current ? plateReadFor(current) : null} expected={current?.plate} onReread={() => current && setRereadPlates((p) => [...p, current.plate])} />,
           <Card key="moves" sx={{ p: 2.5, pb: 1.5 }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>Recent movements</Typography>
             <Stack divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
