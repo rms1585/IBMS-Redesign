@@ -33,7 +33,11 @@ export function RoleProvider({ children }) {
         setRoleId(id);
         try { localStorage.setItem(STORAGE_KEY, id); } catch { /* storage unavailable */ }
       },
-      canOpen: (path) => (!role.paths || role.paths.includes(path)) && !role.hidden?.includes(path),
+      // A sub-page such as /cf-portal/<manifest> follows the access of its parent screen.
+      canOpen: (path) => {
+        const within = (p) => path === p || (p !== '/' && path.startsWith(`${p}/`));
+        return (!role.paths || role.paths.some(within)) && !role.hidden?.some(within);
+      },
     };
   }, [roleId]);
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;

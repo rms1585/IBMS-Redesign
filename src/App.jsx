@@ -4,6 +4,7 @@ import useAutoHideScrollbars from './hooks/useAutoHideScrollbars';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import CfPortal from './pages/CfPortal';
+import CfManifest from './pages/CfManifest';
 import TraderPortal from './pages/TraderPortal';
 import Manifests from './pages/Manifests';
 import GateWorkbench from './pages/GateWorkbench';
@@ -44,6 +45,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="cf-portal" element={<CfPortal />} />
+        <Route path="cf-portal/:manifestId" element={<CfManifest />} />
         <Route path="trader-portal" element={<TraderPortal />} />
         <Route path="manifests" element={<Manifests />} />
         {/* Keys give each gate its own state; without them the inland gate kept the border queue. */}

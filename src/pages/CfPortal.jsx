@@ -117,7 +117,7 @@ export default function CfPortal() {
                       {m.balance > 0 && <Button size="small" variant="contained" onClick={() => setPay(m)}>Pay now</Button>}
                     </TableCell>
                     <TableCell sx={{ pr: 3 }}>
-                      {!m.preArrival && <Button size="small" color="inherit" onClick={() => navigate('/manifests')}>View details</Button>}
+                      {!m.preArrival && <Button size="small" color="inherit" onClick={() => navigate(`/cf-portal/${m.id}`)}>View details</Button>}
                     </TableCell>
                   </TableRow>
                 ))}

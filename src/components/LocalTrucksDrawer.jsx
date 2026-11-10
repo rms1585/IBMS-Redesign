@@ -8,7 +8,7 @@ import Label from './Label';
 import { localBookingStatus as status, vehicleTypes } from '../data/mock';
 import { AddRoundedIcon, CloseRoundedIcon } from './icons';
 
-const statusColor = { [status.booked]: 'info', [status.entered]: 'primary', [status.loaded]: 'success', [status.changeRequested]: 'warning' };
+export const statusColor = { [status.booked]: 'info', [status.entered]: 'primary', [status.loaded]: 'success', [status.changeRequested]: 'warning' };
 const roadClasses = vehicleTypes.filter((v) => v.mode === 'Road');
 const compactAction = { minWidth: 0, px: 1 };
 const tightColumns = { '& .MuiTableCell-root': { px: 1 }, '& .MuiTableCell-root:first-of-type': { pl: 3 }, '& .MuiTableCell-root:last-of-type': { pr: 3 } };
@@ -21,7 +21,7 @@ function plateProblem(plate) {
   return '';
 }
 
-function TruckDialog({ replacing, takenPlates, onClose, onSave }) {
+export function TruckDialog({ replacing, takenPlates, onClose, onSave }) {
   const [f, setF] = useState({ plate: '', driver: '', cls: replacing?.cls ?? '' });
   const set = (k) => (e) => setF({ ...f, [k]: k === 'plate' ? e.target.value.toUpperCase() : e.target.value });
   const plate = f.plate.trim();

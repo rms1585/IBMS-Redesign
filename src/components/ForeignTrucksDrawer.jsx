@@ -8,7 +8,7 @@ import Label from './Label';
 import { truckDataStatus, vehicleTypes, truckClassRates } from '../data/mock';
 import { AddRoundedIcon, CloseRoundedIcon } from './icons';
 
-const statusColor = {
+export const statusColor = {
   [truckDataStatus.entered]: 'warning',
   [truckDataStatus.validated]: 'success',
   [truckDataStatus.inPort]: 'default',
@@ -27,7 +27,7 @@ function classCharges(cls) {
   return `Entrance ${formatBDT(rates.borderEntrance)} · weighing ${formatBDT(rates.weighing)} (demo rates)`;
 }
 
-function TruckForm({ open, truck, takenPlates, onClose, onSave }) {
+export function TruckForm({ open, truck, takenPlates, onClose, onSave }) {
   const [f, setF] = useState(truck ?? emptyTruck);
   const set = (k) => (e) => setF({ ...f, [k]: k === 'plate' ? e.target.value.toUpperCase() : e.target.value });
   const editing = Boolean(truck);
