@@ -3,11 +3,11 @@ import { useParams } from 'react-router-dom';
 import {
   Card, Typography, Button, Menu, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Alert, Snackbar, Grid2 as Grid,
 } from '@mui/material';
-import { PageHeader, SectionCard, EmptyState, TableScroll, formatBDT, formatKg } from '../components/common';
+import { PageHeader, SectionCard, EmptyState, AssumptionNote, TableScroll, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
 import { TruckForm, statusColor as foreignStatusColor } from '../components/ForeignTrucksDrawer';
 import { TruckDialog as LocalTruckForm, statusColor as localStatusColor } from '../components/LocalTrucksDrawer';
-import { manifests } from '../data/mock';
+import { manifests, preArrivals } from '../data/mock';
 import { useCfTrucks } from '../CfTrucksContext';
 import { AddRoundedIcon, KeyboardArrowDownRoundedIcon } from '../components/icons';
 
@@ -66,10 +66,31 @@ function VehiclesTable({ rows }) {
   );
 }
 
+// Pre-arrival consignments have no IGM yet, so they show what is expected instead of Customs and billing.
+function summaryFor(m) {
+  if (m.preArrival) {
+    return [
+      ['Customs', <Label color="error">No IGM yet</Label>],
+      ['Land-port bill', 'Not billed yet'],
+      ['Expected', m.expected],
+      ['Goods', m.perishable ? 'Perishable' : 'Non-perishable'],
+      ['Status', 'Open'],
+    ];
+  }
+  return [
+    ['Customs', <Label color={customsColor[m.customs]}>{m.customs}</Label>],
+    ['Land-port bill', m.balance > 0 ? <Label color="warning">{formatBDT(m.balance)} due</Label> : <Label color="success">Paid</Label>],
+    ['Declared', formatKg(m.declaredKg)],
+    ['Still in port', formatKg(m.remainingKg)],
+    ['Status', m.status],
+  ];
+}
+
 // One manifest from the C&F portal: its summary and every vehicle under it, Indian and Bangladeshi.
 export default function CfManifest() {
   const { manifestId } = useParams();
-  const manifest = manifests.find((m) => m.id === manifestId);
+  const manifest = manifests.find((m) => m.id === manifestId)
+    ?? preArrivals.filter((p) => p.id === manifestId).map((p) => ({ ...p, preArrival: true, status: 'Open' }))[0];
   const { foreign: allForeign, local: allLocal, setForeignFor, setLocalFor } = useCfTrucks();
   const foreign = allForeign[manifestId] ?? [];
   const local = allLocal[manifestId] ?? [];
@@ -87,13 +108,7 @@ export default function CfManifest() {
   }
 
   const closed = manifest.status === 'Closed';
-  const summary = [
-    ['Customs', <Label color={customsColor[manifest.customs]}>{manifest.customs}</Label>],
-    ['Land-port bill', manifest.balance > 0 ? <Label color="warning">{formatBDT(manifest.balance)} due</Label> : <Label color="success">Paid</Label>],
-    ['Declared', formatKg(manifest.declaredKg)],
-    ['Still in port', formatKg(manifest.remainingKg)],
-    ['Status', manifest.status],
-  ];
+  const summary = summaryFor(manifest);
   const rows = [...foreign.map((t) => ({ ...t, side: 'foreign' })), ...local.map((t) => ({ ...t, side: 'local' }))];
   const save = (side, truck) => {
     if (side === 'foreign') setForeignFor(manifestId, [...foreign, truck]);
@@ -110,6 +125,11 @@ export default function CfManifest() {
         subtitle={`${manifest.product} · ${manifest.trader}`}
         action={<AddTruckButton disabled={closed} onPick={setAdding} />}
       />
+      {manifest.preArrival && (
+        <AssumptionNote code="F4" sx={{ mb: 3 }}>
+          Customs keys the IGM when the goods reach zero point. Until then this consignment uses an IBMS pre-arrival reference.
+        </AssumptionNote>
+      )}
       {/* Summary sits in a strip above so the vehicle table gets the full width. */}
       <Card sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={3}>
