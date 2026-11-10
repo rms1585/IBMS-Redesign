@@ -8,7 +8,8 @@ import { PageHeader, KpiCard, SectionCard, SearchField, formatBDT } from '../com
 import Label from '../components/Label';
 import ForeignTrucksDrawer from '../components/ForeignTrucksDrawer';
 import LocalTrucksDrawer from '../components/LocalTrucksDrawer';
-import { manifests, alerts, preArrivals, registeredTrucks, localBookings } from '../data/mock';
+import { manifests, alerts, preArrivals } from '../data/mock';
+import { useCfTrucks } from '../CfTrucksContext';
 import { LocalShippingRoundedIcon, NotificationsActiveRoundedIcon, PaymentsRoundedIcon, ReceiptLongRoundedIcon } from '../components/icons';
 
 const AGENCY = 'Rupsha Clearing & Forwarding';
@@ -50,9 +51,8 @@ export default function CfPortal() {
   const [search, setSearch] = useState('');
   const [pay, setPay] = useState(null);
   const [toast, setToast] = useState('');
-  const [trucks, setTrucks] = useState(registeredTrucks);
+  const { foreign: trucks, local: locals, setForeignFor, setLocalFor } = useCfTrucks();
   const [trucksFor, setTrucksFor] = useState(null);
-  const [locals, setLocals] = useState(localBookings);
   const [localsFor, setLocalsFor] = useState(null);
   const own = manifests.filter((m) => m.agency === AGENCY);
   const consignments = [...preArrivalRows, ...own];
@@ -154,7 +154,7 @@ export default function CfPortal() {
         <ForeignTrucksDrawer
           consignment={trucksFor}
           trucks={trucksFor ? trucks[trucksFor.id] ?? [] : []}
-          onChange={(next, message) => { setTrucks((all) => ({ ...all, [trucksFor.id]: next })); setToast(message); }}
+          onChange={(next, message) => { setForeignFor(trucksFor.id, next); setToast(message); }}
           onClose={() => setTrucksFor(null)}
         />
       </Drawer>
@@ -164,7 +164,7 @@ export default function CfPortal() {
             key={localsFor.id}
             consignment={localsFor}
             trucks={locals[localsFor.id] ?? []}
-            onChange={(next, message) => { setLocals((all) => ({ ...all, [localsFor.id]: next })); setToast(message); }}
+            onChange={(next, message) => { setLocalFor(localsFor.id, next); setToast(message); }}
             onClose={() => setLocalsFor(null)}
           />
         )}

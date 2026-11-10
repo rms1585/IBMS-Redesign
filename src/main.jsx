@@ -8,6 +8,7 @@ import '@fontsource/public-sans/700.css';
 import '@fontsource/public-sans/800.css';
 import { ColorModeProvider } from './ColorModeContext';
 import { RoleProvider } from './RoleContext';
+import { CfTrucksProvider } from './CfTrucksContext';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ColorModeProvider>
       <RoleProvider>
         <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <App />
+          <CfTrucksProvider>
+            <App />
+          </CfTrucksProvider>
         </HashRouter>
       </RoleProvider>
     </ColorModeProvider>

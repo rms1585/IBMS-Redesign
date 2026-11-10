@@ -7,7 +7,8 @@ import { PageHeader, SectionCard, EmptyState, TableScroll, formatBDT, formatKg }
 import Label from '../components/Label';
 import { TruckForm, statusColor as foreignStatusColor } from '../components/ForeignTrucksDrawer';
 import { TruckDialog as LocalTruckForm, statusColor as localStatusColor } from '../components/LocalTrucksDrawer';
-import { manifests, registeredTrucks, localBookings } from '../data/mock';
+import { manifests } from '../data/mock';
+import { useCfTrucks } from '../CfTrucksContext';
 import { AddRoundedIcon, KeyboardArrowDownRoundedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
@@ -69,8 +70,9 @@ function VehiclesTable({ rows }) {
 export default function CfManifest() {
   const { manifestId } = useParams();
   const manifest = manifests.find((m) => m.id === manifestId);
-  const [foreign, setForeign] = useState(registeredTrucks[manifestId] ?? []);
-  const [local, setLocal] = useState(localBookings[manifestId] ?? []);
+  const { foreign: allForeign, local: allLocal, setForeignFor, setLocalFor } = useCfTrucks();
+  const foreign = allForeign[manifestId] ?? [];
+  const local = allLocal[manifestId] ?? [];
   const [adding, setAdding] = useState(null);
   const [toast, setToast] = useState('');
 
@@ -94,8 +96,8 @@ export default function CfManifest() {
   ];
   const rows = [...foreign.map((t) => ({ ...t, side: 'foreign' })), ...local.map((t) => ({ ...t, side: 'local' }))];
   const save = (side, truck) => {
-    if (side === 'foreign') setForeign((all) => [...all, truck]);
-    else setLocal((all) => [...all, truck]);
+    if (side === 'foreign') setForeignFor(manifestId, [...foreign, truck]);
+    else setLocalFor(manifestId, [...local, truck]);
     setAdding(null);
     setToast(`${truck.plate} added to ${manifest.id}.`);
   };
