@@ -108,8 +108,8 @@ function ChargeTable() {
   );
 }
 
-// Every tile is sized from the largest logo (Nagad, 73×32 at display size) plus 16px on each side,
-// so all tiles match whatever the logo's shape.
+// Every tile is sized from the largest logo (Nagad, 73×32 at display size) plus 16px top, right and bottom,
+// so all tiles match whatever the logo's shape. The left gap is small because the radio already has its own padding.
 const LOGO_BOX = { width: 73, height: 32 };
 
 // Logo tiles with a radio each, like BLPA's passenger site: easier to recognise than a list of names.
@@ -127,7 +127,7 @@ function PaymentMethodPicker({ value, onChange }) {
             <FormControlLabel
               key={m.name} value={m.name} control={<Radio size="small" />}
               label={(
-                <Box sx={{ ...LOGO_BOX, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+                <Box sx={{ ...LOGO_BOX, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 0.75 }}>
                   {m.logo
                     ? <Box component="img" src={m.logo} alt={m.name} sx={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                     : <><CashRoundedIcon fontSize="small" /><Typography variant="body2">Cash</Typography></>}
@@ -135,7 +135,7 @@ function PaymentMethodPicker({ value, onChange }) {
               )}
               sx={{
                 m: 0, borderRadius: 1.5, border: 1,
-                '& .MuiFormControlLabel-label': { p: 2 },
+                '& .MuiFormControlLabel-label': { py: 2, pr: 2, pl: 0.5 },
                 borderColor: selected ? 'primary.main' : 'divider',
                 bgcolor: (t) => (selected ? alpha(t.palette.primary.main, 0.08) : 'transparent'),
                 '&:hover': { borderColor: selected ? 'primary.main' : 'text.disabled' },
