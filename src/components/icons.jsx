@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Add01Icon, Analytics01Icon, AnalyticsDownIcon, AnalyticsUpIcon, ArrowDataTransferHorizontalIcon, ArrowDown01Icon,
-  ArrowLeft01Icon, ArrowRight01Icon, Briefcase01Icon, Bus01Icon, Cancel01Icon, CancelCircleIcon, CheckListIcon,
+  ArrowLeft01Icon, ArrowRight01Icon, Briefcase01Icon, Bus01Icon, Cancel01Icon, CancelCircleIcon, Cash01Icon, CheckListIcon,
   CheckmarkCircle02Icon, Clock01Icon, ContainerTruck02Icon, CreditCardIcon, DashboardSquare01Icon, DeliveryTruck01Icon,
   DocumentValidationIcon, Download01Icon, FileUploadIcon, ForkliftIcon, Globe02Icon, GridViewIcon, Home01Icon, InboxIcon,
   Invoice01Icon, LockIcon, Menu01Icon, Moon02Icon, MoreHorizontalIcon, MoreVerticalIcon, Notification01Icon, Notification03Icon,
@@ -79,6 +79,7 @@ export const MoreHorizRoundedIcon = createIcon(MoreHorizontalIcon, 'MoreHorizRou
 export const MoreVertRoundedIcon = createIcon(MoreVerticalIcon, 'MoreVertRoundedIcon');
 export const NotificationsActiveRoundedIcon = createIcon(Notification03Icon, 'NotificationsActiveRoundedIcon');
 export const NotificationsNoneRoundedIcon = createIcon(Notification01Icon, 'NotificationsNoneRoundedIcon');
+export const CashRoundedIcon = createIcon(Cash01Icon, 'CashRoundedIcon');
 export const PaymentsRoundedIcon = createIcon(CreditCardIcon, 'PaymentsRoundedIcon');
 export const PeopleAltRoundedIcon = createIcon(UserGroupIcon, 'PeopleAltRoundedIcon');
 export const PrecisionManufacturingRoundedIcon = createIcon(ForkliftIcon, 'PrecisionManufacturingRoundedIcon');

@@ -1,12 +1,25 @@
 import { useState } from 'react';
 import {
   Box, Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
-  Autocomplete, Table, TableHead, TableRow, TableCell, TableBody,
+  Autocomplete, Table, TableHead, TableRow, TableCell, TableBody, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { PageHeader, KpiCard, AssumptionNote, formatBDT } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
-import { AddRoundedIcon } from '../components/icons';
+import { AddRoundedIcon, CashRoundedIcon } from '../components/icons';
+import bkashLogo from '../assets/payment/bkash.png';
+import nagadLogo from '../assets/payment/nagad.png';
+import upayLogo from '../assets/payment/upay.png';
+import rocketLogo from '../assets/payment/rocket.png';
+import tapLogo from '../assets/payment/tap.png';
+import meghnaPayLogo from '../assets/payment/meghna-pay.png';
+import okWalletLogo from '../assets/payment/ok-wallet.png';
+import modhumotiLogo from '../assets/payment/modhumoti.png';
+import nexusDbblLogo from '../assets/payment/nexus-dbbl.png';
+import amexLogo from '../assets/payment/amex.png';
+import mastercardLogo from '../assets/payment/mastercard.jpg';
+import visaLogo from '../assets/payment/visa.jpg';
 
 // Benapole charges as shown on BLPA's passenger site (passenger.blpa.gov.bd), read 10 Nov 2026.
 const FACILITY_CHARGE = 52.27;
@@ -24,9 +37,21 @@ const countries = [
   'JPN-Japan', 'KOR-Korea, Republic of', 'LKA-Sri Lanka', 'MMR-Myanmar', 'MYS-Malaysia', 'PAK-Pakistan', 'SAU-Saudi Arabia',
   'SGP-Singapore', 'THA-Thailand', 'USA-United States',
 ];
+// Logos as shown on BLPA's passenger site; cash at the counter is IBMS's own option.
 const paymentMethods = [
-  'Cash at counter', 'bKash', 'Nagad', 'Upay', 'Rocket', 'Tap', 'MeghnaPay', 'OK Wallet', 'Modhumoti Bank Internet Banking',
-  'NEXUS-DBBL', 'AMEX-City', 'MASTER-Brac', 'VISA-Brac',
+  { name: 'Cash at counter' },
+  { name: 'bKash', logo: bkashLogo },
+  { name: 'Nagad', logo: nagadLogo },
+  { name: 'Upay', logo: upayLogo },
+  { name: 'Rocket', logo: rocketLogo },
+  { name: 'Tap', logo: tapLogo },
+  { name: 'MeghnaPay', logo: meghnaPayLogo },
+  { name: 'OK Wallet', logo: okWalletLogo },
+  { name: 'Modhumoti Bank Internet Banking', logo: modhumotiLogo },
+  { name: 'NEXUS-DBBL', logo: nexusDbblLogo },
+  { name: 'AMEX-City', logo: amexLogo },
+  { name: 'MASTER-Brac', logo: mastercardLogo },
+  { name: 'VISA-Brac', logo: visaLogo },
 ];
 const categories = ['Standard', 'Illiterate (assisted)', 'Disabled', 'Sick', 'Exempt under the Customs Act'];
 const today = () => new Date().toISOString().slice(0, 10);
@@ -58,7 +83,7 @@ function amountInWords(amount) {
 const maskPassport = (p) => `•••• ${p.slice(-4)}`;
 const phoneProblem = (phone) => (phone && !/^01\d{9}$/.test(phone) ? 'Use 11 digits starting with 01' : '');
 
-const emptyPassenger = { name: '', phone: '', port: ports[0], country: null, passport: '', date: today(), category: 'Standard', method: paymentMethods[0] };
+const emptyPassenger = { name: '', phone: '', port: ports[0], country: null, passport: '', date: today(), category: 'Standard', method: paymentMethods[0].name };
 
 function ChargeTable() {
   const rows = [['Passenger Facilities Charge', FACILITY_CHARGE], ['VAT 15%', VAT], ['Convenience Fee', CONVENIENCE_FEE]];
@@ -80,6 +105,37 @@ function ChargeTable() {
       </Table>
       <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1.25 }}>In words: {amountInWords(PASSENGER_TOTAL)} taka</Typography>
     </Box>
+  );
+}
+
+// Logo tiles with a radio each, like BLPA's passenger site: easier to recognise than a list of names.
+function PaymentMethodPicker({ value, onChange }) {
+  return (
+    <FormControl component="fieldset" fullWidth>
+      <FormLabel component="legend" sx={{ mb: 1, typography: 'body2' }}>Payment method</FormLabel>
+      <RadioGroup
+        value={value} onChange={(e) => onChange(e.target.value)}
+        sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: 1 }}
+      >
+        {paymentMethods.map((m) => {
+          const selected = m.name === value;
+          return (
+            <FormControlLabel
+              key={m.name} value={m.name} control={<Radio size="small" />}
+              label={m.logo
+                ? <Box component="img" src={m.logo} alt={m.name} sx={{ display: 'block', height: 32, maxWidth: 80, objectFit: 'contain' }} />
+                : <Stack direction="row" alignItems="center" gap={0.75}><CashRoundedIcon fontSize="small" /><Typography variant="body2">Cash</Typography></Stack>}
+              sx={{
+                m: 0, pr: 1.5, py: 0.5, minHeight: 52, borderRadius: 1.5, border: 1,
+                borderColor: selected ? 'primary.main' : 'divider',
+                bgcolor: (t) => (selected ? alpha(t.palette.primary.main, 0.08) : 'transparent'),
+                '&:hover': { borderColor: selected ? 'primary.main' : 'text.disabled' },
+              }}
+            />
+          );
+        })}
+      </RadioGroup>
+    </FormControl>
   );
 }
 
@@ -126,11 +182,7 @@ function PassengerDialog({ paidToday, onClose, onSave }) {
               {categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField select fullWidth label="Payment method" value={f.method} onChange={set('method')}>
-              {paymentMethods.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-            </TextField>
-          </Grid>
+          <Grid size={12}><PaymentMethodPicker value={f.method} onChange={(method) => setF({ ...f, method })} /></Grid>
           <Grid size={12}><ChargeTable /></Grid>
         </Grid>
       </DialogContent>
