@@ -127,7 +127,7 @@ function PaymentMethodPicker({ value, onChange }) {
             <FormControlLabel
               key={m.name} value={m.name} control={<Radio size="small" />}
               label={(
-                <Box sx={{ ...LOGO_BOX, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 0.75 }}>
+                <Box sx={{ ...LOGO_BOX, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
                   {m.logo
                     ? <Box component="img" src={m.logo} alt={m.name} sx={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                     : <><CashRoundedIcon fontSize="small" /><Typography variant="body2">Cash</Typography></>}
