@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Card, Stack, Typography, Button, Menu, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Alert, Snackbar, Grid2 as Grid,
+  Card, Typography, Button, Menu, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Alert, Snackbar, Grid2 as Grid,
 } from '@mui/material';
-import { PageHeader, SectionCard, DetailRow, EmptyState, TableScroll, formatBDT, formatKg } from '../components/common';
+import { PageHeader, SectionCard, EmptyState, TableScroll, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
 import { TruckForm, statusColor as foreignStatusColor } from '../components/ForeignTrucksDrawer';
 import { TruckDialog as LocalTruckForm, statusColor as localStatusColor } from '../components/LocalTrucksDrawer';
@@ -85,6 +85,13 @@ export default function CfManifest() {
   }
 
   const closed = manifest.status === 'Closed';
+  const summary = [
+    ['Customs', <Label color={customsColor[manifest.customs]}>{manifest.customs}</Label>],
+    ['Land-port bill', manifest.balance > 0 ? <Label color="warning">{formatBDT(manifest.balance)} due</Label> : <Label color="success">Paid</Label>],
+    ['Declared', formatKg(manifest.declaredKg)],
+    ['Still in port', formatKg(manifest.remainingKg)],
+    ['Status', manifest.status],
+  ];
   const rows = [...foreign.map((t) => ({ ...t, side: 'foreign' })), ...local.map((t) => ({ ...t, side: 'local' }))];
   const save = (side, truck) => {
     if (side === 'foreign') setForeign((all) => [...all, truck]);
@@ -101,26 +108,20 @@ export default function CfManifest() {
         subtitle={`${manifest.product} · ${manifest.trader}`}
         action={<AddTruckButton disabled={closed} onPick={setAdding} />}
       />
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <SectionCard title="Manifest">
-            <Stack sx={{ px: 3, pb: 3 }}>
-              <DetailRow label="Customs"><Label color={customsColor[manifest.customs]}>{manifest.customs}</Label></DetailRow>
-              <DetailRow label="Land-port bill">
-                {manifest.balance > 0 ? <Label color="warning">{formatBDT(manifest.balance)} due</Label> : <Label color="success">Paid</Label>}
-              </DetailRow>
-              <DetailRow label="Declared">{formatKg(manifest.declaredKg)}</DetailRow>
-              <DetailRow label="Still in port">{formatKg(manifest.remainingKg)}</DetailRow>
-              <DetailRow label="Status">{manifest.status}</DetailRow>
-            </Stack>
-          </SectionCard>
+      {/* Summary sits in a strip above so the vehicle table gets the full width. */}
+      <Card sx={{ p: 3, mb: 3 }}>
+        <Grid container spacing={3}>
+          {summary.map(([label, value]) => (
+            <Grid key={label} size={{ xs: 6, sm: 4, md: 'grow' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>{label}</Typography>
+              <Typography variant="subtitle2" component="div">{value}</Typography>
+            </Grid>
+          ))}
         </Grid>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <SectionCard title="Vehicles" subheader={`${foreign.length} Indian · ${local.length} Bangladeshi`}>
-            <VehiclesTable rows={rows} />
-          </SectionCard>
-        </Grid>
-      </Grid>
+      </Card>
+      <SectionCard title="Vehicles" subheader={`${foreign.length} Indian · ${local.length} Bangladeshi`}>
+        <VehiclesTable rows={rows} />
+      </SectionCard>
       {adding === 'foreign' && (
         <TruckForm open truck={null} takenPlates={foreign.map((t) => t.plate)} onClose={() => setAdding(null)} onSave={(t) => save('foreign', t)} />
       )}
