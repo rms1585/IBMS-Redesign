@@ -22,9 +22,9 @@ const compactAction = { minWidth: 0, px: 1 };
 const tightColumns = { '& .MuiTableCell-root': { px: 1 }, '& .MuiTableCell-root:first-of-type': { pl: 3 }, '& .MuiTableCell-root:last-of-type': { pr: 3 } };
 
 function classCharges(cls) {
-  if (!cls) return 'Sets the entrance and weighing charges';
+  if (!cls) return 'Advance information. Customs confirms the class at zero point, and charges follow it';
   const rates = truckClassRates[cls];
-  return `Entrance ${formatBDT(rates.borderEntrance)} · weighing ${formatBDT(rates.weighing)} (demo rates)`;
+  return `Entrance ${formatBDT(rates.borderEntrance)} · weighing ${formatBDT(rates.weighing)} if Customs confirms this class (demo rates)`;
 }
 
 export function TruckForm({ open, truck, takenPlates, onClose, onSave }) {

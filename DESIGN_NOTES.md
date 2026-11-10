@@ -209,6 +209,8 @@ Plates, manifest IDs and references use a monospace font.
     C&F agent. The only hand entry is *Register unexpected truck*, which is flagged for management review.
   - No truck is weighed before it has passed the entry gate; each checkpoint needs the previous one complete.
   - No screen asks for the LC number at entry.
+  - The border gate charges the entrance fee on the truck class Customs records at zero point. The C&F agent's class
+    is advance information; a difference is flagged on the record, not charged.
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 - **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate

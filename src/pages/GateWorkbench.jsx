@@ -71,7 +71,11 @@ function ManualRegistration({ open, onClose, onDone }) {
 
 function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
   const [confirm, setConfirm] = useState(false);
-  const fee = truckClassRates[truck.cls][side === 'border' ? 'borderEntrance' : 'inlandEntrance'];
+  // At the border BLPA charges on the class Customs records at zero point; the C&F class is advance information.
+  // Inland trucks are Bangladeshi and keep the class from the C&F booking.
+  const feeCls = side === 'border' ? truck.customsCls : truck.cls;
+  const fee = feeCls ? truckClassRates[feeCls][side === 'border' ? 'borderEntrance' : 'inlandEntrance'] : null;
+  const classDiffers = side === 'border' && truck.customsCls && truck.customsCls !== truck.cls;
   const cameraCheck = {
     label: plateRead ? 'Camera plate matches the selected truck' : 'No camera plate read: check the vehicle manually',
     ok: plateRead === truck.plate,
@@ -91,7 +95,7 @@ function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
             {truck.firstVisit && <Label color="info">First visit</Label>}
             {truck.perishable && <PerishableLabel />}
           </Stack>
-          <Typography variant="body2" color="text.secondary">{truck.kind} · {truck.cls} · expected {truck.eta}</Typography>
+          <Typography variant="body2" color="text.secondary">{truck.kind} · {feeCls ?? truck.cls} · expected {truck.eta}</Typography>
         </Box>
         {awaitingIgm(truck) ? <Label color="error">No IGM yet</Label> : <Label color={customsColor[truck.customs]}>Customs: {truck.customs}</Label>}
       </Stack>
@@ -113,7 +117,20 @@ function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
           <Typography variant="overline" color="text.disabled">Driver</Typography>
           <DetailRow label="Name">{truck.driver}</DetailRow>
           <DetailRow label="Driver card">{truck.driverCard}</DetailRow>
-          <DetailRow label="Entry fee">{formatBDT(fee)} <Typography component="span" variant="caption" color="text.disabled">({side} gate rate)</Typography></DetailRow>
+          {side === 'border' ? (
+            <DetailRow label="Truck class">
+              {truck.customsCls ?? truck.cls}{' '}
+              <Typography component="span" variant="caption" color="text.disabled">{truck.customsCls ? '(from Customs)' : '(from the C&F agent, not yet confirmed by Customs)'}</Typography>
+              {classDiffers && <Box sx={{ mt: 0.5 }}><Label color="warning">C&amp;F entered {truck.cls}</Label></Box>}
+            </DetailRow>
+          ) : (
+            <DetailRow label="Truck class">{truck.cls}</DetailRow>
+          )}
+          <DetailRow label="Entry fee">
+            {fee === null
+              ? <Typography component="span" variant="body2" color="text.secondary">Set when Customs confirms the class</Typography>
+              : <>{formatBDT(fee)} <Typography component="span" variant="caption" color="text.disabled">({side} gate rate)</Typography></>}
+          </DetailRow>
         </Grid>
       </Grid>
       <Divider sx={{ borderStyle: 'dashed' }} />
@@ -288,7 +305,7 @@ export default function GateWorkbench({ side }) {
                 onRefresh={(t) => {
                   // Demo stand-in for a BNSW update: Customs keys the IGM and validates the truck at zero point.
                   setArriving((a) => a.map((x) => (x.plate === t.plate
-                    ? { ...x, igm: 'Received', manifest: x.manifest ?? x.igmOnKey, truckData: truckDataStatus.validated }
+                    ? { ...x, igm: 'Received', manifest: x.manifest ?? x.igmOnKey, truckData: truckDataStatus.validated, customsCls: x.customsCls ?? x.cls }
                     : x)));
                   setToast(awaitingIgm(t)
                     ? `Customs keyed ${t.igmOnKey} and validated ${t.plate}. The truck can be admitted.`
