@@ -211,6 +211,13 @@ Plates, manifest IDs and references use a monospace font.
   - No screen asks for the LC number at entry.
   - The border gate charges the entrance fee on the truck class Customs records at zero point. The C&F agent's class
     is advance information; a difference is flagged on the record, not charged.
+- **Phase 4, weighing** (consultation minutes, item 6, F16 to F18):
+  - Weight capture, manual entry and confirmation stop until the plate read matches the expected truck, the truck has
+    passed the entry gate, and the bridge camera shows the whole truck inside the marked area.
+  - The weight-tolerance flag against the declared weight is information only. It never deducts weight or changes the
+    scale reading; the figure (proposed 5%) waits on BLPA and Customs.
+  - Every confirmed weight is written to the audit log against the user. A manual weight needs a reason and is flagged
+    Override and Manual pending reconciliation.
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 - **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate
