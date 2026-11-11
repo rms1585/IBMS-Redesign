@@ -7,7 +7,8 @@ import { alpha } from '@mui/material/styles';
 import { PageHeader, DetailRow, formatKg, EmptyState } from '../components/common';
 import { Workbench, QueueCard, CameraCard, BridgeCameraCard } from '../components/Workbench';
 import Label from '../components/Label';
-import { weighQueue } from '../data/mock';
+import { weighQueue, currentUser } from '../data/mock';
+import { useAudit } from '../AuditContext';
 
 function ManualWeight({ open, onClose, onConfirm }) {
   const [kg, setKg] = useState('');
@@ -122,7 +123,7 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
           )}
         </Stack>
       </Stack>
-      <ManualWeight open={manual} onClose={() => setManual(false)} onConfirm={(kg) => { setManual(false); setCaptured({ kg, method: 'manual' }); }} />
+      <ManualWeight open={manual} onClose={() => setManual(false)} onConfirm={(kg, reason) => { setManual(false); setCaptured({ kg, method: 'manual', reason }); }} />
     </Card>
   );
 }
@@ -134,6 +135,7 @@ export default function Weighbridge() {
   const [selected, setSelected] = useState(weighQueue[0].plate);
   const [toast, setToast] = useState('');
   const [rereadPlates, setRereadPlates] = useState([]);
+  const { addEvent } = useAudit();
   const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate ?? t.plate);
   // Demo stand-in for the bridge camera: a re-check finds the truck moved fully onto the bridge.
   const [repositioned, setRepositioned] = useState([]);
@@ -188,6 +190,14 @@ export default function Weighbridge() {
               onConfirmed={(t, c) => {
                 setQueue((q) => q.filter((x) => x.plate !== t.plate));
                 setSelected(null);
+                // Every confirmed weight goes to the audit log; a manual one is flagged for reconciliation (F16).
+                addEvent({
+                  actor: currentUser.name, role: currentUser.role, module: 'Weighing', type: 'Record',
+                  text: c.method === 'manual'
+                    ? `Entered manual weight ${formatKg(c.kg)} for ${t.plate} (${c.reason})`
+                    : `Captured ${t.reason.startsWith('Loaded') ? 'loaded' : 'empty'} weight ${formatKg(c.kg)} for ${t.plate} on Scale 1`,
+                  flags: c.method === 'manual' ? ['Override', 'Manual pending reconciliation'] : [],
+                });
                 setToast(`${formatKg(c.kg)} recorded for ${t.plate} (${c.method}). Weighment charge added.`);
               }}
             />

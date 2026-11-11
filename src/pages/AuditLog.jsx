@@ -3,17 +3,18 @@ import { Box, Card, Stack, Typography, Button, TextField, MenuItem, Drawer, Icon
 import { PageHeader, DetailRow } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
-import { auditEvents } from '../data/mock';
+import { useAudit } from '../AuditContext';
 import { CloseRoundedIcon, FileDownloadOutlinedIcon } from '../components/icons';
 
 const flagColor = { Override: 'warning', 'Recorded offline': 'info', 'Manual pending reconciliation': 'error' };
-const modules = ['All', ...new Set(auditEvents.map((e) => e.module))];
 
 export default function AuditLog() {
+  const { events } = useAudit();
+  const modules = ['All', ...new Set(events.map((e) => e.module))];
   const [module, setModule] = useState('All');
   const [flags, setFlags] = useState([]);
   const [open, setOpen] = useState(null);
-  const rows = auditEvents.filter((e) => (module === 'All' || e.module === module) && (flags.length === 0 || flags.some((f) => e.flags.includes(f))));
+  const rows = events.filter((e) => (module === 'All' || e.module === module) && (flags.length === 0 || flags.some((f) => e.flags.includes(f))));
 
   return (
     <>
