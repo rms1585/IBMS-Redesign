@@ -4,10 +4,10 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { PageHeader, DetailRow, formatKg, EmptyState, AssumptionNote } from '../components/common';
+import { PageHeader, DetailRow, formatKg, formatBDT, EmptyState, AssumptionNote } from '../components/common';
 import { Workbench, QueueCard, CameraCard, BridgeCameraCard } from '../components/Workbench';
 import Label from '../components/Label';
-import { weighQueue, currentUser } from '../data/mock';
+import { weighQueue, currentUser, truckClassRates } from '../data/mock';
 import { useAudit } from '../AuditContext';
 
 function ManualWeight({ open, onClose, onConfirm }) {
@@ -42,6 +42,9 @@ function ManualWeight({ open, onClose, onConfirm }) {
     </Dialog>
   );
 }
+
+// Weighing is charged on the class Customs recorded, as the border gate fee is (cards #27 and #36).
+const weighingCharge = (truck) => (truck.customsCls ? truckClassRates[truck.customsCls].weighing : null);
 
 // Proposed tolerance against the declared weight (F18): 5% either way, still to be confirmed by BLPA and Customs.
 const TOLERANCE = 0.05;
@@ -127,7 +130,16 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
         </Grid>
         <Grid size={{ xs: 12, xl: 6 }}>
           <DetailRow label="Driver">{truck.driver}</DetailRow>
-          <DetailRow label="Class">{truck.cls}</DetailRow>
+          <DetailRow label="Class">
+            {truck.customsCls ?? truck.cls}{' '}
+            <Typography component="span" variant="caption" color="text.disabled">{truck.customsCls ? '(from Customs)' : '(from the C&F agent, not yet confirmed by Customs)'}</Typography>
+            {truck.customsCls && truck.customsCls !== truck.cls && <Box sx={{ mt: 0.5 }}><Label color="warning">C&amp;F entered {truck.cls}</Label></Box>}
+          </DetailRow>
+          <DetailRow label="Weighing charge">
+            {weighingCharge(truck) == null
+              ? <Typography component="span" variant="body2" color="text.secondary">Set when Customs confirms the class</Typography>
+              : formatBDT(weighingCharge(truck))}
+          </DetailRow>
           <DetailRow label="Stored tare">{truck.tare ? `${formatKg(truck.tare)} · ${truck.tareAge}` : truck.tareAge}</DetailRow>
         </Grid>
       </Grid>
@@ -221,7 +233,7 @@ export default function Weighbridge() {
                     + (tolerance?.outside ? `; net cargo ${(tolerance.share * 100).toFixed(1)}% from declared, flagged for Customs` : ''),
                   flags: c.method === 'manual' ? ['Override', 'Manual pending reconciliation'] : [],
                 });
-                setToast(`${formatKg(c.kg)} recorded for ${t.plate} (${c.method}). Weighment charge added.`);
+                setToast(`${formatKg(c.kg)} recorded for ${t.plate} (${c.method}). Weighment charge ${formatBDT(weighingCharge(t))} added.`);
               }}
             />
           ) : (

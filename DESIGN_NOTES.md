@@ -216,6 +216,8 @@ Plates, manifest IDs and references use a monospace font.
     passed the entry gate, and the bridge camera shows the whole truck inside the marked area.
   - The weight-tolerance flag against the declared weight is information only. It never deducts weight or changes the
     scale reading; the figure (proposed 5%) waits on BLPA and Customs.
+  - The weighing charge follows the truck class Customs recorded, like the border gate fee; a different C&F class is
+    flagged, not charged.
   - Every confirmed weight is written to the audit log against the user. A manual weight needs a reason and is flagged
     Override and Manual pending reconciliation.
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
