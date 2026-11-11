@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { PageHeader, DetailRow, formatKg, EmptyState } from '../components/common';
-import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
+import { Workbench, QueueCard, CameraCard, BridgeCameraCard } from '../components/Workbench';
 import Label from '../components/Label';
 import { weighQueue } from '../data/mock';
 
@@ -42,14 +42,16 @@ function ManualWeight({ open, onClose, onConfirm }) {
   );
 }
 
-// Weighing needs a truck that has passed the entry gate and whose plate matches the camera read (F17).
-function weighingBlock(truck, plateRead) {
+// Weighing needs a truck that has passed the entry gate, whose plate matches the camera read (F17),
+// and that sits fully inside the marked area on the bridge camera.
+function weighingBlock(truck, plateRead, inPosition) {
   if (!truck.admitted) return 'This truck has not been admitted at the entry gate. It can be weighed only after entry.';
   if (plateRead !== truck.plate) return `The camera read ${plateRead}, which doesn't match this truck. Weight capture stays stopped until the plate matches.`;
+  if (!inPosition) return 'The truck is not fully inside the marked area. Weight capture stays stopped until it is.';
   return null;
 }
 
-function WeighRecord({ truck, plateRead, onConfirmed }) {
+function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
   const [live, setLive] = useState(truck.live);
   const [captured, setCaptured] = useState(null);
   const [manual, setManual] = useState(false);
@@ -61,7 +63,7 @@ function WeighRecord({ truck, plateRead, onConfirmed }) {
     return () => clearInterval(id);
   }, [captured, truck.live]);
 
-  const block = weighingBlock(truck, plateRead);
+  const block = weighingBlock(truck, plateRead, inPosition);
   const loaded = truck.reason.startsWith('Loaded');
   const tareValid = truck.tare && !truck.tareAge.includes('expired');
   const net = captured && loaded && tareValid ? captured.kg - truck.tare : null;
@@ -133,6 +135,9 @@ export default function Weighbridge() {
   const [toast, setToast] = useState('');
   const [rereadPlates, setRereadPlates] = useState([]);
   const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate ?? t.plate);
+  // Demo stand-in for the bridge camera: a re-check finds the truck moved fully onto the bridge.
+  const [repositioned, setRepositioned] = useState([]);
+  const inPositionFor = (t) => t.inPosition !== false || repositioned.includes(t.plate);
 
   const tabQueue = queue.filter((t) => (tab === 'entry' ? t.reason.startsWith('Loaded') : !t.reason.startsWith('Loaded')));
   const filtered = tabQueue.filter((t) => `${t.plate} ${t.manifest}`.toLowerCase().includes(search.toLowerCase()));
@@ -167,7 +172,7 @@ export default function Weighbridge() {
                 <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label color={t.reason.startsWith('Loaded') ? 'primary' : 'info'}>{t.reason}</Label>
                   {(!t.tare || t.tareAge.includes('expired')) && <Label color="warning">Tare needed</Label>}
-                  {weighingBlock(t, plateReadFor(t)) && <Label color="error">Stopped</Label>}
+                  {weighingBlock(t, plateReadFor(t), inPositionFor(t)) && <Label color="error">Stopped</Label>}
                 </Stack>
               </>
             )}
@@ -179,6 +184,7 @@ export default function Weighbridge() {
               key={current.plate}
               truck={current}
               plateRead={plateReadFor(current)}
+              inPosition={inPositionFor(current)}
               onConfirmed={(t, c) => {
                 setQueue((q) => q.filter((x) => x.plate !== t.plate));
                 setSelected(null);
@@ -189,7 +195,10 @@ export default function Weighbridge() {
             <Card><EmptyState title="Select a truck to weigh" sx={{ py: 12 }} /></Card>
           )
         }
-        rail={[<CameraCard key="cam" lane="Scale 1" plate={current ? plateReadFor(current) : null} expected={current?.plate} onReread={() => current && setRereadPlates((p) => [...p, current.plate])} />]}
+        rail={[
+          <CameraCard key="cam" lane="Scale 1 · plate" plate={current ? plateReadFor(current) : null} expected={current?.plate} onReread={() => current && setRereadPlates((p) => [...p, current.plate])} />,
+          <BridgeCameraCard key="bridge" lane="Scale 1 · bridge" inPosition={current ? inPositionFor(current) : true} onRecheck={current ? () => setRepositioned((p) => [...p, current.plate]) : undefined} />,
+        ]}
       />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>

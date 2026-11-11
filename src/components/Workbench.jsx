@@ -92,29 +92,39 @@ export function QueueCard({ title, count, search, onSearch, placeholder, items, 
   );
 }
 
-export function CameraCard({ lane, plate, expected, onReread }) {
+// The live video area shared by the plate camera and the bridge camera; `overlay` draws on top of the feed.
+function CameraFeed({ lane, overlay }) {
   const theme = useTheme();
+  return (
+    <Box
+      sx={{
+        height: 170, position: 'relative', display: 'grid', placeItems: 'center',
+        background: `repeating-linear-gradient(135deg, ${theme.palette.grey[800]} 0 12px, ${theme.palette.grey[900]} 12px 24px)`,
+        color: alpha('#fff', 0.4),
+      }}
+    >
+      <VideocamRoundedIcon sx={{ fontSize: 40 }} />
+      <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
+        <Label color="error" variant="filled">● LIVE</Label>
+        <Label variant="filled" sx={{ bgcolor: alpha('#000', 0.5), color: '#fff' }}>{lane}</Label>
+      </Box>
+      {overlay}
+    </Box>
+  );
+}
+
+export function CameraCard({ lane, plate, expected, onReread }) {
   const match = plate && expected ? plate === expected : null;
   return (
     <Card>
-      <Box
-        sx={{
-          height: 170, position: 'relative', display: 'grid', placeItems: 'center',
-          background: `repeating-linear-gradient(135deg, ${theme.palette.grey[800]} 0 12px, ${theme.palette.grey[900]} 12px 24px)`,
-          color: alpha('#fff', 0.4),
-        }}
-      >
-        <VideocamRoundedIcon sx={{ fontSize: 40 }} />
-        <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
-          <Label color="error" variant="filled">● LIVE</Label>
-          <Label variant="filled" sx={{ bgcolor: alpha('#000', 0.5), color: '#fff' }}>{lane}</Label>
-        </Box>
-        {plate && (
+      <CameraFeed
+        lane={lane}
+        overlay={plate && (
           <Box sx={{ position: 'absolute', bottom: 12, left: 12, right: 12, px: 1.5, py: 0.75, borderRadius: 1, bgcolor: alpha('#000', 0.6), color: '#fff', fontFamily: 'monospace', fontSize: 15, letterSpacing: 1 }}>
             {plate}
           </Box>
         )}
-      </Box>
+      />
       <Stack spacing={1.25} sx={{ p: 2.5 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
           <Typography variant="subtitle2">Plate read</Typography>
@@ -127,6 +137,37 @@ export function CameraCard({ lane, plate, expected, onReread }) {
         )}
         <Typography variant="caption" color="text.disabled">A camera match supports, but does not replace, the operator&apos;s identity check.</Typography>
         {onReread && <ButtonBase onClick={onReread} sx={{ alignSelf: 'flex-start', fontSize: 13, fontWeight: 700, color: 'primary.main' }}>Re-read plate</ButtonBase>}
+      </Stack>
+    </Card>
+  );
+}
+
+// Whole-bridge view at the weighbridge: weight is captured only while the truck is inside the marked area.
+export function BridgeCameraCard({ lane, inPosition, onRecheck }) {
+  return (
+    <Card>
+      <CameraFeed
+        lane={lane}
+        overlay={(
+          <Box
+            sx={{
+              position: 'absolute', top: 44, bottom: 16, left: '18%', right: '18%', borderRadius: 1,
+              border: '2px dashed', borderColor: inPosition ? 'success.light' : 'error.light',
+            }}
+          />
+        )}
+      />
+      <Stack spacing={1.25} sx={{ p: 2.5 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+          <Typography variant="subtitle2">Truck position</Typography>
+          {inPosition ? <Label color="success">Within marked area</Label> : <Label color="error">Outside marked area</Label>}
+        </Stack>
+        {!inPosition && (
+          <Typography variant="body2" color="error.main">
+            Part of the truck is outside the marked area. Ask the driver to move fully onto the bridge.
+          </Typography>
+        )}
+        {onRecheck && <ButtonBase onClick={onRecheck} sx={{ alignSelf: 'flex-start', fontSize: 13, fontWeight: 700, color: 'primary.main' }}>Check position again</ButtonBase>}
       </Stack>
     </Card>
   );
