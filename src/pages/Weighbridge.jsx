@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { PageHeader, DetailRow, formatKg, EmptyState } from '../components/common';
+import { PageHeader, DetailRow, formatKg, EmptyState, AssumptionNote } from '../components/common';
 import { Workbench, QueueCard, CameraCard, BridgeCameraCard } from '../components/Workbench';
 import Label from '../components/Label';
 import { weighQueue, currentUser } from '../data/mock';
@@ -43,6 +43,16 @@ function ManualWeight({ open, onClose, onConfirm }) {
   );
 }
 
+// Proposed tolerance against the declared weight (F18): 5% either way, still to be confirmed by BLPA and Customs.
+const TOLERANCE = 0.05;
+
+// How far net cargo is from the declaration. Information only: the scale reading is never changed (F18).
+function toleranceCheck(net, declaredKg) {
+  if (net == null || !declaredKg) return null;
+  const diff = net - declaredKg;
+  return { diff, share: diff / declaredKg, outside: Math.abs(diff / declaredKg) > TOLERANCE };
+}
+
 // Weighing needs a truck that has passed the entry gate, whose plate matches the camera read (F17),
 // and that sits fully inside the marked area on the bridge camera.
 function weighingBlock(truck, plateRead, inPosition) {
@@ -68,6 +78,7 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
   const loaded = truck.reason.startsWith('Loaded');
   const tareValid = truck.tare && !truck.tareAge.includes('expired');
   const net = captured && loaded && tareValid ? captured.kg - truck.tare : null;
+  const tolerance = toleranceCheck(net, truck.declaredKg);
 
   return (
     <Card>
@@ -88,6 +99,17 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
           {net != null && <Typography variant="subtitle1" color="primary.main">Net cargo {formatKg(net)} (gross − stored tare)</Typography>}
         </Box>
         {block && <Alert severity="error" sx={{ mt: 2 }}>{block}</Alert>}
+        {tolerance && (tolerance.outside ? (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            Net cargo is {formatKg(Math.abs(tolerance.diff))} ({Math.abs(tolerance.share * 100).toFixed(1)}%) {tolerance.diff > 0 ? 'above' : 'below'} the declared {formatKg(truck.declaredKg)}, outside the {TOLERANCE * 100}% tolerance.
+            Customs is notified for checking. The weight is saved exactly as read; nothing is deducted.
+          </Alert>
+        ) : (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            Net cargo is within {TOLERANCE * 100}% of the declared {formatKg(truck.declaredKg)} ({tolerance.share >= 0 ? '+' : '−'}{Math.abs(tolerance.share * 100).toFixed(1)}%).
+          </Alert>
+        ))}
+        {tolerance && <AssumptionNote code="F18" sx={{ mt: 1.5 }}>The 5% tolerance is proposed, to be confirmed by BLPA and Customs, including whether it applies below the declaration too.</AssumptionNote>}
         {!tareValid && loaded && (
           <Alert severity="warning" sx={{ mt: 2 }}>
             Stored tare: {truck.tareAge}. This truck must be weighed empty before it leaves, so net weight is not calculated yet.
@@ -116,7 +138,7 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
           {captured ? (
             <>
               <Button variant="outlined" color="inherit" size="large" onClick={() => setCaptured(null)}>Re-weigh</Button>
-              <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => onConfirmed(truck, captured)}>Confirm weight</Button>
+              <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => onConfirmed(truck, captured, tolerance)}>Confirm weight</Button>
             </>
           ) : (
             <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => setCaptured({ kg: live, method: 'scale' })}>Capture weight</Button>
@@ -187,15 +209,16 @@ export default function Weighbridge() {
               truck={current}
               plateRead={plateReadFor(current)}
               inPosition={inPositionFor(current)}
-              onConfirmed={(t, c) => {
+              onConfirmed={(t, c, tolerance) => {
                 setQueue((q) => q.filter((x) => x.plate !== t.plate));
                 setSelected(null);
                 // Every confirmed weight goes to the audit log; a manual one is flagged for reconciliation (F16).
                 addEvent({
                   actor: currentUser.name, role: currentUser.role, module: 'Weighing', type: 'Record',
-                  text: c.method === 'manual'
+                  text: (c.method === 'manual'
                     ? `Entered manual weight ${formatKg(c.kg)} for ${t.plate} (${c.reason})`
-                    : `Captured ${t.reason.startsWith('Loaded') ? 'loaded' : 'empty'} weight ${formatKg(c.kg)} for ${t.plate} on Scale 1`,
+                    : `Captured ${t.reason.startsWith('Loaded') ? 'loaded' : 'empty'} weight ${formatKg(c.kg)} for ${t.plate} on Scale 1`)
+                    + (tolerance?.outside ? `; net cargo ${(tolerance.share * 100).toFixed(1)}% from declared, flagged for Customs` : ''),
                   flags: c.method === 'manual' ? ['Override', 'Manual pending reconciliation'] : [],
                 });
                 setToast(`${formatKg(c.kg)} recorded for ${t.plate} (${c.method}). Weighment charge added.`);

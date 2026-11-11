@@ -158,6 +158,7 @@ export const leavingTrucks = [
 export const weighQueue = [
   { plate: 'WB-19-C-0803', manifest: 'BEN-IGM-2026-08841', reason: 'Loaded (arrival)', agency: 'Rupsha Clearing & Forwarding', driver: 'Prakash Roy', cls: '10-wheel truck', tare: 11240, tareAge: '41 days', admitted: '10:48', declaredKg: 32000, live: 43310 },
   { plate: 'WB-41-B-1192', manifest: 'BEN-IGM-2026-08871', reason: 'Loaded (arrival)', agency: 'Padma Border Agents', driver: 'Subrata Ghosh', cls: '14-wheel trailer', tare: null, tareAge: 'No stored tare', admitted: '10:58', declaredKg: 13000, live: 27920, cameraPlate: 'WB-41-B-1129' },
+  { plate: 'WB-19-C-0812', manifest: 'BEN-IGM-2026-08860', reason: 'Loaded (arrival)', agency: 'Padma Border Agents', driver: 'Dilip Sarkar', cls: '10-wheel truck', tare: 10950, tareAge: '20 days', admitted: '11:02', declaredKg: 16000, live: 28250 },
   { plate: 'WB-19-C-0791', manifest: 'BEN-IGM-2026-08841', reason: 'Empty (return)', inPosition: false, agency: 'Rupsha Clearing & Forwarding', driver: 'Mithun Saha', cls: '10-wheel truck', tare: 11180, tareAge: '3 months (expired)', admitted: '07:12', declaredKg: 0, live: 11205 },
   { plate: 'WB-23-K-4471', manifest: 'BEN-IGM-2026-08852', reason: 'Loaded (arrival)', agency: 'Meghna Trade Logistics', driver: 'Ramesh Kumar Das', cls: '10-wheel truck', tare: 11060, tareAge: '12 days', admitted: null, declaredKg: 18500, live: 29640 },
 ];
