@@ -100,7 +100,7 @@ function ProposalCard({ line, bay, onClearBay, onChange, onSend }) {
         <Stack spacing={0.5} sx={{ mt: 2 }}>
           {line.parts.map((p) => (
             <Stack key={p.bay} direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-              <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: 12 }}>{p.bay} · {p.m3} m³</Typography>
+              <Typography variant="caption" component="p" sx={{ fontFamily: 'monospace' }}>{p.bay} · {p.m3} m³</Typography>
               <Button size="small" color="error" sx={{ minWidth: 0, px: 1 }} onClick={() => onChange(line.parts.filter((x) => x.bay !== p.bay))}>Remove</Button>
             </Stack>
           ))}

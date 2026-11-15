@@ -105,7 +105,8 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
         )}
       </Stack>
       {/* The value spans the card under the title/icon row and stays on one line,
-          shrinking with the card (cqi = 1% of the card's content width). */}
+          shrinking with the card (cqi = 1% of the card's content width). A recorded exception to the type
+          scale: it is h3 at full width and never goes below body1. */}
       <Typography variant="h3" noWrap sx={{ mt: 1.5, mb: 0.5, fontSize: 'clamp(16px, 13cqi, 32px)' }}>{value}</Typography>
       {change != null ? (
         <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={0.5}>
@@ -142,7 +143,7 @@ export function UserAvatar({ name, size = 40, sx }) {
   const colors = ['primary', 'info', 'warning', 'secondary', 'error', 'success'];
   const c = colors[name.length % colors.length];
   return (
-    <Avatar sx={{ width: size, height: size, fontSize: size * 0.38, bgcolor: (t) => alpha(t.palette[c].main, 0.16), color: (t) => (t.palette.mode === 'light' ? t.palette[c].text ?? t.palette[c].dark : t.palette[c].light), ...sx }}>
+    <Avatar sx={{ width: size, height: size, typography: size > 40 ? 'subtitle1' : 'subtitle2', bgcolor: (t) => alpha(t.palette[c].main, 0.16), color: (t) => (t.palette.mode === 'light' ? t.palette[c].text ?? t.palette[c].dark : t.palette[c].light), ...sx }}>
       {initials}
     </Avatar>
   );

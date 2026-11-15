@@ -82,7 +82,7 @@ export default function AuditLog() {
               <DetailRow label="Origin">{open.flags.includes('Recorded offline') ? 'Offline contingency sheet, synced 07:40' : 'Online'}</DetailRow>
               <DetailRow label="Flags">{open.flags.length ? open.flags.join(', ') : 'None'}</DetailRow>
               <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>Before / after</Typography>
-              <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.neutral', fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre-wrap' }}>
+              <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.neutral', typography: 'caption', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
                 {'{\n  "status": "assigned" → "admitted",\n  "gate": null → "Border gate 1 / B2"\n}'}
               </Box>
             </Box>

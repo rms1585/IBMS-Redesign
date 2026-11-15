@@ -11,6 +11,9 @@ so keep them unless the product owner changes them. When you change one, update 
   (Color & Typo, Button, Text Input Field, Search, Top Nav Bar, Alert, Table, Tabs, Dropdown, Tag/Chips/Status,
   Dialog, Other Component).
 - **Never change anything in the existing Figma design system.** Read from it only.
+- **Every design follows the style guide** (`public/style-guide.html`, live at `/style-guide.html` on the preview):
+  colours only from theme tokens, text only from the type scale. A new size, weight or colour needs the product
+  owner's OK and goes into the theme and the guide first, never into a page.
 - Building screens in Figma is **not needed**. An `IBMS Theme` variable collection (Light/Dark) was added to the
   file earlier with approval; it aliases the existing Minimals colours and changes nothing else.
 - Product spec: *IBMS — Product, Workflow & UI Specification* (the PDF this app was built from).
@@ -68,7 +71,7 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
 
 - **Use only the scale.** No other font sizes or an 800 weight in pages; use `typography: '<variant>'` in `sx`.
 - **Exceptions:** collapsed-nav labels and badges are 10px (caption clips in the 88px rail); the Weighbridge live
-  reading is fluid, 32–56px.
+  reading is fluid, 32–56px; KPI card values are h3 that shrinks with the card, down to 16px.
 - **White and black** come from `common.white` / `common.black`, never `#fff` / `#000`.
 - `public/style-guide.html` shows these colours and styles; update it in the same commit as the theme.
 

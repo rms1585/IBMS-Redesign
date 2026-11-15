@@ -327,7 +327,7 @@ export default function GateWorkbench({ side }) {
               {[['10:48', 'WB-19-C-0803', 'In'], ['10:31', 'WB-23-K-4390', 'Out'], ['10:12', 'WB-41-B-1150', 'In']].map(([t, p, d]) => (
                 <Stack key={p} direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ py: 1 }}>
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace', fontSize: 12 }}>{p}</Typography>
+                    <Typography variant="caption" component="p" noWrap sx={{ fontFamily: 'monospace' }}>{p}</Typography>
                     <Typography variant="caption" color="text.secondary">{t}</Typography>
                   </Box>
                   <Label color={d === 'In' ? 'success' : 'info'}>{d}</Label>

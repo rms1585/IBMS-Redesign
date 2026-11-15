@@ -80,7 +80,7 @@ function ManifestDrawer({ m, onClose }) {
                   <TableCell sx={{ pl: 3 }}><Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{p}</Typography><Typography variant="caption" color="text.secondary">{k}</Typography></TableCell>
                   <TableCell><Label color="info">{s}</Label></TableCell>
                   <TableCell>{w}</TableCell>
-                  <TableCell sx={{ pr: 3, fontFamily: 'monospace', fontSize: 12 }}>{pass}</TableCell>
+                  <TableCell sx={{ pr: 3, typography: 'caption', fontFamily: 'monospace' }}>{pass}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
