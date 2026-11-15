@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBMS Style Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!--
+  Typography and colour reference for the IBMS Redesign prototype.
+  Values mirror src/theme/palette.js and src/theme/index.js, which take them from the IBMS Figma
+  design system (file key sdIfB3NDRRRENCUi2MfLfU). When a theme value changes, update this page
+  and DESIGN_NOTES.md in the same commit.
+-->
+<style>
+  :root {
+    --page: #FFFFFF;
+    --surface: #F4F5F7;
+    --card: #FFFFFF;
+    --text: #2B3136;
+    --text-2: #677481;
+    --line: rgba(43, 49, 54, 0.12);
+    --accent: #008F40;
+    --shadow: 0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #161B1F;
+      --surface: #2E363D;
+      --card: #22292F;
+      --text: #FFFFFF;
+      --text-2: #919EAB;
+      --line: rgba(145, 158, 171, 0.2);
+      --accent: #ADFFD3;
+      --shadow: 0 0 2px 0 rgba(0, 0, 0, 0.2), 0 12px 24px -4px rgba(0, 0, 0, 0.12);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text);
+    font-family: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 48px 16px 80px; }
+  header { margin-bottom: 48px; }
+  .eyebrow { font-size: 12px; line-height: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+  h1 { font-size: 32px; line-height: 48px; font-weight: 700; margin: 8px 0 8px; }
+  h2 { font-size: 24px; line-height: 32px; font-weight: 700; margin: 64px 0 8px; }
+  h3 { font-size: 16px; line-height: 24px; font-weight: 600; margin: 32px 0 12px; }
+  p { margin: 0 0 12px; color: var(--text-2); max-width: 760px; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+  nav { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px; }
+  nav a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  nav a:hover, nav a:focus-visible { text-decoration: underline; }
+
+  .card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 24px; }
+
+  /* Palette rows: six shades side by side, wrapping to two rows of three on narrow screens. */
+  .palette { margin-bottom: 24px; }
+  .palette-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .palette-head strong { font-size: 16px; line-height: 24px; }
+  .palette-head span { color: var(--text-2); }
+  .shades { display: grid; grid-template-columns: repeat(6, 1fr); border-radius: 12px; overflow: hidden; }
+  .shade { padding: 16px 12px; min-height: 104px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+  .shade b { font-size: 12px; line-height: 16px; font-weight: 600; }
+  .shade code { font-size: 12px; }
+  .shade.is-main { box-shadow: inset 0 0 0 3px rgba(255,255,255,.7); }
+  @media (max-width: 720px) { .shades { grid-template-columns: repeat(3, 1fr); } }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .chip { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; border: 1px solid var(--line); }
+  .chip div { display: flex; flex-direction: column; }
+  .chip small { color: var(--text-2); }
+
+  .tints { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .tag { border-radius: 8px; padding: 6px 10px; font-size: 12px; line-height: 16px; font-weight: 600; display: inline-block; }
+
+  table { width: 100%; border-collapse: collapse; }
+  .scroll { overflow-x: auto; }
+  th, td { text-align: left; padding: 14px 16px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
+  th { font-weight: 600; color: var(--text-2); background: var(--surface); border-bottom-style: solid; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.meta { white-space: nowrap; color: var(--text-2); }
+  .specimen { margin: 0; color: var(--text); white-space: nowrap; }
+
+  .rules { margin: 0; padding-left: 20px; color: var(--text-2); max-width: 820px; }
+  .rules li { margin-bottom: 8px; }
+  .rules strong { color: var(--text); }
+  .weights { display: flex; gap: 32px; flex-wrap: wrap; font-size: 24px; line-height: 32px; }
+  .weights small { display: block; font-size: 12px; line-height: 16px; color: var(--text-2); }
+  footer { margin-top: 64px; color: var(--text-2); font-size: 12px; line-height: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">IBMS Redesign · BLPA land ports</div>
+    <h1>Style guide: colour and typography</h1>
+    <p>The colours and type styles the prototype uses. Every value comes from the IBMS Figma design system, through the app theme. In screens, use the token names (for example <code>primary.main</code>), never raw hex codes.</p>
+    <nav aria-label="Sections">
+      <a href="#colour">Colour</a>
+      <a href="#typography">Typography</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="colour" aria-labelledby="colour-title">
+      <h2 id="colour-title">Colour</h2>
+      <p>Five palettes, each with six shades. <b>Main</b> is the default; <b>Text</b> is the shade for words on a soft tinted background, such as a status label.</p>
+
+      <div class="card">
+        <div class="palette">
+          <div class="palette-head"><strong>Primary · Forest Green</strong><span>Primary actions, active navigation, selected rows</span></div>
+          <div class="shades">
+            <div class="shade" style="background:#D6FFE9;color:#002912"><b>Lighter</b><code>#D6FFE9</code></div>
+            <div class="shade" style="background:#ADFFD3;color:#002912"><b>Light</b><code>#ADFFD3</code></div>
+            <div class="shade is-main" style="background:#008F40;color:#FFFFFF"><b>Main</b><code>#008F40</code></div>
+            <div class="shade" style="background:#00662E;color:#FFFFFF"><b>Dark</b><code>#00662E</code></div>
+            <div class="shade" style="background:#002912;color:#FFFFFF"><b>Darker</b><code>#002912</code></div>
+            <div class="shade" style="background:#00753A;color:#FFFFFF"><b>Text</b><code>#00753A</code></div>
+          </div>
+        </div>
+
+        <div class="palette">
+          <div class="palette-head"><strong>Info · Sky Blue</strong><span>Information, links, also used as the secondary colour</span></div>
+          <div class="shades">
+            <div class="shade" style="background:#EFF3FF;color:#141E87"><b>Lighter</b><code>#EFF3FF</code></div>
+            <div class="shade" style="background:#BDCFFF;color:#141E87"><b>Light</b><code>#BDCFFF</code></div>
+            <div class="shade is-main" style="background:#4166FB;color:#FFFFFF"><b>Main</b><code>#4166FB</code></div>
+            <div class="shade" style="background:#0C1BC7;color:#FFFFFF"><b>Dark</b><code>#0C1BC7</code></div>
+            <div class="shade" style="background:#141E87;color:#FFFFFF"><b>Darker</b><code>#141E87</code></div>
+            <div class="shade" style="background:#0C1BC7;color:#FFFFFF"><b>Text</b><code>#0C1BC7</code></div>
+          </div>
+        </div>
+
+        <div class="palette">
+          <div class="palette-head"><strong>Success</strong><span>Paid, released, completed</span></div>
+          <div class="shades">
+            <div class="shade" style="background:#D8FBEC;color:#0A5536"><b>Lighter</b><code>#D8FBEC</code></div>
+            <div class="shade" style="background:#86E8BF;color:#0A5536"><b>Light</b><code>#86E8BF</code></div>
+            <div class="shade is-main" style="background:#1A9C65;color:#161B1F"><b>Main</b><code>#1A9C65</code></div>
+            <div class="shade" style="background:#1B8056;color:#FFFFFF"><b>Dark</b><code>#1B8056</code></div>
+            <div class="shade" style="background:#0A5536;color:#FFFFFF"><b>Darker</b><code>#0A5536</code></div>
+            <div class="shade" style="background:#1B8056;color:#FFFFFF"><b>Text</b><code>#1B8056</code></div>
+          </div>
+        </div>
+
+        <div class="palette">
+          <div class="palette-head"><strong>Warning · Orange</strong><span>Pending, due, needs attention</span></div>
+          <div class="shades">
+            <div class="shade" style="background:#FFF6E7;color:#945700"><b>Lighter</b><code>#FFF6E7</code></div>
+            <div class="shade" style="background:#FFE4B5;color:#945700"><b>Light</b><code>#FFE4B5</code></div>
+            <div class="shade is-main" style="background:#FFA70F;color:#2B3136"><b>Main</b><code>#FFA70F</code></div>
+            <div class="shade" style="background:#E8980E;color:#2B3136"><b>Dark</b><code>#E8980E</code></div>
+            <div class="shade" style="background:#B5770B;color:#161B1F"><b>Darker</b><code>#B5770B</code></div>
+            <div class="shade" style="background:#945700;color:#FFFFFF"><b>Text</b><code>#945700</code></div>
+          </div>
+        </div>
+
+        <div class="palette" style="margin-bottom:0">
+          <div class="palette-head"><strong>Error</strong><span>Hold, rejected, destructive actions</span></div>
+          <div class="shades">
+            <div class="shade" style="background:#FFF1F1;color:#881414"><b>Lighter</b><code>#FFF1F1</code></div>
+            <div class="shade" style="background:#FF9D9D;color:#881414"><b>Light</b><code>#FF9D9D</code></div>
+            <div class="shade is-main" style="background:#FF3030;color:#161B1F"><b>Main</b><code>#FF3030</code></div>
+            <div class="shade" style="background:#C80D0D;color:#FFFFFF"><b>Dark</b><code>#C80D0D</code></div>
+            <div class="shade" style="background:#881414;color:#FFFFFF"><b>Darker</b><code>#881414</code></div>
+            <div class="shade" style="background:#C80D0D;color:#FFFFFF"><b>Text</b><code>#C80D0D</code></div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Greys</h3>
+      <div class="card">
+        <div class="grid">
+          <div class="chip"><span class="dot" style="background:#FCFDFD"></span><div><b>Grey 50</b><small class="mono">#FCFDFD</small></div></div>
+          <div class="chip"><span class="dot" style="background:#F4F5F7"></span><div><b>Grey 100</b><small class="mono">#F4F5F7 · neutral background</small></div></div>
+          <div class="chip"><span class="dot" style="background:#EAECF0"></span><div><b>Grey 200</b><small class="mono">#EAECF0</small></div></div>
+          <div class="chip"><span class="dot" style="background:#DFE3E8"></span><div><b>Grey 300</b><small class="mono">#DFE3E8</small></div></div>
+          <div class="chip"><span class="dot" style="background:#C4CDD5"></span><div><b>Grey 400</b><small class="mono">#C4CDD5</small></div></div>
+          <div class="chip"><span class="dot" style="background:#919EAB"></span><div><b>Grey 500</b><small class="mono">#919EAB · disabled text</small></div></div>
+          <div class="chip"><span class="dot" style="background:#677481"></span><div><b>Grey 600</b><small class="mono">#677481 · secondary text</small></div></div>
+          <div class="chip"><span class="dot" style="background:#49525B"></span><div><b>Grey 700</b><small class="mono">#49525B</small></div></div>
+          <div class="chip"><span class="dot" style="background:#2B3136"></span><div><b>Grey 800</b><small class="mono">#2B3136 · primary text</small></div></div>
+          <div class="chip"><span class="dot" style="background:#161B1F"></span><div><b>Grey 900</b><small class="mono">#161B1F · dark mode only, not in Figma</small></div></div>
+        </div>
+      </div>
+
+      <h3>Text and surfaces</h3>
+      <div class="card scroll">
+        <table>
+          <thead><tr><th>Token</th><th>Light mode</th><th>Dark mode</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">text.primary</td><td class="mono">#2B3136</td><td class="mono">#FFFFFF</td><td>Headings, body text, values</td></tr>
+            <tr><td class="mono">text.secondary</td><td class="mono">#677481</td><td class="mono">#919EAB</td><td>Labels, helper text, table headers</td></tr>
+            <tr><td class="mono">text.disabled</td><td class="mono">#919EAB</td><td class="mono">#677481</td><td>Disabled fields and buttons</td></tr>
+            <tr><td class="mono">background.default</td><td class="mono">#FFFFFF</td><td class="mono">#161B1F</td><td>Page</td></tr>
+            <tr><td class="mono">background.paper</td><td class="mono">#FFFFFF</td><td class="mono">#22292F</td><td>Cards, dialogs, drawers</td></tr>
+            <tr><td class="mono">background.neutral</td><td class="mono">#F4F5F7</td><td class="mono">#2E363D</td><td>Table headers, quiet panels</td></tr>
+            <tr><td class="mono">divider</td><td class="mono">Grey 800 at 12%</td><td class="mono">Grey 500 at 20%</td><td>Lines between sections</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Status labels (text on tint)</h3>
+      <p>Soft labels use the palette's <b>Lighter</b> shade as the background and its <b>Text</b> shade for the words.</p>
+      <div class="card">
+        <div class="tints">
+          <span><span class="tag" style="background:#D6FFE9;color:#00753A">Admitted</span></span>
+          <span><span class="tag" style="background:#EFF3FF;color:#0C1BC7">In transit</span></span>
+          <span><span class="tag" style="background:#D8FBEC;color:#1B8056">Paid</span></span>
+          <span><span class="tag" style="background:#FFF6E7;color:#945700">Pending</span></span>
+          <span><span class="tag" style="background:#FFF1F1;color:#C80D0D">Hold</span></span>
+        </div>
+      </div>
+
+      <h3>Colour rules</h3>
+      <ul class="rules">
+        <li><strong>Every primary action is a filled Forest Green button</strong> (<code>#008F40</code>). Destructive confirmations (block, deactivate, reject) use Error.</li>
+        <li><strong>Never use Warning Dark for text.</strong> <code>#E8980E</code> is unreadable on a tint; use Warning Text <code>#945700</code>.</li>
+        <li><strong>In dark mode</strong>, words on a tint use the palette's Light shade instead of Text.</li>
+        <li><strong>Hover, selected, borders and dividers</strong> are see-through tints of Grey 800 (light mode) or Grey 500 (dark mode), at 8–48%.</li>
+        <li><strong>Charts:</strong> don't use Primary Light (<code>#ADFFD3</code>) for a series; it disappears on white. Use Primary Dark.</li>
+        <li><strong>There is no separate secondary palette.</strong> Sky Blue fills that role.</li>
+      </ul>
+    </section>
+
+    <section id="typography" aria-labelledby="type-title">
+      <h2 id="type-title">Typography</h2>
+      <p>One typeface, <b>Public Sans</b>, bundled with the app in weights 400–800. Sizes below are the desktop scale from Figma, in pixels (1rem = 16px).</p>
+
+      <h3>Weights</h3>
+      <div class="card">
+        <div class="weights">
+          <span style="font-weight:400">Aa<small>Regular 400</small></span>
+          <span style="font-weight:500">Aa<small>Medium 500</small></span>
+          <span style="font-weight:600">Aa<small>SemiBold 600</small></span>
+          <span style="font-weight:700">Aa<small>Bold 700</small></span>
+        </div>
+      </div>
+
+      <h3>Type scale</h3>
+      <div class="card scroll" style="padding:0">
+        <table>
+          <thead><tr><th>Style</th><th>Figma name</th><th>Size / line height</th><th>Weight</th><th>Specimen</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">h1</td><td class="meta">H1</td><td class="meta">64 / 80</td><td class="meta">700</td><td><p class="specimen" style="font-size:64px;line-height:80px;font-weight:700">Land port</p></td></tr>
+            <tr><td class="mono">h2</td><td class="meta">H2</td><td class="meta">48 / 64</td><td class="meta">700</td><td><p class="specimen" style="font-size:48px;line-height:64px;font-weight:700">Land port</p></td></tr>
+            <tr><td class="mono">h3</td><td class="meta">H3</td><td class="meta">32 / 48</td><td class="meta">700</td><td><p class="specimen" style="font-size:32px;line-height:48px;font-weight:700">Land port operations</p></td></tr>
+            <tr><td class="mono">h4</td><td class="meta">H4 · page titles</td><td class="meta">28 / 36</td><td class="meta">700</td><td><p class="specimen" style="font-size:28px;line-height:36px;font-weight:700">Weighbridge</p></td></tr>
+            <tr><td class="mono">h5</td><td class="meta">H5</td><td class="meta">24 / 32</td><td class="meta">700</td><td><p class="specimen" style="font-size:24px;line-height:32px;font-weight:700">Weighing queue</p></td></tr>
+            <tr><td class="mono">h6</td><td class="meta">H6 · card titles</td><td class="meta">20 / 30</td><td class="meta">700</td><td><p class="specimen" style="font-size:20px;line-height:30px;font-weight:700">Truck details</p></td></tr>
+            <tr><td class="mono">subtitle1</td><td class="meta">Body1/Semibold</td><td class="meta">16 / 24</td><td class="meta">600</td><td><p class="specimen" style="font-size:16px;line-height:24px;font-weight:600">Net cargo 17,300 kg</p></td></tr>
+            <tr><td class="mono">subtitle2</td><td class="meta">Body2/Semibold</td><td class="meta">14 / 20</td><td class="meta">600</td><td><p class="specimen" style="font-size:14px;line-height:20px;font-weight:600">Declared weight</p></td></tr>
+            <tr><td class="mono">body1</td><td class="meta">Body1/Regular</td><td class="meta">16 / 24</td><td class="meta">400</td><td><p class="specimen" style="font-size:16px;line-height:24px">The scale sends the weight straight to IBMS.</p></td></tr>
+            <tr><td class="mono">body2</td><td class="meta">Body2/Regular</td><td class="meta">14 / 20</td><td class="meta">400</td><td><p class="specimen" style="font-size:14px;line-height:20px">Default text in tables, forms and cards.</p></td></tr>
+            <tr><td class="mono">caption</td><td class="meta">Caption/Regular</td><td class="meta">12 / 16</td><td class="meta">400</td><td><p class="specimen" style="font-size:12px;line-height:16px;color:var(--text-2)">Updated 2 minutes ago</p></td></tr>
+            <tr><td class="mono">overline</td><td class="meta">Caption/Bold, uppercase</td><td class="meta">12 / 16</td><td class="meta">700</td><td><p class="specimen" style="font-size:12px;line-height:16px;font-weight:700;text-transform:uppercase">Demo data</p></td></tr>
+            <tr><td class="mono">button</td><td class="meta">Body2/Semibold</td><td class="meta">14 / 20</td><td class="meta">600</td><td><p class="specimen" style="font-size:14px;line-height:20px;font-weight:600">Confirm weight</p></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Typography rules</h3>
+      <ul class="rules">
+        <li><strong>Page titles are h4; card titles are h6.</strong> Body text in tables and forms is body2.</li>
+        <li><strong>Plates, manifest IDs and references use a monospace font</strong>, for example <span class="mono">WB-19-C-0812</span>.</li>
+        <li><strong>Buttons are never uppercase.</strong> Large buttons use a 16px label; Medium and Small use 14px.</li>
+        <li><strong>Money is written as BDT 1,234.56.</strong> Don't use the ৳ sign: Public Sans doesn't include it, so it renders in a fallback font.</li>
+        <li><strong>Table header cells</strong> are 14px SemiBold in secondary text on the neutral background.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    Source: IBMS Figma design system (Color &amp; Typo page) · app theme in <code>src/theme/palette.js</code> and <code>src/theme/index.js</code> · rules in <code>DESIGN_NOTES.md</code>.
+  </footer>
+</div>
+</body>
+</html>
