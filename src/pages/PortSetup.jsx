@@ -244,8 +244,8 @@ export default function PortSetup() {
                 >
                   <Box
                     sx={{
-                      width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 13, fontWeight: 700,
-                      bgcolor: active || done ? 'primary.main' : 'action.selected', color: active || done ? '#fff' : 'text.secondary',
+                      width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0, typography: 'subtitle2',
+                      bgcolor: active || done ? 'primary.main' : 'action.selected', color: active || done ? 'primary.contrastText' : 'text.secondary',
                     }}
                   >
                     {i < 4 ? i + 1 : 'L'}

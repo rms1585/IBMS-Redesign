@@ -26,11 +26,11 @@ function Logo({ mini }) {
         component="img"
         src={blpaLogo}
         alt="Bangladesh Land Port Authority"
-        sx={{ width: 40, height: 40, flexShrink: 0, objectFit: 'contain', borderRadius: '50%', bgcolor: '#fff', p: '2px' }}
+        sx={{ width: 40, height: 40, flexShrink: 0, objectFit: 'contain', borderRadius: '50%', bgcolor: 'common.white', p: '2px' }}
       />
       {!mini && (
         <Box sx={{ lineHeight: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>IBMS</Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.1 }}>IBMS</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>Land port management</Typography>
         </Box>
       )}
@@ -71,7 +71,9 @@ function NavItem({ item, mini }) {
     >
       <Box sx={{ width: 24, height: 24, display: 'grid', placeItems: 'center', flexShrink: 0, '& svg': { fontSize: 22 } }}>
         {item.badge && mini ? (
-          <Badge badgeContent={item.badge} color="error" sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16 } }}>
+          <Badge badgeContent={item.badge} color="error"
+            /* 10px is below the type scale on purpose: a 16px badge on a collapsed-nav icon has no room for caption. */
+            sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16 } }}>
             {item.icon}
           </Badge>
         ) : (
@@ -84,6 +86,8 @@ function NavItem({ item, mini }) {
         noWrap
         sx={{
           fontWeight: 500,
+          // Collapsed-nav labels sit under 24px icons in an 88px rail; caption (12px) clips most titles, so 10px is a
+          // recorded exception to the type scale.
           ...(mini ? { fontSize: 10, lineHeight: 1.2, maxWidth: '100%', textAlign: 'center' } : { flex: 1, textAlign: 'left' }),
         }}
       >
@@ -112,7 +116,7 @@ function NavGroup({ group, mini }) {
           disableSticky
           onClick={() => setOpen((o) => !o)}
           sx={{
-            fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, cursor: 'pointer',
+            typography: 'overline', letterSpacing: 0.4, cursor: 'pointer',
             color: 'text.disabled', bgcolor: 'transparent', lineHeight: '36px', pl: 1.5, pt: 1.5,
             display: 'flex', alignItems: 'center', gap: 0.5, '&:hover': { color: 'text.primary' },
           }}

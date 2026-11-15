@@ -63,7 +63,14 @@ Public Sans (bundled through `@fontsource/public-sans`, weights 400–800). Desk
 | overline | Caption/Bold, uppercase | 12 / 16 | 700 |
 | button | Body2/Semibold | 14 / 20 | 600 |
 
-Plates, manifest IDs and references use a monospace font.
+Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospace'` resolves to the theme's
+`typography.monospace` stack (SF Mono, Menlo, Consolas by platform). Give it a size from the scale above.
+
+- **Use only the scale.** No other font sizes or an 800 weight in pages; use `typography: '<variant>'` in `sx`.
+- **Exceptions:** collapsed-nav labels and badges are 10px (caption clips in the 88px rail); the Weighbridge live
+  reading is fluid, 32–56px.
+- **White and black** come from `common.white` / `common.black`, never `#fff` / `#000`.
+- `public/style-guide.html` shows these colours and styles; update it in the same commit as the theme.
 
 ## 4. Icons (`src/components/icons.jsx`)
 

@@ -33,7 +33,7 @@ export function Workbench({ queue, center, rail }) {
           // Compact record: tighter card padding, smaller plate, full-width stacked actions.
           [RECORD_COMPACT]: {
             '& .MuiCard-root > .MuiBox-root, & .MuiCard-root > .MuiStack-root, & .MuiCard-root > .MuiGrid-container': { paddingLeft: '16px', paddingRight: '16px' },
-            '& .record-plate': { fontSize: '1.125rem' },
+            '& .record-plate': { fontSize: '1.25rem', lineHeight: 30 / 20 }, // h6
             '& .record-actions': { flexDirection: 'column-reverse', alignItems: 'stretch' },
             '& .record-actions > .MuiStack-root': { flexDirection: 'column-reverse', alignItems: 'stretch', gap: '12px' },
             '& .record-actions .MuiButton-root': { width: '100%', margin: 0 },
@@ -100,13 +100,13 @@ function CameraFeed({ lane, overlay }) {
       sx={{
         height: 170, position: 'relative', display: 'grid', placeItems: 'center',
         background: `repeating-linear-gradient(135deg, ${theme.palette.grey[800]} 0 12px, ${theme.palette.grey[900]} 12px 24px)`,
-        color: alpha('#fff', 0.4),
+        color: alpha(theme.palette.common.white, 0.4),
       }}
     >
       <VideocamRoundedIcon sx={{ fontSize: 40 }} />
       <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
         <Label color="error" variant="filled">● LIVE</Label>
-        <Label variant="filled" sx={{ bgcolor: alpha('#000', 0.5), color: '#fff' }}>{lane}</Label>
+        <Label variant="filled" sx={{ bgcolor: alpha(theme.palette.common.black, 0.5), color: 'common.white' }}>{lane}</Label>
       </Box>
       {overlay}
     </Box>
@@ -120,7 +120,7 @@ export function CameraCard({ lane, plate, expected, onReread }) {
       <CameraFeed
         lane={lane}
         overlay={plate && (
-          <Box sx={{ position: 'absolute', bottom: 12, left: 12, right: 12, px: 1.5, py: 0.75, borderRadius: 1, bgcolor: alpha('#000', 0.6), color: '#fff', fontFamily: 'monospace', fontSize: 15, letterSpacing: 1 }}>
+          <Box sx={{ position: 'absolute', bottom: 12, left: 12, right: 12, px: 1.5, py: 0.75, borderRadius: 1, bgcolor: (t) => alpha(t.palette.common.black, 0.6), color: 'common.white', typography: 'body1', fontFamily: 'monospace', letterSpacing: 1 }}>
             {plate}
           </Box>
         )}
@@ -136,7 +136,7 @@ export function CameraCard({ lane, plate, expected, onReread }) {
           </Typography>
         )}
         <Typography variant="caption" color="text.disabled">A camera match supports, but does not replace, the operator&apos;s identity check.</Typography>
-        {onReread && <ButtonBase onClick={onReread} sx={{ alignSelf: 'flex-start', fontSize: 13, fontWeight: 700, color: 'primary.main' }}>Re-read plate</ButtonBase>}
+        {onReread && <ButtonBase onClick={onReread} sx={{ alignSelf: 'flex-start', typography: 'subtitle2', color: 'primary.main' }}>Re-read plate</ButtonBase>}
       </Stack>
     </Card>
   );
@@ -167,7 +167,7 @@ export function BridgeCameraCard({ lane, inPosition, onRecheck }) {
             Part of the truck is outside the marked area. Ask the driver to move fully onto the bridge.
           </Typography>
         )}
-        {onRecheck && <ButtonBase onClick={onRecheck} sx={{ alignSelf: 'flex-start', fontSize: 13, fontWeight: 700, color: 'primary.main' }}>Check position again</ButtonBase>}
+        {onRecheck && <ButtonBase onClick={onRecheck} sx={{ alignSelf: 'flex-start', typography: 'subtitle2', color: 'primary.main' }}>Check position again</ButtonBase>}
       </Stack>
     </Card>
   );

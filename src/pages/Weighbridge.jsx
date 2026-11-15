@@ -96,7 +96,7 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
       <Box sx={{ p: 3 }}>
         <Box sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 2, textAlign: 'center', containerType: 'inline-size', bgcolor: (t) => alpha(t.palette.primary.main, 0.06), border: (t) => `1px dashed ${alpha(t.palette.primary.main, 0.3)}` }}>
           <Typography variant="overline" color="text.secondary">{captured ? `Captured weight (${captured.method})` : 'Live scale reading'}</Typography>
-          <Typography sx={{ fontSize: 'clamp(32px, 13cqi, 56px)', fontWeight: 800, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums', color: 'text.primary', whiteSpace: 'nowrap' }}>
+          <Typography sx={{ fontSize: 'clamp(32px, 13cqi, 56px)', fontWeight: 700, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums', color: 'text.primary', whiteSpace: 'nowrap' }}>
             {(captured?.kg ?? live).toLocaleString('en-US')} <Typography component="span" variant="h4" color="text.secondary">kg</Typography>
           </Typography>
           {net != null && <Typography variant="subtitle1" color="primary.main">Net cargo {formatKg(net)} (gross − stored tare)</Typography>}

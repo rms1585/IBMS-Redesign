@@ -67,8 +67,8 @@ export default function Home() {
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ position: 'absolute', right: -60, top: -60, width: 280, height: 280, borderRadius: '50%', bgcolor: alpha('#fff', 0.06) }} />
-        <Box sx={{ position: 'absolute', right: 120, bottom: -100, width: 200, height: 200, borderRadius: '50%', bgcolor: alpha('#fff', 0.05) }} />
+        <Box sx={{ position: 'absolute', right: -60, top: -60, width: 280, height: 280, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.common.white, 0.06) }} />
+        <Box sx={{ position: 'absolute', right: 120, bottom: -100, width: 200, height: 200, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.common.white, 0.05) }} />
         <Typography variant="overline" sx={{ opacity: 0.72 }}>Benapole (BEN) · Monday 27 October 2026</Typography>
         <Typography variant="h3" sx={{ mt: 1, mb: 1 }}>Good morning, {currentUser.name.split(' ')[0]}</Typography>
         <Typography sx={{ opacity: 0.8, maxWidth: 560 }}>
@@ -76,11 +76,11 @@ export default function Home() {
         </Typography>
         <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
           {canOpen('/inbox') && (
-            <ButtonBase onClick={() => navigate('/inbox')} sx={{ px: 2, py: 1, borderRadius: 1, fontWeight: 700, bgcolor: '#fff', color: 'primary.dark', fontSize: 14 }}>
+            <ButtonBase onClick={() => navigate('/inbox')} sx={{ px: 2, py: 1, borderRadius: 1, typography: 'button', fontWeight: 700, bgcolor: 'common.white', color: 'primary.dark' }}>
               Review inbox ({waiting})
             </ButtonBase>
           )}
-          <ButtonBase onClick={() => navigate('/dashboard')} sx={{ px: 2, py: 1, borderRadius: 1, fontWeight: 700, color: '#fff', border: `1px solid ${alpha('#fff', 0.4)}`, fontSize: 14 }}>
+          <ButtonBase onClick={() => navigate('/dashboard')} sx={{ px: 2, py: 1, borderRadius: 1, typography: 'button', fontWeight: 700, color: 'common.white', border: '1px solid', borderColor: (t) => alpha(t.palette.common.white, 0.4) }}>
             Open dashboard
           </ButtonBase>
         </Stack>

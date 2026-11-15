@@ -113,7 +113,7 @@ export default function Billing() {
               return (
                 <TableRow key={p.receipt} hover>
                   <TableCell sx={{ pl: 3, fontWeight: 600, whiteSpace: 'nowrap' }}>{p.receipt}<Typography variant="caption" color="text.disabled" component="div">{p.at}</Typography></TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>{p.ref}</TableCell>
+                  <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{p.ref}</TableCell>
                   <TableCell>{p.payer}<Typography variant="caption" color="text.secondary" component="div">{p.method}</Typography></TableCell>
                   <TableCell>{p.by}</TableCell>
                   <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(p.amount)}</TableCell>

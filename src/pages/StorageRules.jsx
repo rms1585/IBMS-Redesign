@@ -59,7 +59,7 @@ function FormatDialog({ open, onClose }) {
             </TableBody>
           </Table>
         </Card>
-        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'background.neutral', fontFamily: 'monospace', fontSize: 13 }}>Food,Chemical,adjacent,1,Contamination risk</Box>
+        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'background.neutral', typography: 'caption', fontFamily: 'monospace' }}>Food,Chemical,adjacent,1,Contamination risk</Box>
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>

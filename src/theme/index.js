@@ -5,6 +5,10 @@ const pxToRem = (px) => `${px / 16}rem`;
 
 const fontFamily = '"Public Sans Variable", "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
+// Plates, manifest IDs and references. Pages write `fontFamily: 'monospace'`; MUI looks that key up in
+// theme.typography first, so this one stack replaces the browser's default monospace everywhere.
+const monospace = 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace';
+
 const cardShadow = (mode) =>
   mode === 'light'
     ? `0 0 2px 0 ${alpha(grey[500], 0.2)}, 0 12px 24px -4px ${alpha(grey[500], 0.12)}`
@@ -23,6 +27,7 @@ export function createAppTheme(mode = 'light') {
     customShadows: { card: cardShadow(mode), dialog: dialogShadow(mode) },
     typography: {
       fontFamily,
+      monospace,
       fontWeightRegular: 400,
       fontWeightMedium: 500,
       fontWeightSemiBold: 600,

@@ -97,7 +97,7 @@ function ConsignmentRecord({ consignment, onRecord }) {
             {consignment.deliveries.map((d) => (
               <TableRow key={d.bill}>
                 <TableCell sx={{ pl: 3, whiteSpace: 'nowrap' }}>{d.bill}<Typography variant="caption" color="text.secondary" component="div">{d.at}</Typography></TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>{d.truck}</TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{d.truck}</TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatKg(d.kg)}</TableCell>
                 <TableCell sx={{ pr: 3, whiteSpace: 'nowrap' }}>{formatBDT(d.kg * partBillRatePerKg)}</TableCell>
               </TableRow>

@@ -28,7 +28,7 @@ function Slot({ code, state, onClick, label }) {
           disabled={state === 'occupied' || state === 'wrong'}
           onClick={onClick}
           sx={(t) => ({
-            width: 44, height: 32, borderRadius: '6px', fontSize: 11,
+            width: 44, height: 32, borderRadius: '6px', ...t.typography.caption,
             border: `1px solid ${state === 'free' ? alpha(t.palette.grey[500], 0.32) : 'transparent'}`,
             color: state === 'selected' ? t.palette.primary.contrastText : t.palette.text.secondary,
             bgcolor: state === 'selected' ? 'primary.main' : state === 'occupied' ? alpha(t.palette.grey[500], 0.24) : 'background.paper',

@@ -13,7 +13,7 @@ export default function Label({ color = 'default', variant = 'soft', startIcon, 
       ? { color: theme.palette.text.secondary, backgroundColor: alpha(theme.palette.grey[500], 0.16) }
       : { color: light ? p.text ?? p.dark : p.light, backgroundColor: alpha(p.main, 0.16) },
     filled: isDefault
-      ? { color: light ? '#fff' : theme.palette.grey[800], backgroundColor: theme.palette.text.primary }
+      ? { color: light ? theme.palette.common.white : theme.palette.grey[800], backgroundColor: theme.palette.text.primary }
       : { color: p.contrastText, backgroundColor: p.main },
     outlined: isDefault
       ? { color: theme.palette.text.primary, border: `2px solid ${theme.palette.text.primary}` }
