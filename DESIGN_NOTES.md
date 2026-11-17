@@ -247,8 +247,10 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
   - Only BLPA changes a manifest's C&F agent, from Manifest tracking, with a written reason (#46). Licensed agents
     for the port are offered; an expired licence can't be picked. The change is kept on the manifest, written to the
     audit log, and both agencies are alerted; the C&F portal follows the new agent.
-  - Open: incomplete goods description warning (#47), product data
-    through BNSW (#48) and the terminal master plan (#49).
+  - A posting line whose goods description does not name the goods ("and others", "etc.", "miscellaneous") shows a
+    "Description incomplete" warning in the queue, at posting and to the warehouse in-charge (#47, F22). Warning only:
+    storage rules are checked against the guessed category, and the lasting fix is the NBR rule in #48.
+  - Open: product data through BNSW (#48) and the terminal master plan (#49).
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 - **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate

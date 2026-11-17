@@ -163,9 +163,10 @@ export function DetailRow({ label, children, labelWidth = 120 }) {
 // from agreed behaviour.
 export function AssumptionNote({ code, children, sx }) {
   return (
-    <Stack direction="row" alignItems="flex-start" gap={1} sx={sx}>
+    // In a narrow column the text drops under the label instead of squeezing into a thin strip.
+    <Stack direction="row" flexWrap="wrap" alignItems="flex-start" gap={1} sx={sx}>
       <Label color="warning" sx={{ flexShrink: 0 }}>Assumption · {code}</Label>
-      <Typography variant="caption" color="text.secondary" sx={{ pt: 0.5 }}>{children}</Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ pt: 0.5, flex: '1 1 180px' }}>{children}</Typography>
     </Stack>
   );
 }

@@ -20,6 +20,8 @@ const cargoLines = [
   // One Indian truck often carries several consignments for different sheds; each line is posted to its own zone (F21).
   { key: 'L4', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Lentils (masur)', category: 'Food', packages: 400, declaredKg: 10000, grossKg: 27130, outstandingKg: 10000, volumeM3: 16, packing: 'Bags', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
   { key: 'L5', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Paint (water-based)', category: 'Chemical', packages: 300, declaredKg: 6000, grossKg: 27130, outstandingKg: 6000, volumeM3: 12, packing: 'Drums', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'waiting', proposedBy: 'Rokeya Begum', parts: [{ bay: 'S5B-R2-C05', m3: 12 }] },
+  // Indian manifests often name goods only as "... and others" (F22), so the category is a guess.
+  { key: 'L7', plate: 'WB-23-K-4502', manifest: 'BEN-IGM-2026-08852', product: 'Spare parts and others', category: 'General', packages: 85, declaredKg: 9000, grossKg: 20120, outstandingKg: 9000, volumeM3: 20, packing: 'Crates', wait: '14m', agency: 'Meghna Trade Logistics', stage: 'propose', parts: [] },
   { key: 'L6', plate: 'WB-58-D-2290', manifest: 'BEN-IGM-2026-08877', product: 'Stone boulders', category: 'Stone', packages: null, declaredKg: 24000, grossKg: 35210, outstandingKg: 24000, volumeM3: 15, packing: 'Loose bulk', wait: '9m', agency: 'Padma Border Agents', stage: 'propose', parts: [] },
 ];
 
@@ -36,6 +38,8 @@ const OUTING_FEE = 250;
 // Lines that left the posting queue; they still count when showing a truck's consignments.
 const DONE_STAGES = ['posted', 'outside'];
 const stageLabel = { propose: 'To propose', waiting: 'Waiting for in-charge', posted: 'Posted', outside: 'Outside yard' };
+// A goods description that does not name the goods: "and others", "etc.", "miscellaneous" (F20, F22).
+const isVagueDescription = (line) => /\b(and others|others|etc\.?|misc(ellaneous)?|assorted|various)\b/i.test(line.product);
 const facilityOf = (bay) => facilities.find((f) => f.zones.some((z) => bay.startsWith(`${z.code}-`)))?.name ?? 'Unknown facility';
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -157,6 +161,21 @@ function TruckConsignments({ line, lines }) {
   );
 }
 
+// Warning only: posting goes ahead, but the officer and the in-charge see that the storage rules rest on a guess.
+function VagueDescriptionWarning({ line }) {
+  if (!isVagueDescription(line)) return null;
+  return (
+    <>
+      <Alert severity="warning" sx={{ mb: 1.5 }}>
+        <b>Goods description incomplete.</b> The manifest line reads &ldquo;{line.product}&rdquo;, so storage rules are checked for {line.category} goods only. Ask {line.agency} for the invoice or packing list if the goods might need a separate zone.
+      </Alert>
+      <AssumptionNote code="F22" sx={{ mb: 2 }}>
+        Warning only. The lasting fix is an NBR rule that each IGM line names its goods, with product data through BNSW (#48).
+      </AssumptionNote>
+    </>
+  );
+}
+
 function OutsideYardRoute({ line, lines, onRoute }) {
   const [yard, setYard] = useState(outsideYards[0].id);
   const [carrier, setCarrier] = useState('foreign');
@@ -212,7 +231,7 @@ function ProposalDecision({ line, lines, onAccept, onReject }) {
         <Typography variant="h6">Proposal for {line.product}</Typography>
         <Typography variant="body2" color="text.secondary">Proposed by {line.proposedBy}. You decide whether this cargo fits.</Typography>
       </Box>
-      <Box sx={{ px: 3 }}><TruckConsignments line={line} lines={lines} /></Box>
+      <Box sx={{ px: 3 }}><VagueDescriptionWarning line={line} /><TruckConsignments line={line} lines={lines} /></Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Stack spacing={1} sx={{ p: 3 }}>
         {line.parts.map((p) => <DetailRow key={p.bay} label={p.bay}>{p.m3} m³ of {line.volumeM3} m³</DetailRow>)}
@@ -315,6 +334,7 @@ export default function Posting() {
                   <Label color="primary">{l.category}</Label>
                   <Label>{l.volumeM3} m³</Label>
                   {isOutsideYard(l) && <Label color="warning">Outside yard</Label>}
+                  {isVagueDescription(l) && <Label color="warning">Description incomplete</Label>}
                   {lines.filter((x) => x.plate === l.plate).length > 1 && <Label color="info">{plural(lines.filter((x) => x.plate === l.plate).length, 'consignment')}</Label>}
                   {l.rejection && <Label color="error">Rejected</Label>}
                 </Stack>
@@ -339,6 +359,7 @@ export default function Posting() {
             <Card>
               <Box sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ mb: 1.5 }}>Propose bays for {current.product}</Typography>
+                <VagueDescriptionWarning line={current} />
                 <TruckConsignments line={current} lines={lines} />
                 <Box sx={{ mb: 2 }}><BayLegend /></Box>
                 {current.rejection && <Alert severity="error" sx={{ mb: 2 }}>The warehouse in-charge rejected the last proposal: {current.rejection}</Alert>}
