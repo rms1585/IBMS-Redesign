@@ -1,11 +1,14 @@
 import { Card, Typography, Table, TableHead, TableRow, TableCell, TableBody, Grid2 as Grid, Button, LinearProgress, Stack } from '@mui/material';
 import { PageHeader, KpiCard, formatBDT } from '../components/common';
 import Label from '../components/Label';
-import { manifests } from '../data/mock';
+import { useNavigate } from 'react-router-dom';
+import { useManifests } from '../ManifestsContext';
 
-const TRADER = 'Delta Agro Foods Ltd.';
+export const TRADER = 'Delta Agro Foods Ltd.';
 
 export default function TraderPortal() {
+  const navigate = useNavigate();
+  const { manifests } = useManifests();
   const own = manifests.filter((m) => m.trader === TRADER);
   return (
     <>
@@ -49,7 +52,7 @@ export default function TraderPortal() {
                     </Stack>
                   </TableCell>
                   <TableCell>{m.balance > 0 ? formatBDT(m.balance) : <Label color="success">Paid</Label>}</TableCell>
-                  <TableCell sx={{ pr: 3 }}><Button size="small" color="inherit">Open</Button></TableCell>
+                  <TableCell sx={{ pr: 3 }}><Button size="small" color="inherit" onClick={() => navigate(`/trader-portal/${m.id}`)}>View details</Button></TableCell>
                 </TableRow>
               );
             })}

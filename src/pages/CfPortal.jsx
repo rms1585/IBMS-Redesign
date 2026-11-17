@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
   Box, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Grid2 as Grid,
-  Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, Divider, Alert, Snackbar, Drawer,
+  Divider, Alert, Snackbar, Drawer,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader, KpiCard, SectionCard, SearchField, formatBDT } from '../components/common';
 import Label from '../components/Label';
+import PayDialog from '../components/PayDialog';
 import ForeignTrucksDrawer from '../components/ForeignTrucksDrawer';
 import LocalTrucksDrawer from '../components/LocalTrucksDrawer';
 import { preArrivals } from '../data/mock';
@@ -21,32 +22,6 @@ const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
 const preArrivalRows = preArrivals
   .filter((p) => p.agency === AGENCY)
   .map((p) => ({ ...p, preArrival: true, status: 'Open', balance: 0, localTrucks: 0 }));
-
-function PayDialog({ open, amount, onClose, onPaid }) {
-  const [method, setMethod] = useState('bkash');
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Pay land-port charges</DialogTitle>
-      <DialogContent>
-        <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
-          <Typography color="text.secondary">Amount due</Typography>
-          <Typography variant="h6">{formatBDT(amount)}</Typography>
-        </Stack>
-        <Divider sx={{ mb: 2, borderStyle: 'dashed' }} />
-        <RadioGroup value={method} onChange={(e) => setMethod(e.target.value)}>
-          {[['card', 'Card'], ['bkash', 'bKash'], ['nagad', 'Nagad']].map(([v, l]) => (
-            <FormControlLabel key={v} value={v} control={<Radio />} label={l} sx={{ border: 1, borderColor: method === v ? 'primary.main' : 'divider', borderRadius: 1.5, m: 0, mb: 1, pr: 2 }} />
-          ))}
-        </RadioGroup>
-        <Typography variant="caption" color="text.secondary">The balance updates only after the payment gateway confirms the payment.</Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={onPaid}>Complete payment</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
 
 export default function CfPortal() {
   const navigate = useNavigate();

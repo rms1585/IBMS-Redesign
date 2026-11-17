@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import CfPortal from './pages/CfPortal';
 import CfManifest from './pages/CfManifest';
 import TraderPortal from './pages/TraderPortal';
+import TraderManifest from './pages/TraderManifest';
 import Manifests from './pages/Manifests';
 import GateWorkbench from './pages/GateWorkbench';
 import Weighbridge from './pages/Weighbridge';
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="cf-portal" element={<CfPortal />} />
         <Route path="cf-portal/:manifestId" element={<CfManifest />} />
         <Route path="trader-portal" element={<TraderPortal />} />
+        <Route path="trader-portal/:manifestId" element={<TraderManifest />} />
         <Route path="manifests" element={<Manifests />} />
         {/* Keys give each gate its own state; without them the inland gate kept the border queue. */}
         <Route path="border-gate" element={<GateWorkbench key="border" side="border" />} />

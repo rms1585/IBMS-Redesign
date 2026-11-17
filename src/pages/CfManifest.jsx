@@ -34,7 +34,7 @@ function AddTruckButton({ disabled, onPick }) {
   );
 }
 
-function VehiclesTable({ rows }) {
+export function VehiclesTable({ rows }) {
   if (rows.length === 0) return <EmptyState title="No vehicles yet" description="Add the trucks that will carry this manifest." sx={{ py: 6 }} />;
   return (
     <TableScroll>

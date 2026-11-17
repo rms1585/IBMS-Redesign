@@ -251,6 +251,9 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
     "Description incomplete" warning in the queue, at posting and to the warehouse in-charge (#47, F22). Warning only:
     storage rules are checked against the guessed category, and the lasting fix is the NBR rule in #48.
   - Open: product data through BNSW (#48) and the terminal master plan (#49).
+- **Importer / exporter portal (#50):** each manifest row has View details, opening a read-only page with the summary,
+  what still stops the manifest from closing, its trucks and Pay now for a balance due (minutes, item 14: the importer
+  can pay the BLPA bill). Operational actions stay with the appointed C&F agency.
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 - **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate
