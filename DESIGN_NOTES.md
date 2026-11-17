@@ -241,7 +241,10 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
     grid: the yard, who carries it (the Indian truck, or Bangladeshi trucks counted, not recorded by plate) and an
     outing fee per trip. Who approves the route waits on BLPA (F62), so the posting officer routes it in the demo and
     the audit entry is flagged Exception. The outing fee is a demo rate.
-  - Open: BRTA fitness flag (#45), change of C&F agent (#46), incomplete goods description warning (#47), product data
+  - Vehicle fitness is shown by source and is a warning only (F19, #45). BRTA covers Bangladeshi trucks: the inland
+    gate shows the BRTA status and warns when it is expired or unfit, and admitting still goes ahead. Indian trucks at
+    posting show "No record: Indian-registered, BRTA does not cover it", never an invented status.
+  - Open: change of C&F agent (#46), incomplete goods description warning (#47), product data
     through BNSW (#48) and the terminal master plan (#49).
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.

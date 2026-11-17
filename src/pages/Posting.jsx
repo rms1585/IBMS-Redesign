@@ -11,6 +11,7 @@ import Label from '../components/Label';
 import { facilities, bayState, storageRules, currentUser } from '../data/mock';
 import { useCfAlerts } from '../CfAlertsContext';
 import { useAudit } from '../AuditContext';
+import { FitnessRow } from '../components/Fitness';
 
 const cargoLines = [
   { key: 'L1', plate: 'WB-19-C-0803', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', category: 'Food', packages: 640, declaredKg: 32000, grossKg: 32070, outstandingKg: 32000, volumeM3: 48, packing: 'Bags', wait: '18m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
@@ -78,6 +79,9 @@ function CargoDetails({ line }) {
       <DetailRow labelWidth={96} label="Volume">{line.volumeM3} m³</DetailRow>
       <DetailRow labelWidth={96} label="Declared">{formatKg(line.declaredKg)}</DetailRow>
       <DetailRow labelWidth={96} label="Truck gross">{formatKg(line.grossKg)}</DetailRow>
+      {/* Posting handles Indian trucks; BRTA has no fitness record for them (F19). */}
+      <FitnessRow plate={line.plate} labelWidth={96} />
+      <AssumptionNote code="F19" sx={{ mt: 1 }}>A fitness check for Indian trucks needs a source IBMS can reach. BLPA to decide whether to pursue one.</AssumptionNote>
     </>
   );
 }

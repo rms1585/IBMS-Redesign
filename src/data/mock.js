@@ -295,6 +295,12 @@ export const localBookings = {
   ],
 };
 
+// Demo BRTA fitness records for Bangladeshi-registered trucks (F19). Dates are invented.
+export const brtaFitness = {
+  'JESSORE-TA-11-2101': { status: 'Fit', validTo: '31 Mar 2027' },
+  'KHULNA-DA-14-0587': { status: 'Expired', validTo: '30 Sep 2026' },
+};
+
 export const inlandArriving = [
   { plate: 'JESSORE-TA-11-2101', kind: 'Local', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Abdul Malek', driverCard: 'DC-BD-30211', declaredKg: 16000, eta: '11:10', firstVisit: false, cargo: 'Rice (non-basmati)', customs: 'Released', fee: 153.58, cameraPlate: 'JESSORE-TA-11-2101' },
   { plate: 'KHULNA-DA-14-0587', kind: 'Local', cls: '6-wheel truck', manifest: 'BEN-IGM-2026-08860', agency: 'Padma Border Agents', driver: 'Jahangir Alam', driverCard: 'DC-BD-11873', declaredKg: 11000, eta: '12:30', firstVisit: true, cargo: 'Industrial solvent', customs: 'Hold', fee: 153.58, cameraPlate: null },

@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { PageHeader, DetailRow, formatBDT, formatKg, EmptyState, AssumptionNote } from '../components/common';
 import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
+import { FitnessRow, FitnessWarning } from '../components/Fitness';
 import Label from '../components/Label';
 import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes, truckDataStatus, truckClassRates } from '../data/mock';
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, TimerOutlinedIcon } from '../components/icons';
@@ -124,7 +125,10 @@ function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
               {classDiffers && <Box sx={{ mt: 0.5 }}><Label color="warning">C&amp;F entered {truck.cls}</Label></Box>}
             </DetailRow>
           ) : (
-            <DetailRow label="Truck class">{truck.cls}</DetailRow>
+            <>
+              <DetailRow label="Truck class">{truck.cls}</DetailRow>
+              <FitnessRow plate={truck.plate} bangladeshi />
+            </>
           )}
           <DetailRow label="Entry fee">
             {fee === null
@@ -144,6 +148,7 @@ function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
             </Stack>
           ))}
         </Stack>
+        {side === 'inland' && <FitnessWarning plate={truck.plate} bangladeshi action="admit the truck" />}
         {side === 'border' && truck.kind === 'Foreign' && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             Where the port uses a Car Pass, accept it from Customs, not the C&amp;F agent.
