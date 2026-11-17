@@ -8,7 +8,8 @@ import { PageHeader, KpiCard, SectionCard, SearchField, formatBDT } from '../com
 import Label from '../components/Label';
 import ForeignTrucksDrawer from '../components/ForeignTrucksDrawer';
 import LocalTrucksDrawer from '../components/LocalTrucksDrawer';
-import { manifests, preArrivals } from '../data/mock';
+import { preArrivals } from '../data/mock';
+import { useManifests } from '../ManifestsContext';
 import { useCfTrucks } from '../CfTrucksContext';
 import { useCfAlerts } from '../CfAlertsContext';
 import { LocalShippingRoundedIcon, NotificationsActiveRoundedIcon, PaymentsRoundedIcon, ReceiptLongRoundedIcon } from '../components/icons';
@@ -55,6 +56,7 @@ export default function CfPortal() {
   const { foreign: trucks, local: locals, setForeignFor, setLocalFor } = useCfTrucks();
   const [trucksFor, setTrucksFor] = useState(null);
   const [localsFor, setLocalsFor] = useState(null);
+  const { manifests } = useManifests();
   const own = manifests.filter((m) => m.agency === AGENCY);
   const consignments = [...preArrivalRows, ...own];
   const rows = consignments.filter((m) => {

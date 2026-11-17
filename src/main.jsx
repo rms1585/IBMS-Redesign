@@ -11,6 +11,7 @@ import { RoleProvider } from './RoleContext';
 import { CfTrucksProvider } from './CfTrucksContext';
 import { AuditProvider } from './AuditContext';
 import { CfAlertsProvider } from './CfAlertsContext';
+import { ManifestsProvider } from './ManifestsContext';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -21,7 +22,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <AuditProvider>
             <CfTrucksProvider>
               <CfAlertsProvider>
-                <App />
+                <ManifestsProvider>
+                  <App />
+                </ManifestsProvider>
               </CfAlertsProvider>
             </CfTrucksProvider>
           </AuditProvider>

@@ -171,7 +171,7 @@ export function AssumptionNote({ code, children, sx }) {
 }
 
 // Confirmation that requires a written reason: used for safety-critical or audited actions.
-export function ReasonDialog({ open, title, description, confirmLabel = 'Confirm', confirmColor = 'primary', onClose, onConfirm, extra }) {
+export function ReasonDialog({ open, title, description, confirmLabel = 'Confirm', confirmColor = 'primary', onClose, onConfirm, extra, canConfirm = true }) {
   const [reason, setReason] = useState('');
   const close = () => { setReason(''); onClose(); };
   return (
@@ -194,7 +194,7 @@ export function ReasonDialog({ open, title, description, confirmLabel = 'Confirm
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" color="inherit" onClick={close}>Cancel</Button>
-        <Button variant="contained" color={confirmColor} disabled={!reason.trim()} onClick={() => { onConfirm(reason.trim()); setReason(''); }}>
+        <Button variant="contained" color={confirmColor} disabled={!reason.trim() || !canConfirm} onClick={() => { onConfirm(reason.trim()); setReason(''); }}>
           {confirmLabel}
         </Button>
       </DialogActions>

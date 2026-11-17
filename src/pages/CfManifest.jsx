@@ -7,7 +7,8 @@ import { PageHeader, SectionCard, EmptyState, AssumptionNote, TableScroll, forma
 import Label from '../components/Label';
 import { TruckForm, statusColor as foreignStatusColor } from '../components/ForeignTrucksDrawer';
 import { TruckDialog as LocalTruckForm, statusColor as localStatusColor } from '../components/LocalTrucksDrawer';
-import { manifests, preArrivals } from '../data/mock';
+import { preArrivals } from '../data/mock';
+import { useManifests } from '../ManifestsContext';
 import { useCfTrucks } from '../CfTrucksContext';
 import { AddRoundedIcon, KeyboardArrowDownRoundedIcon } from '../components/icons';
 
@@ -89,6 +90,7 @@ function summaryFor(m) {
 // One manifest from the C&F portal: its summary and every vehicle under it, Indian and Bangladeshi.
 export default function CfManifest() {
   const { manifestId } = useParams();
+  const { manifests } = useManifests();
   const manifest = manifests.find((m) => m.id === manifestId)
     ?? preArrivals.filter((p) => p.id === manifestId).map((p) => ({ ...p, preArrival: true, status: 'Open' }))[0];
   const { foreign: allForeign, local: allLocal, setForeignFor, setLocalFor } = useCfTrucks();

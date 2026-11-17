@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import {
   Box, Card, Stack, Typography, Table, TableHead, TableRow, TableCell, TableBody, Drawer, IconButton, Divider,
-  Tabs, Tab, LinearProgress, MenuItem, TextField,
+  Tabs, Tab, LinearProgress, MenuItem, TextField, Button, Alert, Snackbar,
 } from '@mui/material';
-import { PageHeader, SearchField, DetailRow, EmptyState, TableScroll, formatBDT, formatKg } from '../components/common';
+import { PageHeader, SearchField, DetailRow, EmptyState, TableScroll, ReasonDialog, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
-import { manifests } from '../data/mock';
+import { agencies, currentUser } from '../data/mock';
+import { useManifests } from '../ManifestsContext';
+import { useAudit } from '../AuditContext';
+import { useCfAlerts } from '../CfAlertsContext';
 import { CloseRoundedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
@@ -19,8 +22,38 @@ const timeline = [
   ['26 Oct, 16:05', 'Manifest received from National Single Window and matched to Benapole Customs House.'],
 ];
 
-function ManifestDrawer({ m, onClose }) {
+const licenceExpired = (agency) => new Date(agency.validTo) < new Date();
+
+// C&F agents are sometimes replaced after unloading; only BLPA changes the agent, with a reason (Phase 5, #46).
+function ChangeAgentDialog({ manifest, open, onClose, onConfirm }) {
+  const [agency, setAgency] = useState('');
+  const options = agencies.filter((a) => a.ports.includes(currentUser.port) && a.name !== manifest.agency);
+  const close = () => { setAgency(''); onClose(); };
+  return (
+    <ReasonDialog
+      open={open}
+      title="Change C&F agent"
+      description={`${manifest.id} is handled by ${manifest.agency}. The new agent takes over its trucks, bills and alerts.`}
+      confirmLabel="Change agent"
+      canConfirm={Boolean(agency)}
+      onClose={close}
+      onConfirm={(reason) => { onConfirm(agency, reason); setAgency(''); }}
+      extra={(
+        <TextField select fullWidth required label="New C&F agent" value={agency} onChange={(e) => setAgency(e.target.value)} sx={{ mb: 2 }}>
+          {options.map((a) => (
+            <MenuItem key={a.id} value={a.name} disabled={licenceExpired(a)}>
+              {a.name}{licenceExpired(a) ? ` (licence expired ${a.validTo})` : ''}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
+    />
+  );
+}
+
+function ManifestDrawer({ m, onClose, onChangeAgent }) {
   const [tab, setTab] = useState('trucks');
+  const [changing, setChanging] = useState(false);
   if (!m) return null;
   const pct = m.declaredKg ? ((m.declaredKg - m.remainingKg) / m.declaredKg) * 100 : 0;
   const blockers = [
@@ -44,7 +77,17 @@ function ManifestDrawer({ m, onClose }) {
       </Stack>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Box sx={{ p: 3 }}>
-        <DetailRow label="Agency">{m.agency}</DetailRow>
+        <DetailRow label="Agency">
+          <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} flexWrap="wrap">
+            <span>{m.agency}</span>
+            <Button size="small" color="inherit" variant="outlined" onClick={() => setChanging(true)}>Change</Button>
+          </Stack>
+          {m.agencyChanges?.map((c) => (
+            <Typography key={c.at} variant="caption" component="p" color="text.secondary" sx={{ mt: 0.5 }}>
+              Was {c.from} until {c.at}. Changed by {c.by}: {c.reason}
+            </Typography>
+          ))}
+        </DetailRow>
         <DetailRow label="Importer">{m.trader}</DetailRow>
         <DetailRow label="Linked bill">BILL-{m.id.slice(-5)} · {formatBDT(m.balance)} due</DetailRow>
         <Box sx={{ mt: 2 }}>
@@ -117,6 +160,12 @@ function ManifestDrawer({ m, onClose }) {
         </Stack>
       )}
       {tab === 'docs' && <EmptyState title="No reference documents" description="The C&F agency can attach invoices and packing lists." />}
+      <ChangeAgentDialog
+        manifest={m}
+        open={changing}
+        onClose={() => setChanging(false)}
+        onConfirm={(agency, reason) => { setChanging(false); onChangeAgent(m, agency, reason); }}
+      />
     </Box>
   );
 }
@@ -124,7 +173,20 @@ function ManifestDrawer({ m, onClose }) {
 export default function Manifests() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('All');
-  const [open, setOpen] = useState(null);
+  const [openId, setOpenId] = useState(null);
+  const [toast, setToast] = useState('');
+  const { manifests, changeAgency } = useManifests();
+  const { addEvent } = useAudit();
+  const { addAlert } = useCfAlerts();
+  const open = manifests.find((m) => m.id === openId) ?? null;
+  const changeAgent = (m, agency, reason) => {
+    const at = new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    changeAgency(m.id, agency, { from: m.agency, at, by: currentUser.name, reason });
+    addEvent({ actor: currentUser.name, role: currentUser.role, module: 'Manifests', type: 'Record', text: `Changed the C&F agent of ${m.id} from ${m.agency} to ${agency} (${reason})` });
+    addAlert({ agency: m.agency, manifest: m.id, text: `${m.id} is no longer with your agency. BLPA moved it to ${agency}.` });
+    addAlert({ agency, manifest: m.id, text: `${m.id} is now with your agency. BLPA moved it from ${m.agency}.` });
+    setToast(`${m.id} moved to ${agency}. Both agencies are alerted.`);
+  };
   const rows = manifests.filter(
     (m) => (status === 'All' || m.status === status) && `${m.id} ${m.agency} ${m.product}`.toLowerCase().includes(search.toLowerCase()),
   );
@@ -134,7 +196,7 @@ export default function Manifests() {
       <PageHeader
         title="Manifest tracking"
         links={[{ name: 'Operations' }, { name: 'Manifest tracking' }]}
-        subtitle="Read-only view of cargo, money and trucks for each manifest at this port."
+        subtitle="Cargo, money and trucks for each manifest at this port."
       />
       <Card>
         <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
@@ -157,7 +219,7 @@ export default function Manifests() {
           </TableHead>
           <TableBody>
             {rows.map((m) => (
-              <TableRow key={m.id} hover onClick={() => setOpen(m)} sx={{ cursor: 'pointer' }}>
+              <TableRow key={m.id} hover onClick={() => setOpenId(m.id)} sx={{ cursor: 'pointer' }}>
                 <TableCell sx={{ pl: 3 }}>
                   <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{m.id}</Typography>
                   <Typography variant="caption" color="text.secondary">{m.product}</Typography>
@@ -174,9 +236,12 @@ export default function Manifests() {
         </Table>
         {rows.length === 0 && <EmptyState title="No manifests match" description="Try a different search or status." />}
       </Card>
-      <Drawer anchor="right" open={Boolean(open)} onClose={() => setOpen(null)}>
-        <ManifestDrawer m={open} onClose={() => setOpen(null)} />
+      <Drawer anchor="right" open={Boolean(open)} onClose={() => setOpenId(null)}>
+        <ManifestDrawer key={openId} m={open} onClose={() => setOpenId(null)} onChangeAgent={changeAgent} />
       </Drawer>
+      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
+      </Snackbar>
     </>
   );
 }
