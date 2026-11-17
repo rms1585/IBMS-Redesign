@@ -6,7 +6,7 @@ import Label from '../components/Label';
 import { useAudit } from '../AuditContext';
 import { CloseRoundedIcon, FileDownloadOutlinedIcon } from '../components/icons';
 
-const flagColor = { Override: 'warning', 'Recorded offline': 'info', 'Manual pending reconciliation': 'error' };
+const flagColor = { Override: 'warning', 'Recorded offline': 'info', 'Manual pending reconciliation': 'error', Exception: 'default' };
 
 export default function AuditLog() {
   const { events } = useAudit();

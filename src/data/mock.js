@@ -178,7 +178,7 @@ export const facilities = [
   },
   {
     id: 'OY1', name: 'Open yard 1', kind: 'Open yard', live: true,
-    zones: [{ code: 'OY1A', rows: 3, cols: 10, capacityT: 40, categories: ['Rubber', 'Stone'] }],
+    zones: [{ code: 'OY1A', rows: 3, cols: 10, capacityT: 40, categories: ['Rubber'] }],
   },
   { id: 'T1', name: 'Transshipment yard T1', kind: 'Transshipment yard', live: true, zones: [] },
 ];

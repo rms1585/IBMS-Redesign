@@ -230,6 +230,19 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
     flagged, not charged.
   - Every confirmed weight is written to the audit log against the user. A manual weight needs a reason and is flagged
     Override and Manual pending reconciliation.
+- **Phase 5, routing to yard / shed** (consultation minutes, item 7, F19 to F23):
+  - Posting is a proposal: the posting officer picks bays by volume (m³) and goods type, the warehouse in-charge
+    accepts or rejects, and a rejection goes back to the officer with the reason.
+  - One truck can carry several consignments. Each product is its own posting line, checked against its own
+    category's storage rules and posted to its own zone; the record lists every consignment on the truck and its stage.
+  - Accepting a posting alerts the C&F agency in its portal with every drop point (facility, bay, m³), so the agent
+    can call the driver. The acceptance is written to the audit log.
+  - Stone and cotton cannot be unloaded in the port. At posting they get an outside-yard route instead of the bay
+    grid: the yard, who carries it (the Indian truck, or Bangladeshi trucks counted, not recorded by plate) and an
+    outing fee per trip. Who approves the route waits on BLPA (F62), so the posting officer routes it in the demo and
+    the audit entry is flagged Exception. The outing fee is a demo rate.
+  - Open: BRTA fitness flag (#45), change of C&F agent (#46), incomplete goods description warning (#47), product data
+    through BNSW (#48) and the terminal master plan (#49).
 - **Posting is a proposal (F21):** the posting officer picks bays and splits the cargo by volume; the warehouse
   in-charge accepts or rejects it. IBMS shows free space in m³ and marks rule breaks, and people decide.
 - **Weighbridge (F17):** weight capture, manual entry and confirmation stop until the truck has passed the entry gate

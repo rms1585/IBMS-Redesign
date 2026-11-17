@@ -10,6 +10,7 @@ import { ColorModeProvider } from './ColorModeContext';
 import { RoleProvider } from './RoleContext';
 import { CfTrucksProvider } from './CfTrucksContext';
 import { AuditProvider } from './AuditContext';
+import { CfAlertsProvider } from './CfAlertsContext';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -19,7 +20,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuditProvider>
             <CfTrucksProvider>
-              <App />
+              <CfAlertsProvider>
+                <App />
+              </CfAlertsProvider>
             </CfTrucksProvider>
           </AuditProvider>
         </HashRouter>

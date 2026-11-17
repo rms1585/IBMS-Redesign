@@ -8,8 +8,9 @@ import { PageHeader, KpiCard, SectionCard, SearchField, formatBDT } from '../com
 import Label from '../components/Label';
 import ForeignTrucksDrawer from '../components/ForeignTrucksDrawer';
 import LocalTrucksDrawer from '../components/LocalTrucksDrawer';
-import { manifests, alerts, preArrivals } from '../data/mock';
+import { manifests, preArrivals } from '../data/mock';
 import { useCfTrucks } from '../CfTrucksContext';
+import { useCfAlerts } from '../CfAlertsContext';
 import { LocalShippingRoundedIcon, NotificationsActiveRoundedIcon, PaymentsRoundedIcon, ReceiptLongRoundedIcon } from '../components/icons';
 
 const AGENCY = 'Rupsha Clearing & Forwarding';
@@ -61,6 +62,8 @@ export default function CfPortal() {
     return `${m.id} ${plates}`.toLowerCase().includes(search.toLowerCase());
   });
   const dues = own.reduce((s, m) => s + m.balance, 0);
+  // Seeded alerts have no agency; alerts sent from other screens name the agency they are for.
+  const alerts = useCfAlerts().alerts.filter((a) => !a.agency || a.agency === AGENCY);
 
   return (
     <>
@@ -141,8 +144,17 @@ export default function CfPortal() {
           <SectionCard title="Alerts" subheader="Newest first">
             <Stack sx={{ px: 3, pb: 2 }} divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
               {alerts.map((a) => (
-                <Box key={a.text} sx={{ py: 1.5 }}>
+                <Box key={`${a.at}-${a.text}`} sx={{ py: 1.5 }}>
                   <Typography variant="body2">{a.text}</Typography>
+                  {a.dropPoints && (
+                    <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2.5 }}>
+                      {a.dropPoints.map((d) => (
+                        <Typography key={d.bay} component="li" variant="body2" color="text.secondary">
+                          {d.facility} · <Box component="span" sx={{ fontFamily: 'monospace' }}>{d.bay}</Box> · {d.m3} m³
+                        </Typography>
+                      ))}
+                    </Box>
+                  )}
                   <Typography variant="caption" color="text.disabled">{a.at} · {a.manifest}</Typography>
                 </Box>
               ))}
