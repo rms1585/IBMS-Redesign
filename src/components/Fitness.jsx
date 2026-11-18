@@ -12,7 +12,7 @@ export function fitnessFor(plate, bangladeshi) {
   return { source: 'brta', ...record, unfit: record.status !== 'Fit' };
 }
 
-const statusColor = { Fit: 'success', Expired: 'warning', Unfit: 'warning', 'No BRTA record': 'warning' };
+const statusColor = { Fit: 'success', Expired: 'error', Unfit: 'warning', 'No BRTA record': 'warning' };
 
 export function FitnessRow({ plate, bangladeshi, labelWidth }) {
   const f = fitnessFor(plate, bangladeshi);
