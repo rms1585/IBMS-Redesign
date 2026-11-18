@@ -251,6 +251,25 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
     "Description incomplete" warning in the queue, at posting and to the warehouse in-charge (#47, F22). Warning only:
     storage rules are checked against the guessed category, and the lasting fix is the NBR rule in #48.
   - Open: product data through BNSW (#48) and the terminal master plan (#49).
+- **Phase 6, yard / warehouse and Bill of Entry** (consultation minutes, item 8, F24 to F29):
+  - A truck reaches Warehouse receipt when the warehouse in-charge accepts its posting (#51). Posting, Warehouse
+    receipt and Labour requisitions share one store (`src/WarehouseContext.jsx`).
+  - Unloading starts only when the handheld plate read matches the expected truck (#52), as at the weighbridge.
+  - The shed raises a labour requisition; the contractor and labour union assign the gang and the equipment sent.
+    The in-charge never picks a gang. Start unloading waits for an assigned gang, and the record shows the
+    labourers the contractor named and any equipment that differs from the request (#53). How the contractor or
+    union confirms is open with BLPA (#60).
+  - The receipt splits its weight between hand and equipment and counts lifts per equipment item. Crane plus
+    forklift is double handling, billed twice. Lifts from the contractor's device are shown as such and locked;
+    the rest are entered by the in-charge (#54).
+  - The receipt weight is the higher of the declared and weighbridge weight, Benapole's rule, labelled as an
+    assumption until BLPA confirms it for every port (#55). The unloaded quantity stays as the physical count.
+  - The Bill of Entry number and Customs channel show at the shed. Yellow and red channel goods carry an
+    examination notice so the shed keeps them reachable; it is a demo BNSW status until NBR confirms (#56, #61).
+  - Goods moved inside a shed are recorded with from and to bay, tonnes and a reason; a per-tonne fee (demo rate)
+    is charged to the owner of the goods moved and written to the Audit log (#57).
+  - The monthly contractor bill is computed from completed requisitions: tonnes by hand and with equipment, double
+    handling and lifts, at demo rates (#58).
 - **Importer / exporter portal (#50):** each manifest row has View details, opening a read-only page with the summary,
   what still stops the manifest from closing, its trucks and Pay now for a balance due (minutes, item 14: the importer
   can pay the BLPA bill). Operational actions stay with the appointed C&F agency.
