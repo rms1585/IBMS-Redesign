@@ -6,31 +6,38 @@ import { PageHeader, AssumptionNote, KpiCard, formatBDT } from '../components/co
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { AddRoundedIcon } from '../components/icons';
+import {
+  useWarehouse, EQUIPMENT, GANGS, gangByName, CONTRACTOR_RATES,
+} from '../WarehouseContext';
 
-const gangs = ['Gang 1', 'Gang 2', 'Gang 3', 'Gang 4'];
-const equipmentOptions = ['None (manual)', 'Forklift FL-01', 'Forklift FL-02', 'Mobile crane MC-01'];
 const statusColor = { Requested: 'warning', 'Gang assigned': 'info', Completed: 'success' };
-const initialRequisitions = [
-  { id: 'LR-BEN-2041', shed: 'Shed 5', truck: 'WB-19-C-0803', work: 'Unloading', workers: 12, equipment: 'Forklift FL-01', status: 'Requested', gang: '—', at: 'Today, 10:58' },
-  { id: 'LR-BEN-2040', shed: 'Shed 5', truck: 'WB-23-K-4402', work: 'Unloading', workers: 10, equipment: 'None (manual)', status: 'Gang assigned', gang: 'Gang 2', at: 'Today, 09:12' },
-  { id: 'LR-BEN-2038', shed: 'Open yard 1', truck: 'JESSORE-TA-11-2034', work: 'Loading', workers: 12, equipment: 'Mobile crane MC-01', status: 'Completed', gang: 'Gang 1', at: 'Today, 07:40' },
-];
-// Demo contractor rates, per tonne. Not the charges BLPA bills to traders.
-const contractorBill = [
-  { gang: 'Gang 1', manualT: 412, equipmentT: 268, rate: 'Manual 42.50 · equipment 18.00', amount: 22334 },
-  { gang: 'Gang 2', manualT: 365, equipmentT: 190, rate: 'Manual 42.50 · equipment 18.00', amount: 18932.5 },
-  { gang: 'Gang 3', manualT: 298, equipmentT: 244, rate: 'Manual 42.50 · equipment 18.00', amount: 17057 },
-  { gang: 'Gang 4', manualT: 176, equipmentT: 92, rate: 'Manual 42.50 · equipment 18.00', amount: 9136 },
-];
-const billTotal = contractorBill.reduce((sum, row) => sum + row.amount, 0);
-const emptyRequest = { shed: 'Shed 5', truck: '', work: 'Unloading', workers: '', equipment: 'None (manual)' };
+const emptyRequest = { shed: 'Shed 5', truck: '', work: 'Unloading', workers: '', requested: [] };
+export const sameEquipment = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+export const equipmentText = (items) => (items.length ? items.join(', ') : 'None (manual)');
+// For use inside a sentence.
+export const equipmentPhrase = (items) => (items.length ? items.join(', ') : 'no equipment');
+const tonnes = (t) => t.toLocaleString('en-US', { maximumFractionDigits: 1 });
 
-function RaiseDialog({ open, onClose, onSave }) {
-  const [f, setF] = useState(emptyRequest);
+export function EquipmentSelect({ label, value, onChange }) {
+  return (
+    <TextField
+      select fullWidth label={label} value={value} onChange={(e) => onChange(e.target.value)}
+      SelectProps={{ multiple: true, displayEmpty: true, renderValue: (v) => equipmentText(v) }}
+      InputLabelProps={{ shrink: true }}
+    >
+      {EQUIPMENT.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+    </TextField>
+  );
+}
+
+// The shed asks for labour and equipment; the contractor and labour union decide who goes (Item 8, Benapole).
+export function RaiseDialog({ open, initial, onClose, onSave }) {
+  const [f, setF] = useState({ ...emptyRequest, ...initial });
   const set = (k) => (e) => setF({ ...f, [k]: k === 'workers' ? e.target.value.replace(/\D/g, '') : e.target.value });
   const valid = f.truck.trim() && Number(f.workers) > 0;
+  const close = () => { setF({ ...emptyRequest, ...initial }); onClose(); };
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
       <DialogTitle>Raise labour requisition</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ pt: 1 }}>
@@ -46,53 +53,71 @@ function RaiseDialog({ open, onClose, onSave }) {
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth required label="Workers needed" value={f.workers} onChange={set('workers')} /></Grid>
-          <Grid size={12}>
-            <TextField select fullWidth label="Equipment needed" value={f.equipment} onChange={set('equipment')}>
-              {equipmentOptions.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-            </TextField>
-          </Grid>
+          <Grid size={12}><EquipmentSelect label="Equipment needed" value={f.requested} onChange={(requested) => setF({ ...f, requested })} /></Grid>
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!valid} onClick={() => { onSave({ ...f, truck: f.truck.trim().toUpperCase(), workers: Number(f.workers) }); setF(emptyRequest); }}>Send to contractor</Button>
+        <Button variant="outlined" color="inherit" onClick={close}>Cancel</Button>
+        <Button variant="contained" disabled={!valid} onClick={() => { onSave({ ...f, truck: f.truck.trim().toUpperCase(), workers: Number(f.workers) }); setF({ ...emptyRequest, ...initial }); }}>Send to contractor</Button>
       </DialogActions>
     </Dialog>
   );
 }
 
+// Stands in for the contractor and labour union: they pick the gang, which names its labourers, and the equipment sent.
 function AssignDialog({ requisition, onClose, onSave }) {
   const [gang, setGang] = useState('');
-  const [equipment, setEquipment] = useState(requisition.equipment);
+  const [sent, setSent] = useState(requisition.requested);
+  const named = gang ? gangByName(gang).labourers.length : 0;
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Assign gang to {requisition.id}</DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>{requisition.shed} needs {requisition.workers} workers for {requisition.work.toLowerCase()} {requisition.truck}.</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+          {requisition.shed} needs {requisition.workers} workers and {equipmentPhrase(requisition.requested)} for {requisition.work.toLowerCase()} {requisition.truck}.
+        </Typography>
         <Stack spacing={2}>
-          <TextField select fullWidth required label="Labour gang" value={gang} onChange={(e) => setGang(e.target.value)}>
-            {gangs.map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
+          <TextField
+            select fullWidth required label="Labour gang" value={gang} onChange={(e) => setGang(e.target.value)}
+            helperText={gang ? `${named} labourers named by the contractor${named < requisition.workers ? `, ${requisition.workers - named} fewer than needed` : ''}` : ' '}
+          >
+            {GANGS.map((g) => <MenuItem key={g.name} value={g.name}>{g.name} · {g.labourers.length} labourers</MenuItem>)}
           </TextField>
-          <TextField select fullWidth label="Equipment" value={equipment} onChange={(e) => setEquipment(e.target.value)}>
-            {equipmentOptions.map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
-          </TextField>
+          <EquipmentSelect label="Equipment sent" value={sent} onChange={setSent} />
+          {!sameEquipment(sent, requisition.requested) && <Alert severity="info">The equipment sent differs from the request. The shed sees both.</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!gang} onClick={() => onSave(gang, equipment)}>Assign gang</Button>
+        <Button variant="contained" disabled={!gang} onClick={() => onSave(gang, sent)}>Assign gang</Button>
       </DialogActions>
     </Dialog>
   );
 }
 
+// Totals per gang from completed requisitions. Double handling bills the equipment tonnes twice (Item 8, Benapole).
+function contractorBill(requisitions) {
+  const rows = GANGS.map(({ name }) => {
+    const work = requisitions.filter((r) => r.status === 'Completed' && r.gang === name && r.handling);
+    const manualT = work.reduce((s, r) => s + r.handling.manualT, 0);
+    const equipmentT = work.reduce((s, r) => s + r.handling.equipmentT, 0);
+    const doubleT = work.filter((r) => r.handling.double).reduce((s, r) => s + r.handling.equipmentT, 0);
+    const lifts = work.reduce((s, r) => s + Object.values(r.handling.lifts).reduce((a, b) => a + b, 0), 0);
+    const amount = manualT * CONTRACTOR_RATES.manual + (equipmentT + doubleT) * CONTRACTOR_RATES.equipment;
+    return { gang: name, jobs: work.length, manualT, equipmentT, doubleT, lifts, amount };
+  });
+  return rows.filter((r) => r.jobs > 0);
+}
+
 export default function Labour() {
+  const { requisitions, raiseRequisition, assignGang } = useWarehouse();
   const [tab, setTab] = useState('requisitions');
-  const [requisitions, setRequisitions] = useState(initialRequisitions);
   const [raising, setRaising] = useState(false);
   const [assigning, setAssigning] = useState(null);
   const [toast, setToast] = useState('');
   const open = requisitions.filter((r) => r.status === 'Requested').length;
+  const bill = contractorBill(requisitions);
+  const billTotal = bill.reduce((s, r) => s + r.amount, 0);
 
   return (
     <>
@@ -102,7 +127,7 @@ export default function Labour() {
         subtitle="The shed asks for labour and equipment, the contractor and labour union assign the gang, and the work feeds the monthly contractor bill."
         action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setRaising(true)}>Raise requisition</Button>}
       />
-      <AssumptionNote code="F24" sx={{ mb: 3 }}>How the contractor or labour union confirms the gang assigned is still to be reviewed with BLPA. Here it is one Assign gang step.</AssumptionNote>
+      <AssumptionNote code="F24" sx={{ mb: 3 }}>How the contractor or labour union confirms the gang assigned is for BLPA to decide (#60). Here it is one Assign gang step.</AssumptionNote>
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
         <Tab value="requisitions" label={<Stack direction="row" spacing={1} alignItems="center"><span>Requisitions</span><Label color="warning">{open}</Label></Stack>} />
         <Tab value="bill" label="Monthly contractor bill" />
@@ -112,23 +137,34 @@ export default function Labour() {
           { key: 'id', label: 'Requisition', render: (r) => <><Typography variant="subtitle2">{r.id}</Typography><Typography variant="caption" color="text.secondary">{r.at}</Typography></> },
           { key: 'shed', label: 'Shed or yard' },
           { key: 'truck', label: 'Truck', render: (r) => <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{r.truck}</Typography> },
-          { key: 'need', label: 'Needed', render: (r) => <>{r.work} · {r.workers} workers<Typography variant="caption" color="text.secondary" component="div">{r.equipment}</Typography></> },
-          { key: 'gang', label: 'Gang' },
+          { key: 'need', label: 'Needed', render: (r) => <>{r.work} · {r.workers} workers<Typography variant="caption" color="text.secondary" component="div">{equipmentText(r.requested)}</Typography></> },
+          {
+            key: 'gang', label: 'Assigned', render: (r) => (r.gang ? (
+              <>
+                {r.gang} · {gangByName(r.gang).labourers.length} named
+                <Typography variant="caption" color="text.secondary" component="div">{equipmentText(r.sent)}</Typography>
+                {!sameEquipment(r.sent, r.requested) && <Label color="warning" sx={{ mt: 0.5 }}>Differs from request</Label>}
+              </>
+            ) : '—'),
+          },
           { key: 'status', label: 'Status', render: (r) => <Label color={statusColor[r.status]}>{r.status}</Label> },
           { key: 'a', label: '', render: (r) => r.status === 'Requested' && <Button size="small" variant="outlined" onClick={() => setAssigning(r)}>Assign gang</Button> },
         ]} />
       ) : (
         <>
           <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6 }}><KpiCard title="October 2026 contractor bill" value={formatBDT(billTotal)} caption="Generated from completed requisitions" /></Grid>
-            <Grid size={{ xs: 12, sm: 6 }}><KpiCard title="Tonnes handled" value={contractorBill.reduce((s, r) => s + r.manualT + r.equipmentT, 0).toLocaleString('en-US')} caption="Manual and with equipment" /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><KpiCard title="November 2026 contractor bill, to date" value={formatBDT(billTotal)} caption={`From ${bill.reduce((s, r) => s + r.jobs, 0)} completed requisitions`} /></Grid>
+            <Grid size={{ xs: 12, sm: 6 }}><KpiCard title="Tonnes handled" value={tonnes(bill.reduce((s, r) => s + r.manualT + r.equipmentT, 0))} caption="By hand and with equipment" /></Grid>
           </Grid>
-          <Alert severity="info" sx={{ mb: 3 }}>Demonstration contractor rates, not contract values.</Alert>
-          <DataTable rows={contractorBill} pageSize={25} rowKey={(r) => r.gang} columns={[
-            { key: 'gang', label: 'Gang', render: (r) => <Typography variant="subtitle2">{r.gang}</Typography> },
-            { key: 'manualT', label: 'Manual (t)' },
-            { key: 'equipmentT', label: 'With equipment (t)' },
-            { key: 'rate', label: 'Rate per tonne (BDT)' },
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Demonstration contractor rates, not contract values: by hand {formatBDT(CONTRACTOR_RATES.manual)} per tonne, equipment {formatBDT(CONTRACTOR_RATES.equipment)} per tonne. Double handling (crane and forklift) bills the equipment tonnes twice.
+          </Alert>
+          <DataTable rows={bill} pageSize={25} rowKey={(r) => r.gang} columns={[
+            { key: 'gang', label: 'Gang', render: (r) => <><Typography variant="subtitle2">{r.gang}</Typography><Typography variant="caption" color="text.secondary">{r.jobs} {r.jobs === 1 ? 'requisition' : 'requisitions'}</Typography></> },
+            { key: 'manualT', label: 'By hand (t)', render: (r) => tonnes(r.manualT) },
+            { key: 'equipmentT', label: 'With equipment (t)', render: (r) => tonnes(r.equipmentT) },
+            { key: 'doubleT', label: 'Double handling (t)', render: (r) => tonnes(r.doubleT) },
+            { key: 'lifts', label: 'Lifts' },
             { key: 'amount', label: 'Amount', render: (r) => formatBDT(r.amount) },
           ]} />
         </>
@@ -138,7 +174,7 @@ export default function Labour() {
         onClose={() => setRaising(false)}
         onSave={(f) => {
           setRaising(false);
-          setRequisitions((rs) => [{ ...f, id: `LR-BEN-${2042 + rs.length}`, status: 'Requested', gang: '—', at: 'Just now' }, ...rs]);
+          raiseRequisition(f);
           setToast('Requisition sent to the contractor and labour union.');
         }}
       />
@@ -146,8 +182,8 @@ export default function Labour() {
         <AssignDialog
           requisition={assigning}
           onClose={() => setAssigning(null)}
-          onSave={(gang, equipment) => {
-            setRequisitions((rs) => rs.map((r) => (r.id === assigning.id ? { ...r, gang, equipment, status: 'Gang assigned' } : r)));
+          onSave={(gang, sent) => {
+            assignGang(assigning.id, gang, sent);
             setToast(`${gang} assigned to ${assigning.id}.`);
             setAssigning(null);
           }}
@@ -159,3 +195,4 @@ export default function Labour() {
     </>
   );
 }
+

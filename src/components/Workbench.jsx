@@ -113,7 +113,7 @@ function CameraFeed({ lane, overlay }) {
   );
 }
 
-export function CameraCard({ lane, plate, expected, onReread }) {
+export function CameraCard({ lane, plate, expected, onReread, before = 'admitting', title = 'Plate read', source = 'Camera' }) {
   const match = plate && expected ? plate === expected : null;
   return (
     <Card>
@@ -127,12 +127,12 @@ export function CameraCard({ lane, plate, expected, onReread }) {
       />
       <Stack spacing={1.25} sx={{ p: 2.5 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
-          <Typography variant="subtitle2">Plate read</Typography>
+          <Typography variant="subtitle2">{title}</Typography>
           {match === null ? <Label>No read</Label> : match ? <Label color="success">Matches selected truck</Label> : <Label color="error">Does not match</Label>}
         </Stack>
         {match === false && (
           <Typography variant="body2" color="error.main">
-            Camera read {plate}, expected {expected}. Check the vehicle before admitting.
+            {source} read {plate}, expected {expected}. Check the vehicle before {before}.
           </Typography>
         )}
         <Typography variant="caption" color="text.disabled">A camera match supports, but does not replace, the operator&apos;s identity check.</Typography>
