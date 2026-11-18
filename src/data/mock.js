@@ -287,6 +287,10 @@ export const localBookings = {
     { plate: 'JESSORE-TA-11-2101', driver: 'Abdul Malek', cls: '10-wheel truck', trips: 1, status: localBookingStatus.booked },
     { plate: 'JESSORE-TA-11-1987', driver: 'Sohel Rana', cls: '6-wheel truck', trips: 1, status: localBookingStatus.entered },
   ],
+  'BEN-IGM-2026-08866': [
+    { plate: 'KHULNA-DA-14-0433', driver: 'Faruk Ahmed', cls: '6-wheel truck', trips: 3, status: localBookingStatus.loaded },
+    { plate: 'KHULNA-DA-14-0451', driver: 'Shamim Ahmed', cls: '6-wheel truck', trips: 1, status: localBookingStatus.booked },
+  ],
   'BEN-IGM-2026-08799': [
     { plate: 'KHULNA-DA-14-0412', driver: 'Rubel Hossain', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },
     { plate: 'KHULNA-DA-14-0433', driver: 'Faruk Ahmed', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },

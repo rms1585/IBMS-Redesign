@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
   Box, Card, Stack, Typography, Button, Divider, Alert, Snackbar, LinearProgress, Table, TableHead, TableRow, TableCell, TableBody,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField, InputAdornment, MenuItem, Link,
 } from '@mui/material';
 import { PageHeader, DetailRow, formatKg, formatBDT, EmptyState, AssumptionNote, TableScroll } from '../components/common';
 import { Workbench, QueueCard } from '../components/Workbench';
 import Label from '../components/Label';
+import { useCfTrucks } from '../CfTrucksContext';
 
 // Demo rate only, so a part bill has an amount to show.
 const partBillRatePerKg = 0.1025;
@@ -30,30 +31,47 @@ const initialConsignments = [
 ];
 const deliveredKg = (c) => c.deliveries.reduce((sum, d) => sum + d.kg, 0);
 
-function RecordDialog({ consignment, onClose, onSave }) {
+// The truck comes from the local trucks the C&F agent registered for this manifest: no typed or invented plates (F32).
+function RecordDialog({ consignment, trucks, onClose, onSave }) {
   const remaining = consignment.receivedKg - deliveredKg(consignment);
   const [truck, setTruck] = useState('');
   const [kg, setKg] = useState('');
   const amount = Number(kg);
   const tooMuch = amount > remaining;
+  let helper = `Up to ${formatKg(remaining)}`;
+  if (tooMuch) helper = `Only ${formatKg(remaining)} remains`;
+  else if (amount > 0) helper = `${amount === remaining ? 'Nothing' : formatKg(remaining - amount)} will remain. Part bill ${formatBDT(amount * partBillRatePerKg)} (demo rate)`;
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Record part delivery</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ pt: 1 }}>
-          <TextField fullWidth required label="Local truck" value={truck} onChange={(e) => setTruck(e.target.value.toUpperCase())} />
+        <Typography variant="body2" color="text.secondary">
+          {consignment.product} on <Box component="span" sx={{ fontFamily: 'monospace' }}>{consignment.id}</Box> · {formatKg(remaining)} still in the port
+        </Typography>
+        <Stack spacing={2} sx={{ pt: 2.5 }}>
+          {trucks.length ? (
+            <TextField
+              select fullWidth required label="Local truck" value={truck} onChange={(e) => setTruck(e.target.value)} helperText="Registered for this manifest by the C&F agent"
+              SelectProps={{ renderValue: (plate) => <Box component="span" sx={{ fontFamily: 'monospace' }}>{plate}</Box> }}
+            >
+              {trucks.map((t) => <MenuItem key={t.plate} value={t.plate}><Box component="span" sx={{ fontFamily: 'monospace' }}>{t.plate}</Box>&nbsp;· {t.cls} · {t.driver}</MenuItem>)}
+            </TextField>
+          ) : (
+            <Alert severity="info">No local trucks are registered for this manifest. The C&amp;F agent registers them in the C&amp;F portal.</Alert>
+          )}
           <TextField
             fullWidth required label="Quantity actually delivered" value={kg}
             onChange={(e) => setKg(e.target.value.replace(/\D/g, ''))}
             error={tooMuch}
-            helperText={tooMuch ? `Only ${formatKg(remaining)} remains` : `${formatKg(remaining)} remains. Part bill ${formatBDT(amount * partBillRatePerKg)} (demo rate)`}
+            helperText={helper}
             slotProps={{ input: { endAdornment: <InputAdornment position="end">kg</InputAdornment> } }}
           />
+          {amount !== remaining && <Link component="button" type="button" variant="subtitle2" underline="hover" sx={{ alignSelf: 'flex-start' }} onClick={() => setKg(String(remaining))}>Deliver all {formatKg(remaining)}</Link>}
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!truck.trim() || amount <= 0 || tooMuch} onClick={() => onSave(truck.trim(), amount)}>Record and bill</Button>
+        <Button variant="contained" disabled={!truck || amount <= 0 || tooMuch} onClick={() => onSave(truck, amount)}>Record and bill</Button>
       </DialogActions>
     </Dialog>
   );
@@ -61,6 +79,7 @@ function RecordDialog({ consignment, onClose, onSave }) {
 
 function ConsignmentRecord({ consignment, onRecord }) {
   const [recording, setRecording] = useState(false);
+  const { local } = useCfTrucks();
   const delivered = deliveredKg(consignment);
   const remaining = consignment.receivedKg - delivered;
   return (
@@ -108,7 +127,7 @@ function ConsignmentRecord({ consignment, onRecord }) {
       <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ p: 3 }}>
         <Button variant="contained" size="large" disabled={remaining === 0} onClick={() => setRecording(true)}>Record part delivery</Button>
       </Stack>
-      {recording && <RecordDialog consignment={consignment} onClose={() => setRecording(false)} onSave={(truck, kg) => { setRecording(false); onRecord(truck, kg); }} />}
+      {recording && <RecordDialog consignment={consignment} trucks={local[consignment.id] ?? []} onClose={() => setRecording(false)} onSave={(truck, kg) => { setRecording(false); onRecord(truck, kg); }} />}
     </Card>
   );
 }
