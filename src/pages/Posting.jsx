@@ -11,18 +11,19 @@ import Label from '../components/Label';
 import { facilities, bayState, storageRules, currentUser } from '../data/mock';
 import { useCfAlerts } from '../CfAlertsContext';
 import { useAudit } from '../AuditContext';
+import { useWarehouse } from '../WarehouseContext';
 import { FitnessRow } from '../components/Fitness';
 
 const cargoLines = [
-  { key: 'L1', plate: 'WB-19-C-0803', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', category: 'Food', packages: 640, declaredKg: 32000, grossKg: 32070, outstandingKg: 32000, volumeM3: 48, packing: 'Bags', wait: '18m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
-  { key: 'L2', plate: 'WB-41-B-1192', manifest: 'BEN-IGM-2026-08871', product: 'Detergent', category: 'Chemical', packages: 520, declaredKg: 13000, grossKg: 12960, outstandingKg: 13000, volumeM3: 26, packing: 'Cartons', wait: '6m', agency: 'Padma Border Agents', stage: 'propose', parts: [] },
-  { key: 'L3', plate: 'WB-41-B-1207', manifest: 'BEN-IGM-2026-08871', product: 'Detergent', category: 'Chemical', packages: 520, declaredKg: 13000, grossKg: 13040, outstandingKg: 13000, volumeM3: 26, packing: 'Cartons', wait: '24m', agency: 'Padma Border Agents', stage: 'waiting', proposedBy: 'Rokeya Begum', parts: [{ bay: 'S5B-R1-C03', m3: 14 }, { bay: 'S9A-R2-C04', m3: 12 }] },
+  { key: 'L1', plate: 'WB-19-C-0803', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', category: 'Food', packages: 640, declaredKg: 32000, grossKg: 32070, weighedKg: 32070, outstandingKg: 32000, volumeM3: 48, packing: 'Bags', wait: '18m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
+  { key: 'L2', plate: 'WB-41-B-1192', manifest: 'BEN-IGM-2026-08871', product: 'Detergent', category: 'Chemical', packages: 520, declaredKg: 13000, grossKg: 12960, weighedKg: 12960, outstandingKg: 13000, volumeM3: 26, packing: 'Cartons', wait: '6m', agency: 'Padma Border Agents', stage: 'propose', parts: [] },
+  { key: 'L3', plate: 'WB-41-B-1207', manifest: 'BEN-IGM-2026-08871', product: 'Detergent', category: 'Chemical', packages: 520, declaredKg: 13000, grossKg: 13040, weighedKg: 13040, outstandingKg: 13000, volumeM3: 26, packing: 'Cartons', wait: '24m', agency: 'Padma Border Agents', stage: 'waiting', proposedBy: 'Rokeya Begum', parts: [{ bay: 'S5B-R1-C03', m3: 14 }, { bay: 'S9A-R2-C04', m3: 12 }] },
   // One Indian truck often carries several consignments for different sheds; each line is posted to its own zone (F21).
-  { key: 'L4', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Lentils (masur)', category: 'Food', packages: 400, declaredKg: 10000, grossKg: 27130, outstandingKg: 10000, volumeM3: 16, packing: 'Bags', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
-  { key: 'L5', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Paint (water-based)', category: 'Chemical', packages: 300, declaredKg: 6000, grossKg: 27130, outstandingKg: 6000, volumeM3: 12, packing: 'Drums', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'waiting', proposedBy: 'Rokeya Begum', parts: [{ bay: 'S5B-R2-C05', m3: 12 }] },
+  { key: 'L4', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Lentils (masur)', category: 'Food', packages: 400, declaredKg: 10000, grossKg: 27130, weighedKg: 10180, outstandingKg: 10000, volumeM3: 16, packing: 'Bags', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
+  { key: 'L5', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Paint (water-based)', category: 'Chemical', packages: 300, declaredKg: 6000, grossKg: 27130, weighedKg: 6105, outstandingKg: 6000, volumeM3: 12, packing: 'Drums', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'waiting', proposedBy: 'Rokeya Begum', parts: [{ bay: 'S5B-R2-C05', m3: 12 }] },
   // Indian manifests often name goods only as "... and others" (F22), so the category is a guess.
-  { key: 'L7', plate: 'WB-23-K-4502', manifest: 'BEN-IGM-2026-08852', product: 'Spare parts and others', category: 'General', packages: 85, declaredKg: 9000, grossKg: 20120, outstandingKg: 9000, volumeM3: 20, packing: 'Crates', wait: '14m', agency: 'Meghna Trade Logistics', stage: 'propose', parts: [] },
-  { key: 'L6', plate: 'WB-58-D-2290', manifest: 'BEN-IGM-2026-08877', product: 'Stone boulders', category: 'Stone', packages: null, declaredKg: 24000, grossKg: 35210, outstandingKg: 24000, volumeM3: 15, packing: 'Loose bulk', wait: '9m', agency: 'Padma Border Agents', stage: 'propose', parts: [] },
+  { key: 'L7', plate: 'WB-23-K-4502', manifest: 'BEN-IGM-2026-08852', product: 'Spare parts and others', category: 'General', packages: 85, declaredKg: 9000, grossKg: 20120, weighedKg: 9150, outstandingKg: 9000, volumeM3: 20, packing: 'Crates', wait: '14m', agency: 'Meghna Trade Logistics', stage: 'propose', parts: [] },
+  { key: 'L6', plate: 'WB-58-D-2290', manifest: 'BEN-IGM-2026-08877', product: 'Stone boulders', category: 'Stone', packages: null, declaredKg: 24000, grossKg: 35210, weighedKg: 24350, outstandingKg: 24000, volumeM3: 15, packing: 'Loose bulk', wait: '9m', agency: 'Padma Border Agents', stage: 'propose', parts: [] },
 ];
 
 // Stone and cotton cannot be unloaded in the port: they go to an outside yard instead of a bay (Item 7, Bhomra).
@@ -262,6 +263,7 @@ export default function Posting() {
   const [toast, setToast] = useState('');
   const { addAlert } = useCfAlerts();
   const { addEvent } = useAudit();
+  const { addPosted } = useWarehouse();
   const inTab = lines.filter((l) => l.stage === tab);
   const current = inTab.find((l) => l.key === selected);
   const filtered = inTab.filter((l) => `${l.plate} ${l.manifest} ${l.product}`.toLowerCase().includes(search.toLowerCase()));
@@ -279,9 +281,10 @@ export default function Posting() {
   const accept = (line) => {
     const dropPoints = line.parts.map((p) => ({ ...p, facility: facilityOf(p.bay) }));
     finish(line.key, 'posted');
+    addPosted({ ...line, sharedTruck: lines.filter((l) => l.plate === line.plate).length > 1 }, dropPoints[0].facility);
     addAlert({ agency: line.agency, manifest: line.manifest, text: `${line.plate}: ${line.product} is posted. Send the driver to ${dropPoints.length === 1 ? 'this drop point' : 'these drop points'}:`, dropPoints });
     addEvent({ actor: currentUser.name, role: currentUser.role, module: 'Posting', type: 'Approval', text: `Accepted posting of ${line.product} on ${line.plate} to ${line.parts.map((p) => p.bay).join(', ')}; ${line.agency} alerted` });
-    setToast(`Proposal accepted. ${line.agency} is alerted with ${plural(dropPoints.length, 'drop point')}.${truckNote(line)}`);
+    setToast(`Proposal accepted. ${line.agency} is alerted with ${plural(dropPoints.length, 'drop point')}, and the truck is in ${dropPoints[0].facility}'s receipt queue.${truckNote(line)}`);
   };
 
   const routeOutside = (line, { yardName, trips, carrier }) => {

@@ -6,11 +6,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import { PageHeader, DetailRow, formatKg, EmptyState } from '../components/common';
 import { Workbench, QueueCard } from '../components/Workbench';
 import Label from '../components/Label';
+import { useWarehouse } from '../WarehouseContext';
 
-const initial = [
-  { key: 'W1', plate: 'WB-19-C-0803', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', category: 'Food', declaredKg: 32000, grossKg: 32070, bay: 'S5A-R2-C03', shed: 'Shed 5', stage: 'waiting' },
-  { key: 'W2', plate: 'WB-23-K-4402', manifest: 'BEN-IGM-2026-08860', product: 'Industrial solvent', category: 'Chemical', declaredKg: 22000, grossKg: 21940, bay: 'S5B-R3-C01', shed: 'Shed 5', stage: 'unloading', startedAt: Date.now() - 34 * 60000, gang: 'Gang 4', equipment: 'Forklift FL-02' },
-];
 
 function Elapsed({ since }) {
   const [now, setNow] = useState(Date.now());
@@ -24,7 +21,7 @@ function Record({ item, onStart, onFinish }) {
   const [equipment, setEquipment] = useState('None (manual)');
   const [kg, setKg] = useState('');
   const [method, setMethod] = useState('Scale weight (gross − tare)');
-  const [actualBay, setActualBay] = useState(item.bay);
+  const [actualBay, setActualBay] = useState(item.parts[0].bay);
   const [note, setNote] = useState('');
   const diff = kg ? Number(kg) - item.declaredKg : 0;
 
@@ -33,7 +30,7 @@ function Record({ item, onStart, onFinish }) {
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Box>
           <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{item.plate}</Typography>
-          <Typography variant="body2" color="text.secondary">{item.product} · allocated {item.bay}</Typography>
+          <Typography variant="body2" color="text.secondary">{item.product} · allocated {item.parts.map((p) => p.bay).join(', ')}</Typography>
         </Box>
         {item.stage === 'waiting' ? <Label color="warning">Waiting at shed door</Label> : <Label color="info">Unloading · <Elapsed since={item.startedAt} /></Label>}
       </Stack>
@@ -45,7 +42,7 @@ function Record({ item, onStart, onFinish }) {
         </Grid>
         <Grid size={{ xs: 12, xl: 6 }}>
           <DetailRow label="Declared">{formatKg(item.declaredKg)}</DetailRow>
-          <DetailRow label="Gross measured">{formatKg(item.grossKg)}</DetailRow>
+          <DetailRow label="Weighbridge net">{formatKg(item.weighedKg)}</DetailRow>
         </Grid>
       </Grid>
       <Divider sx={{ borderStyle: 'dashed' }} />
@@ -82,7 +79,7 @@ function Record({ item, onStart, onFinish }) {
             <Box><TextField fullWidth label="Actual bay" value={actualBay} onChange={(e) => setActualBay(e.target.value)} /></Box>
             <Box><TextField fullWidth label="Shortage / damage note" value={note} onChange={(e) => setNote(e.target.value)} /></Box>
           </Box>
-          {actualBay !== item.bay && <Alert severity="warning" sx={{ mt: 2 }}>The actual bay differs from the allocation. Capacity, category and separation rules will be checked again for {actualBay}.</Alert>}
+          {actualBay !== item.parts[0].bay && <Alert severity="warning" sx={{ mt: 2 }}>The actual bay differs from the allocation. Capacity, category and separation rules will be checked again for {actualBay}.</Alert>}
           <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
             <Button variant="contained" size="large" disabled={!kg} onClick={() => onFinish(item, Number(kg))}>Finish and record receipt</Button>
           </Stack>
@@ -94,10 +91,10 @@ function Record({ item, onStart, onFinish }) {
 }
 
 export default function Warehousing() {
-  const [items, setItems] = useState(initial);
+  const { receipts: items, updateReceipt, recordReceipt } = useWarehouse();
   const [tab, setTab] = useState('waiting');
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState('W1');
+  const [selected, setSelected] = useState(items[0]?.key ?? null);
   const [toast, setToast] = useState('');
   const list = items.filter((i) => i.stage === tab && `${i.plate} ${i.manifest}`.toLowerCase().includes(search.toLowerCase()));
   const current = items.find((i) => i.key === selected && i.stage === tab);
@@ -125,7 +122,7 @@ export default function Warehousing() {
               <>
                 <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{i.plate}</Typography>
                 <Typography variant="body2" noWrap>{i.product}</Typography>
-                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}><Label>{i.bay}</Label></Stack>
+                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>{i.parts.map((p) => <Label key={p.bay}>{p.bay}</Label>)}</Stack>
               </>
             )}
           />
@@ -136,14 +133,14 @@ export default function Warehousing() {
               key={current.key + current.stage}
               item={current}
               onStart={(it, gang, equipment) => {
-                setItems((xs) => xs.map((x) => (x.key === it.key ? { ...x, stage: 'unloading', startedAt: Date.now(), gang, equipment } : x)));
+                updateReceipt(it.key, { stage: 'unloading', startedAt: Date.now(), gang, equipment });
                 setTab('unloading');
                 setToast(`Unloading started for ${it.plate}.`);
               }}
               onFinish={(it, kg) => {
-                setItems((xs) => xs.filter((x) => x.key !== it.key));
+                recordReceipt(it, kg, null);
                 setSelected(null);
-                setToast(`Receipt recorded: ${formatKg(kg)} into ${it.bay}. Vehicle processed.`);
+                setToast(`Receipt recorded: ${formatKg(kg)} into ${it.parts[0].bay}. Vehicle processed.`);
               }}
             />
           ) : (
