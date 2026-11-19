@@ -270,6 +270,22 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
     is charged to the owner of the goods moved and written to the Audit log (#57).
   - The monthly contractor bill is computed from completed requisitions: tonnes by hand and with equipment, double
     handling and lifts, at demo rates (#58).
+- **Phase 7, transshipment and perishables** (consultation minutes, item 9, F32, F62):
+  - Transshipment works from a queue of work orders, one per source truck. Perishables come first, then the longest
+    wait, and each shows how long it has waited (#62).
+  - Receiving trucks are only those the C&F agent registered for the manifest that have entered at the inland gate;
+    the order shows registered, entered and in-use counts (#63).
+  - Each transfer needs the handheld plate read to match the receiving truck, records the kg moved, can't exceed the
+    remaining weight, and is written to the Audit log (#64).
+  - Labour comes from a Transshipment requisition, as at the shed. Finishing a work order records the handling split
+    and completes the requisition, which feeds the contractor bill (#65).
+  - Non-perishables go across only with Customs' permission: transfers stay stopped until it is Granted. It is a demo
+    BNSW status until NBR confirms (#66, #69). Products & routing warns when a non-perishable is routed to
+    Transshipment.
+  - Truck-to-truck transfer when sheds are jammed is its own work-order type (#67). It and non-perishable
+    transshipment are billed as unloading plus loading (two handlings); true transshipment of perishables is one.
+    The rate is a demo value, and who declares sheds jammed waits on BLPA (#70). Both exceptions are flagged
+    Exception in the Audit log.
 - **Importer / exporter portal (#50):** each manifest row has View details, opening a read-only page with the summary,
   what still stops the manifest from closing, its trucks and Pay now for a balance due (minutes, item 14: the importer
   can pay the BLPA bill). Operational actions stay with the appointed C&F agency.
