@@ -294,8 +294,20 @@ export const localBookings = {
   'BEN-IGM-2026-08799': [
     { plate: 'KHULNA-DA-14-0412', driver: 'Rubel Hossain', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },
     { plate: 'KHULNA-DA-14-0433', driver: 'Faruk Ahmed', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },
-    { plate: 'JESSORE-TA-11-1760', driver: 'Mizanur Rahman', cls: '6-wheel truck', trips: 1, status: localBookingStatus.loaded },
-    { plate: 'JESSORE-TA-11-1802', driver: 'Alamgir Kabir', cls: '6-wheel truck', trips: 1, status: localBookingStatus.loaded },
+    { plate: 'JESSORE-TA-11-1760', driver: 'Mizanur Rahman', cls: '6-wheel truck', trips: 1, status: localBookingStatus.entered },
+    { plate: 'JESSORE-TA-11-1802', driver: 'Alamgir Kabir', cls: '6-wheel truck', trips: 1, status: localBookingStatus.booked },
+  ],
+  // Bangladeshi trucks for consignments that go across in the transshipment yard (Phase 7).
+  'BEN-IGM-2026-08881': [
+    { plate: 'JESSORE-TA-11-2210', driver: 'Kamal Hossain', cls: '6-wheel truck', trips: 1, status: localBookingStatus.entered },
+    { plate: 'JESSORE-TA-11-2215', driver: 'Ripon Mia', cls: '6-wheel truck', trips: 1, status: localBookingStatus.booked },
+  ],
+  'BEN-IGM-2026-08883': [
+    { plate: 'KHULNA-DA-14-0520', driver: 'Selim Uddin', cls: '10-wheel truck', trips: 1, status: localBookingStatus.entered },
+  ],
+  'BEN-IGM-2026-08885': [
+    { plate: 'JESSORE-TA-11-2302', driver: 'Babul Akter', cls: '10-wheel truck', trips: 1, status: localBookingStatus.entered },
+    { plate: 'JESSORE-TA-11-2311', driver: 'Nasir Ahmed', cls: '10-wheel truck', trips: 1, status: localBookingStatus.entered },
   ],
 };
 

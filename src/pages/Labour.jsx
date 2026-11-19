@@ -43,13 +43,13 @@ export function RaiseDialog({ open, initial, onClose, onSave }) {
         <Grid container spacing={2} sx={{ pt: 1 }}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField select fullWidth label="Shed or yard" value={f.shed} onChange={set('shed')}>
-              {['Shed 5', 'Shed 9', 'Open yard 1'].map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+              {['Shed 5', 'Shed 9', 'Open yard 1', 'Transshipment yard T1'].map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth required label="Truck" value={f.truck} onChange={set('truck')} /></Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField select fullWidth label="Work" value={f.work} onChange={set('work')}>
-              {['Unloading', 'Loading'].map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+              {['Unloading', 'Loading', 'Transshipment'].map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth required label="Workers needed" value={f.workers} onChange={set('workers')} /></Grid>

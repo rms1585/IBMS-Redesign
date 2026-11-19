@@ -16,6 +16,11 @@ export const CONTRACTOR_RATES = { manual: 42.5, equipment: 18 };
 // Demonstration shifting fee per tonne, charged to the owner of the goods moved (Item 8, Bhomra).
 export const SHIFTING_FEE_PER_T = 120;
 
+// Demonstration handling charge per tonne for transshipment. True transshipment of perishables is one handling;
+// non-perishable transshipment and truck-to-truck transfer are billed as unloading plus loading (Item 9, Bhomra).
+export const TRANSSHIP_HANDLING_RATE = 95;
+export const handlingsFor = (order) => (order.kind === 'truck-to-truck' || order.productType !== 'Perishable' ? 2 : 1);
+
 const labourerNames = [
   'Abul Kalam', 'Rafiqul Islam', 'Motaleb Mia', 'Nurul Amin', 'Shahidul Haque', 'Jamal Uddin', 'Kamrul Hasan', 'Selim Reza',
   'Harun Mia', 'Babul Sheikh', 'Alamgir Hossain', 'Mizanur Rahman', 'Ripon Das', 'Sohel Rana', 'Faruk Ahmed', 'Monir Hossain',
@@ -68,12 +73,41 @@ const seededRequisitions = [
     sent: ['Mobile crane MC-01 (25 t)', 'Forklift FL-02 (3 t)'], status: 'Gang assigned', gang: 'Gang 2', at: 'Today, 09:12',
     captured: { 'Mobile crane MC-01 (25 t)': 18, 'Forklift FL-02 (3 t)': 22 },
   },
+  { id: 'LR-BEN-2035', shed: 'Transshipment yard T1', truck: 'WB-23-K-4588', work: 'Transshipment', workers: 12, requested: ['Forklift FL-01 (3 t)'], sent: ['Mobile crane MC-01 (25 t)', 'Forklift FL-01 (3 t)'], status: 'Gang assigned', gang: 'Gang 3', at: 'Today, 09:40' },
+  { id: 'LR-BEN-2037', shed: 'Transshipment yard T1', truck: 'WB-19-C-0791', work: 'Transshipment', workers: 12, requested: [], sent: [], status: 'Gang assigned', gang: 'Gang 4', at: 'Today, 08:05' },
   { id: 'LR-BEN-2039', shed: 'Shed 5', truck: 'WB-19-C-0788', work: 'Unloading', workers: 12, requested: [], sent: [], status: 'Gang assigned', gang: 'Gang 1', at: 'Today, 08:47' },
   done('Gang 1', 'Loading', 12, 9.5, ['Mobile crane MC-01 (25 t)'], { 'Mobile crane MC-01 (25 t)': 14 }, 'Today, 07:40', 'LR-BEN-2038', 'JESSORE-TA-11-2034'),
   done('Gang 3', 'Unloading', 26, 0, [], {}, '17 Nov, 22:10', 'LR-BEN-2036', 'WB-25-G-7731'),
   done('Gang 2', 'Unloading', 8, 21, ['Mobile crane MC-01 (25 t)', 'Forklift FL-01 (3 t)'], { 'Mobile crane MC-01 (25 t)': 16, 'Forklift FL-01 (3 t)': 19 }, '17 Nov, 15:32', 'LR-BEN-2034', 'WB-19-C-0761'),
   done('Gang 4', 'Unloading', 14, 0, [], {}, '16 Nov, 11:05', 'LR-BEN-2031', 'WB-41-B-1150'),
   done('Gang 1', 'Unloading', 6, 24, ['Forklift FL-05 (5 t)'], { 'Forklift FL-05 (5 t)': 31 }, '15 Nov, 13:48', 'LR-BEN-2027', 'WB-58-D-2204'),
+];
+
+const minutesAgo = (m) => Date.now() - m * 60000;
+const seededWorkOrders = [
+  {
+    id: 'WO-BEN-3381', kind: 'transshipment', plate: 'WB-19-C-0791', manifest: 'BEN-IGM-2026-08799', product: 'Onion', productType: 'Perishable',
+    agency: 'Padma Border Agents', driver: 'Mithun Saha', location: 'Yard T1, position 3', goodsKg: 30000, arrivedAt: minutesAgo(130),
+    receivers: [
+      { plate: 'KHULNA-DA-14-0412', handheldPlate: 'KHULNA-DA-14-0412', movedKg: 10000 },
+      { plate: 'KHULNA-DA-14-0433', handheldPlate: 'KHULNA-DA-14-0433', movedKg: 8000 },
+    ],
+  },
+  {
+    id: 'WO-BEN-3384', kind: 'transshipment', plate: 'WB-37-B-5512', manifest: 'BEN-IGM-2026-08881', product: 'Green chilli', productType: 'Perishable',
+    agency: 'Rupsha Clearing & Forwarding', driver: 'Bikash Das', location: 'Yard T1, position 5', goodsKg: 9000, arrivedAt: minutesAgo(40),
+    receivers: [], handheld: { 'JESSORE-TA-11-2210': 'JESSORE-TA-11-2216' },
+  },
+  {
+    id: 'WO-BEN-3386', kind: 'transshipment', plate: 'WB-41-B-1288', manifest: 'BEN-IGM-2026-08883', product: 'Truck tyres', productType: 'Non-perishable',
+    agency: 'Meghna Trade Logistics', driver: 'Sunil Ghosh', location: 'Yard T1, position 1', goodsKg: 14000, arrivedAt: minutesAgo(95),
+    receivers: [], customsPermission: 'Pending',
+  },
+  {
+    id: 'WO-BEN-3387', kind: 'truck-to-truck', plate: 'WB-23-K-4588', manifest: 'BEN-IGM-2026-08885', product: 'Detergent', productType: 'Non-perishable',
+    agency: 'Padma Border Agents', driver: 'Ajoy Paul', location: 'Shed 5 apron', goodsKg: 12000, arrivedAt: minutesAgo(70),
+    receivers: [], jammedBy: 'Farhana Rahman',
+  },
 ];
 
 const seededStock = [
@@ -93,12 +127,17 @@ export function WarehouseProvider({ children }) {
   const [requisitions, setRequisitions] = useState(seededRequisitions);
   const [stock, setStock] = useState(seededStock);
   const [shiftings, setShiftings] = useState(seededShiftings);
+  const [workOrders, setWorkOrders] = useState(seededWorkOrders);
+  const updateOrder = (id, change) => setWorkOrders((all) => all.map((o) => (o.id === id ? { ...o, ...(typeof change === 'function' ? change(o) : change) } : o)));
 
   const value = useMemo(() => ({
     receipts,
     requisitions,
     stock,
     shiftings,
+    workOrders,
+    updateOrder,
+    completeRequisition: (id, handling) => setRequisitions((all) => all.map((r) => (r.id === id ? { ...r, status: 'Completed', handling } : r))),
     // An accepted posting sends the truck to its shed. The Bill of Entry usually comes after unloading.
     addPosted: (line, shed) => setReceipts((all) => [...all, {
       key: `P${nextKey++}`, plate: line.plate, handheldPlate: line.plate, manifest: line.manifest, product: line.product, category: line.category,
@@ -110,7 +149,7 @@ export function WarehouseProvider({ children }) {
     recordReceipt: (item, receiptKg, handling) => {
       setReceipts((all) => all.filter((r) => r.key !== item.key));
       setStock((all) => [...all, { id: `LOT-${5104 + all.length}`, manifest: item.manifest, product: item.product, owner: item.agency, bay: item.parts[0].bay, kg: receiptKg }]);
-      setRequisitions((all) => all.map((r) => (r.truck === item.plate && r.status === 'Gang assigned' ? { ...r, status: 'Completed', handling } : r)));
+      setRequisitions((all) => all.map((r) => (r.truck === item.plate && r.work === 'Unloading' && r.status === 'Gang assigned' ? { ...r, status: 'Completed', handling } : r)));
     },
     raiseRequisition: (f) => setRequisitions((all) => [{ ...f, id: `LR-BEN-${2042 + all.length - seededRequisitions.length}`, sent: [], status: 'Requested', gang: null, at: 'Just now' }, ...all]),
     assignGang: (id, gang, sent) => setRequisitions((all) => all.map((r) => (r.id === id ? { ...r, gang, sent, status: 'Gang assigned' } : r))),
@@ -118,11 +157,11 @@ export function WarehouseProvider({ children }) {
       setShiftings((all) => [{ ...s, id: `SH-BEN-${String(119 + all.length - seededShiftings.length).padStart(4, '0')}`, at: 'Just now' }, ...all]);
       setStock((all) => all.map((l) => (l.id === s.lot ? { ...l, bay: s.to } : l)));
     },
-  }), [receipts, requisitions, stock, shiftings]);
+  }), [receipts, requisitions, stock, shiftings, workOrders]);
 
   return <WarehouseContext.Provider value={value}>{children}</WarehouseContext.Provider>;
 }
 
 export const useWarehouse = () => useContext(WarehouseContext);
-// The truck's open requisition for unloading, if the shed has raised one.
-export const requisitionFor = (requisitions, plate) => requisitions.find((r) => r.truck === plate && r.work === 'Unloading' && r.status !== 'Completed');
+// The truck's open requisition for this work, if one has been raised.
+export const requisitionFor = (requisitions, plate, work = 'Unloading') => requisitions.find((r) => r.truck === plate && r.work === work && r.status !== 'Completed');

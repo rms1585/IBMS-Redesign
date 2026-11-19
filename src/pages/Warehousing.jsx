@@ -58,7 +58,7 @@ function CustomsStatus({ item }) {
   );
 }
 
-function LabourPanel({ requisition, onRaise }) {
+export function LabourPanel({ requisition, onRaise }) {
   if (!requisition) {
     return (
       <Alert severity="info" action={<Button color="inherit" size="small" onClick={onRaise}>Raise requisition</Button>}>
@@ -96,8 +96,7 @@ function LabourPanel({ requisition, onRaise }) {
 
 // Tonnes by hand and by equipment, lifts per equipment item, and double handling (F25). Lifts captured by the
 // contractor's device are shown as such; anything else is entered by the in-charge.
-function HandlingFields({ item, requisition, manual, setManual, lifts, setLifts }) {
-  const total = toTonnes(receiptWeight(item));
+export function HandlingFields({ totalT: total, requisition, manual, setManual, lifts, setLifts }) {
   const sent = requisition.sent;
   if (!sent.length) {
     return <Typography variant="body2" color="text.secondary">No equipment was sent: all {tonnes(total)} is handled by hand.</Typography>;
@@ -224,7 +223,7 @@ function Record({ item, plateRead, requisition, onRaise, onStart, onFinish }) {
           {actualBay !== item.parts[0].bay && <Alert severity="warning" sx={{ mt: 2 }}>The actual bay differs from the allocation. Capacity, category and separation rules will be checked again for {actualBay}.</Alert>}
           <Typography variant="subtitle2" sx={{ mt: 3, mb: 0.5 }}>How it was handled</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Split the {tonnes(totalT)} receipt weight between hand and equipment, and count the lifts. This feeds the contractor bill.</Typography>
-          {requisition && <HandlingFields item={item} requisition={requisition} manual={manual} setManual={setManual} lifts={lifts} setLifts={setLifts} />}
+          {requisition && <HandlingFields totalT={totalT} requisition={requisition} manual={manual} setManual={setManual} lifts={lifts} setLifts={setLifts} />}
           <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
             <Button variant="contained" size="large" disabled={!kg || !handlingDone} onClick={() => onFinish(item, receiptKg, handling())}>Finish and record receipt</Button>
           </Stack>
