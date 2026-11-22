@@ -190,7 +190,13 @@ export function createAppTheme(mode = 'light') {
         styleOverrides: { tooltip: { backgroundColor: grey[800], borderRadius: 6 }, arrow: { color: grey[800] } },
       },
       MuiAlert: {
-        styleOverrides: { root: { borderRadius: 8 }, standardInfo: { color: light ? palette.info.darker : palette.info.light } },
+        styleOverrides: {
+          // An alert's button moves under the message when the message would get narrower than 200px.
+          root: { borderRadius: 8, flexWrap: 'wrap' },
+          message: { flex: '1 1 200px' },
+          action: { alignItems: 'flex-start', marginLeft: 'auto' },
+          standardInfo: { color: light ? palette.info.darker : palette.info.light },
+        },
       },
       MuiStepIcon: {
         styleOverrides: { root: { '&.Mui-completed, &.Mui-active': { color: palette.primary.main } } },

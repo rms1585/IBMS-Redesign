@@ -71,7 +71,7 @@ function CustomsStatus({ item }) {
 export function LabourPanel({ requisition, onRaise }) {
   if (!requisition) {
     return (
-      <Alert severity="info" action={<Button color="inherit" size="small" onClick={onRaise}>Raise requisition</Button>}>
+      <Alert severity="info" action={<Button variant="outlined" color="inherit" size="small" onClick={onRaise}>Raise requisition</Button>}>
         No labour requisition for this truck yet.
       </Alert>
     );

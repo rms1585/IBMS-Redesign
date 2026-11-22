@@ -1,4 +1,4 @@
-import { Box, Card, Stack, Typography, ButtonBase, Divider } from '@mui/material';
+import { Box, Card, Stack, Typography, ButtonBase, Button, Divider } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { SearchField, EmptyState } from './common';
 import Label from './Label';
@@ -136,7 +136,7 @@ export function CameraCard({ lane, plate, expected, onReread, before = 'admittin
           </Typography>
         )}
         <Typography variant="caption" color="text.disabled">A camera match supports, but does not replace, the operator&apos;s identity check.</Typography>
-        {onReread && <ButtonBase onClick={onReread} sx={{ alignSelf: 'flex-start', typography: 'subtitle2', color: 'primary.main' }}>Re-read plate</ButtonBase>}
+        {onReread && <Button variant="outlined" color="inherit" size="small" onClick={onReread} sx={{ alignSelf: 'flex-start' }}>Re-read plate</Button>}
       </Stack>
     </Card>
   );
@@ -167,7 +167,7 @@ export function BridgeCameraCard({ lane, inPosition, onRecheck }) {
             Part of the truck is outside the marked area. Ask the driver to move fully onto the bridge.
           </Typography>
         )}
-        {onRecheck && <ButtonBase onClick={onRecheck} sx={{ alignSelf: 'flex-start', typography: 'subtitle2', color: 'primary.main' }}>Check position again</ButtonBase>}
+        {onRecheck && <Button variant="outlined" color="inherit" size="small" onClick={onRecheck} sx={{ alignSelf: 'flex-start' }}>Check position again</Button>}
       </Stack>
     </Card>
   );

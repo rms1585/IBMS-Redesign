@@ -304,8 +304,8 @@ export default function Posting() {
         links={[{ name: 'Operations' }, { name: 'Posting / bay allocation' }]}
         action={
           <>
-            <Button component={RouterLink} to="/warehouse-layout" color="inherit">Warehouse layout</Button>
-            <Button component={RouterLink} to="/storage-rules" color="inherit">Storage-rule overrides</Button>
+            <Button component={RouterLink} to="/warehouse-layout" variant="outlined" color="inherit">Warehouse layout</Button>
+            <Button component={RouterLink} to="/storage-rules" variant="outlined" color="inherit">Storage-rule overrides</Button>
           </>
         }
       />

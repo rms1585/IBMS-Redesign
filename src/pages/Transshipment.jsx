@@ -97,7 +97,7 @@ function TransferDialog({ order, receiver, onReread, onClose, onSave }) {
           {match ? <Label color="success">Matches {receiver.plate}</Label> : <Label color="error">Expected {receiver.plate}</Label>}
         </Stack>
         {!match && (
-          <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={onReread}>Re-read plate</Button>}>
+          <Alert severity="error" sx={{ mb: 2 }} action={<Button variant="outlined" color="inherit" size="small" onClick={onReread}>Re-read plate</Button>}>
             This isn&apos;t the registered truck. Loading stays stopped until the plate matches.
           </Alert>
         )}
@@ -173,7 +173,7 @@ function OrderTypeNotes({ order, onCheckPermission }) {
     <Box sx={{ px: 3, pb: 3 }}>
       <Alert
         severity={granted ? 'success' : 'warning'}
-        action={!granted && <Button color="inherit" size="small" onClick={onCheckPermission}>Check again</Button>}
+        action={!granted && <Button variant="outlined" color="inherit" size="small" onClick={onCheckPermission}>Check again</Button>}
       >
         <Box component="span" sx={{ fontWeight: 600 }}>Customs permission: {granted ? 'granted' : order.customsPermission.toLowerCase()}.</Box>{' '}
         {granted ? 'Non-perishable goods may go across. Billed as unloading plus loading.' : 'Non-perishable goods go across only with Customs’ permission.'}

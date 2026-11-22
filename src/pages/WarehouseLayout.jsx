@@ -31,7 +31,7 @@ function ZoneCard({ zone, onAction }) {
           </Typography>
           <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>{zone.categories.map((c) => <Label key={c} color="info">{c}</Label>)}</Stack>
         </Box>
-        <Button size="small" color="inherit" endIcon={<MoreHorizRoundedIcon />} onClick={(e) => setAnchor(e.currentTarget)}>Edit grid</Button>
+        <Button size="small" variant="outlined" color="inherit" endIcon={<MoreHorizRoundedIcon />} onClick={(e) => setAnchor(e.currentTarget)}>Edit grid</Button>
         <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
           <MenuItem onClick={() => act('Add row')}>Add row</MenuItem>
           <MenuItem onClick={() => act('Add column')}>Add column</MenuItem>
@@ -97,7 +97,7 @@ export default function WarehouseLayout() {
           <SectionCard
             title={f.name}
             subheader={f.kind}
-            action={<Stack direction="row" spacing={1}><Button color="inherit">Change kind</Button><Button color="error">Retire</Button><Button variant="outlined" startIcon={<AddRoundedIcon />}>Add zone</Button></Stack>}
+            action={<Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">Change kind</Button><Button variant="outlined" color="error">Retire</Button><Button variant="outlined" startIcon={<AddRoundedIcon />}>Add zone</Button></Stack>}
           >
             <Box sx={{ px: 3, pb: 3 }}>
               {f.zones.length ? (

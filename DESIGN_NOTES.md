@@ -101,6 +101,14 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
   beside it are Large too (e.g. Report problem / Admit truck; Re-weigh / Enter manually / Confirm weight).
 - Still outlined (secondary) in page headers: "Import …" (Platform setup), "Import rules" (Storage rules),
   "Export" (Audit log).
+- **A button must look like a button (#66).** Any action sitting in running content — inside an alert, a camera card,
+  a card header or a page header — is outlined (`variant="outlined"`, `color="inherit"`, or `color="error"` for a
+  destructive one), never a bare text button. This covers Check again, Re-read plate, Check position again, Raise
+  requisition, Enter manually, Posting's header links, and the Warehouse layout and Platform setup card actions.
+  Text buttons stay only as table row actions (Edit, View details) and dialog Cancel/Previous; green text links stay
+  for navigation and fill-in shortcuts (Move all, Deliver all).
+- **Alert buttons wrap:** an alert's button moves under the message when the message would get narrower than 200px
+  (theme rule on `MuiAlert`), so a narrow record column never squeezes the message into a thin strip.
 
 ## 7. Row actions and alignment
 

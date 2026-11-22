@@ -160,7 +160,7 @@ function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
           <Alert
             severity="warning"
             sx={{ mt: 2 }}
-            action={<Button color="inherit" size="small" onClick={() => onRefresh(truck)}>Check again</Button>}
+            action={<Button variant="outlined" color="inherit" size="small" onClick={() => onRefresh(truck)}>Check again</Button>}
           >
             {awaitingIgm(truck) ? 'Keep the truck at zero point until Customs keys its IGM.' : 'Keep the truck at zero point until Customs validates its details.'} Customs updates arrive through BNSW.
           </Alert>

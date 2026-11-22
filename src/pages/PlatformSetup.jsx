@@ -123,7 +123,7 @@ export default function PlatformSetup() {
                 <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">TO-2026-03</Typography><Label color="success">Active</Label></Stack>
                 <Typography variant="body2" color="text.secondary">Invented reference · effective 1 Mar 2026 · billing at BEN, BUR, SON, AKH</Typography>
               </Box>
-              <Stack direction="row" spacing={1}><Button color="inherit">Edit details</Button><Button color="error">Deactivate</Button></Stack>
+              <Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">Edit details</Button><Button variant="outlined" color="error">Deactivate</Button></Stack>
             </Stack>
             <Alert severity="info" sx={{ mt: 2 }}>Demonstration values, not legal rates. Free days: storage 3, haltage 1.</Alert>
           </Card>

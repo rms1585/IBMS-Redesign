@@ -143,7 +143,7 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
         {tolerance && <AssumptionNote code="F18" sx={{ mt: 1.5 }}>The 5% tolerance is proposed, to be confirmed by BLPA and Customs, including whether it applies below the declaration too.</AssumptionNote>}
         {!tareValid && loaded && (
           <Alert severity="warning" sx={{ mt: 2 }}>
-            Stored tare: {tare.status}. This truck must be weighed empty before it leaves, so net weight is not calculated yet.
+            {tare.kg ? `Stored tare expired on ${formatDate(tare.expiresOn)}` : 'No stored tare'}. This truck must be weighed empty before it leaves, so net weight is not calculated yet.
           </Alert>
         )}
         {!loaded && emptyReason && (
@@ -183,7 +183,7 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
       {!loaded && <TareHistory history={tare.history} />}
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Stack className="record-actions" direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
-        <Button color="inherit" size="large" disabled={Boolean(block)} onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
+        <Button variant="outlined" color="inherit" size="large" disabled={Boolean(block)} onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
         <Stack direction="row" spacing={1.5}>
           {captured ? (
             <>
