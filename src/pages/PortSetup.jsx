@@ -8,6 +8,7 @@ import { alpha } from '@mui/material/styles';
 import { PageHeader, SectionCard, UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { ports, agencies, users } from '../data/mock';
+import { useTruckWeights } from '../TruckWeightsContext';
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, LockOutlinedIcon } from '../components/icons';
 
 const steps = [
@@ -60,7 +61,13 @@ function StepModules({ modules, setModules }) {
   );
 }
 
+const validTareMonths = (v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 12;
+
 function StepResources({ modules }) {
+  // The tare interval is read by the Weighbridge and the Border gate, so changing it here changes which trucks must be weighed (#73).
+  const { tareMonths, setTareMonths } = useTruckWeights();
+  const [months, setMonths] = useState(String(tareMonths));
+  const monthsValid = validTareMonths(months);
   const resources = [
     ['Border gate 1', 'Border gate', 'Lanes B1, B2', 'Live'],
     ['Inland gate', 'Inland gate', 'Lanes I1, I2', 'Live'],
@@ -94,8 +101,16 @@ function StepResources({ modules }) {
       <Box sx={{ mt: 3, p: 2.5, borderRadius: 2, bgcolor: 'background.neutral' }}>
         <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Empty weighing rule</Typography>
         <Grid container spacing={2}>
-          <Grid size={6}><TextField fullWidth size="small" label="Stored tare valid for (months)" defaultValue="3" /></Grid>
-          <Grid size={6}><TextField fullWidth size="small" select label="Weigh empty" defaultValue="missing" SelectProps={{ native: true }}><option value="missing">Only trucks with missing or expired tare</option><option value="all">Every truck</option></TextField></Grid>
+          <Grid size={{ xs: 12, sm: 6 }}><TextField
+            fullWidth
+            size="small"
+            label="Stored tare valid for (months)"
+            value={months}
+            onChange={(e) => { setMonths(e.target.value); if (validTareMonths(e.target.value)) setTareMonths(Number(e.target.value)); }}
+            error={!monthsValid}
+            helperText={monthsValid ? 'Applies to the Weighbridge and the Border gate at once.' : 'Enter 1 to 12 months.'}
+          /></Grid>
+          <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth size="small" select label="Weigh empty" defaultValue="missing" SelectProps={{ native: true }}><option value="missing">Only trucks with missing or expired tare</option><option value="all">Every truck</option></TextField></Grid>
         </Grid>
       </Box>
     </>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Card, Typography, Button, Menu, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Alert, Snackbar, Grid2 as Grid,
+  Box, Card, Typography, Button, Menu, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Alert, Snackbar, Grid2 as Grid,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField,
 } from '@mui/material';
 import { PageHeader, SectionCard, EmptyState, AssumptionNote, TableScroll, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
@@ -10,6 +11,8 @@ import { TruckDialog as LocalTruckForm, statusColor as localStatusColor } from '
 import { preArrivals } from '../data/mock';
 import { useManifests } from '../ManifestsContext';
 import { useCfTrucks } from '../CfTrucksContext';
+import { useAudit } from '../AuditContext';
+import { useTruckWeights } from '../TruckWeightsContext';
 import { AddRoundedIcon, KeyboardArrowDownRoundedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
@@ -34,7 +37,8 @@ function AddTruckButton({ disabled, onPick }) {
   );
 }
 
-export function VehiclesTable({ rows }) {
+// renderAction, when given, adds a last column with an action for each vehicle.
+export function VehiclesTable({ rows, renderAction }) {
   if (rows.length === 0) return <EmptyState title="No vehicles yet" description="Add the trucks that will carry this manifest." sx={{ py: 6 }} />;
   return (
     <TableScroll>
@@ -44,7 +48,8 @@ export function VehiclesTable({ rows }) {
             <TableCell sx={{ pl: 3 }}>Vehicle</TableCell>
             <TableCell>Side</TableCell>
             <TableCell>Class</TableCell>
-            <TableCell sx={{ pr: 3 }}>Status</TableCell>
+            <TableCell sx={renderAction ? undefined : { pr: 3 }}>Status</TableCell>
+            {renderAction && <TableCell sx={{ pr: 3 }} />}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -56,14 +61,36 @@ export function VehiclesTable({ rows }) {
               </TableCell>
               <TableCell>{sides[t.side]}</TableCell>
               <TableCell sx={{ whiteSpace: 'nowrap' }}>{t.cls}</TableCell>
-              <TableCell sx={{ pr: 3 }}>
+              <TableCell sx={renderAction ? undefined : { pr: 3 }}>
                 <Label color={(t.side === 'foreign' ? foreignStatusColor : localStatusColor)[t.status]}>{t.status}</Label>
               </TableCell>
+              {renderAction && <TableCell align="right" sx={{ pr: 3, whiteSpace: 'nowrap' }}>{renderAction(t)}</TableCell>}
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </TableScroll>
+  );
+}
+
+// The C&F agent asks for an Indian truck to be weighed empty before its stored tare expires (F31, #75).
+function ReweighApplication({ truck, onClose, onSave }) {
+  const [reason, setReason] = useState('');
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>Apply for early re-weigh</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+          <Box component="span" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Box> will be weighed empty again before it leaves, if both the Customs Assistant Commissioner and the BLPA Assistant Director approve.
+        </Typography>
+        <TextField autoFocus fullWidth required multiline minRows={3} label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Stored tare was taken in rain, or with bamboo poles on board" />
+        <AssumptionNote code="F31" sx={{ mt: 2 }}>How the Customs Assistant Commissioner approves in IBMS is to be confirmed with NBR.</AssumptionNote>
+      </DialogContent>
+      <DialogActions>
+        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
+        <Button variant="contained" disabled={!reason.trim()} onClick={() => onSave(reason.trim())}>Apply</Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
@@ -97,6 +124,9 @@ export default function CfManifest() {
   const foreign = allForeign[manifestId] ?? [];
   const local = allLocal[manifestId] ?? [];
   const [adding, setAdding] = useState(null);
+  const [applying, setApplying] = useState(null);
+  const { tareFor, openOrder, applications, applyForReweigh } = useTruckWeights();
+  const { addEvent } = useAudit();
   const [toast, setToast] = useState('');
 
   const links = [{ name: 'Operations' }, { name: 'C&F portal', href: '/cf-portal' }, { name: manifestId }];
@@ -117,6 +147,15 @@ export default function CfManifest() {
     else setLocalFor(manifestId, [...local, truck]);
     setAdding(null);
     setToast(`${truck.plate} added to ${manifest.id}.`);
+  };
+
+  // Only an Indian truck with a valid stored tare can be re-weighed early; one without is weighed empty anyway.
+  const reweighAction = (t) => {
+    if (t.side !== 'foreign' || !tareFor(t.plate).valid) return null;
+    if (openOrder(t.plate)) return <Label color="info">Re-weigh ordered</Label>;
+    const pending = applications.find((a) => a.plate === t.plate && a.status === 'Waiting');
+    if (pending) return <Label color="warning">Re-weigh applied</Label>;
+    return <Button size="small" color="inherit" onClick={() => setApplying(t)}>Apply for re-weigh</Button>;
   };
 
   return (
@@ -144,13 +183,25 @@ export default function CfManifest() {
         </Grid>
       </Card>
       <SectionCard title="Vehicles" subheader={`${foreign.length} Indian · ${local.length} Bangladeshi`}>
-        <VehiclesTable rows={rows} />
+        <VehiclesTable rows={rows} renderAction={reweighAction} />
       </SectionCard>
       {adding === 'foreign' && (
         <TruckForm open truck={null} takenPlates={foreign.map((t) => t.plate)} onClose={() => setAdding(null)} onSave={(t) => save('foreign', t)} />
       )}
       {adding === 'local' && (
         <LocalTruckForm takenPlates={local.map((t) => t.plate)} onClose={() => setAdding(null)} onSave={(t) => save('local', t)} />
+      )}
+      {applying && (
+        <ReweighApplication
+          truck={applying}
+          onClose={() => setApplying(null)}
+          onSave={(reason) => {
+            const id = applyForReweigh({ plate: applying.plate, manifest: manifest.id, agency: manifest.agency, requester: manifest.agency, reason });
+            addEvent({ actor: manifest.agency, role: 'C&F agent user', module: 'Weighing', type: 'Record', text: `Applied for early re-weigh ${id} of ${applying.plate} on ${manifest.id}: ${reason}` });
+            setToast(`${id} sent to the Customs Assistant Commissioner and the BLPA Assistant Director.`);
+            setApplying(null);
+          }}
+        />
       )}
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>

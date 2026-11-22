@@ -7,7 +7,9 @@ import { PageHeader, DetailRow, formatBDT, formatKg, EmptyState, AssumptionNote 
 import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
 import { FitnessRow, FitnessWarning } from '../components/Fitness';
 import Label from '../components/Label';
-import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes, truckDataStatus, truckClassRates } from '../data/mock';
+import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes, truckDataStatus, truckClassRates, currentUser } from '../data/mock';
+import { useAudit } from '../AuditContext';
+import { useTruckWeights, AUTHORITIES, formatDate } from '../TruckWeightsContext';
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, TimerOutlinedIcon } from '../components/icons';
 
 const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
@@ -193,42 +195,88 @@ function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
   );
 }
 
-function LeavingRecord({ truck, side }) {
+// BLPA or Customs orders a re-weigh on suspicion, at any time; the weighbridge is notified (F30, #74).
+function ReweighOrderDialog({ truck, onClose, onSave }) {
+  const [authority, setAuthority] = useState('blpa');
+  const [reason, setReason] = useState('');
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>Order re-weigh for <Box component="span" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Box></DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+          The truck can&apos;t leave until it is weighed empty again. The weighbridge is notified now.
+        </Typography>
+        <Stack spacing={2}>
+          <TextField select fullWidth label="Ordered on the authority of" value={authority} onChange={(e) => setAuthority(e.target.value)}>
+            {Object.entries(AUTHORITIES).map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}
+          </TextField>
+          <TextField fullWidth required multiline minRows={3} label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Body looks altered since the last empty weighing" helperText="Recorded in the audit log with your name and time." />
+        </Stack>
+        <AssumptionNote code="F30" sx={{ mt: 2 }}>Who may order a re-weigh, and whether Customs does it in IBMS, is to be confirmed by BLPA and NBR.</AssumptionNote>
+      </DialogContent>
+      <DialogActions>
+        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
+        <Button variant="contained" disabled={!reason.trim()} onClick={() => onSave(authority, reason.trim())}>Order re-weigh</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function LeavingRecord({ truck, side, plateRead, onDepart, onOrder }) {
+  const { tareFor, emptyWeighingReason } = useTruckWeights();
+  const [ordering, setOrdering] = useState(false);
   const local = truck.kind === 'Local';
+  const tare = local ? null : tareFor(truck.plate);
+  const weighing = local ? null : emptyWeighingReason(truck.plate);
+  // A foreign truck leaves on a plate scan matched to its entry record, empty and with a valid tare (Phase 8).
   const checks = local
     ? [['Customs released', truck.release === 'Released'], ['No Customs or BLPA hold', truck.release !== 'Hold'], ['BLPA charges paid in full', true], ['Exit pass signed by all three approvers (expires end of operating day)', truck.pass !== '—']]
-    : [['Truck is empty', truck.load === 'Empty'], ['No Customs or BLPA hold', truck.release !== 'Hold']];
+    : [
+      ['Truck is empty', truck.load === 'Empty'],
+      ['No Customs or BLPA hold', truck.release !== 'Hold'],
+      [truck.admitted ? `Entry record found: admitted ${truck.admitted} at Border gate 1` : 'No entry record for this plate', Boolean(truck.admitted)],
+      [plateRead === truck.plate ? 'Camera plate matches the entry record' : plateRead ? `Camera read ${plateRead}, which doesn't match` : 'No camera plate read', plateRead === truck.plate],
+      [weighing ? `${weighing}: weigh empty before departure` : `Stored tare valid until ${formatDate(tare.expiresOn)}`, !weighing],
+    ];
   const allOk = checks.every(([, ok]) => ok);
   return (
     <Card>
       <Box sx={{ p: 3 }}>
         <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
-        <Typography variant="body2" color="text.secondary">{truck.kind} · {truck.load} · admitted {truck.admitted}</Typography>
+        <Typography variant="body2" color="text.secondary">{local ? 'Local' : 'Foreign'} · {truck.load} · admitted {truck.admitted}</Typography>
       </Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Box sx={{ p: 3 }}>
         <DetailRow label="Location">{truck.location}</DetailRow>
         <DetailRow label="Manifest">{truck.manifest}</DetailRow>
-        <DetailRow label="Exit pass">{truck.pass}</DetailRow>
+        {local ? <DetailRow label="Exit pass">{truck.pass}</DetailRow> : <DetailRow label="Stored tare">{tare.kg ? formatKg(tare.kg) : '—'}</DetailRow>}
       </Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Box sx={{ p: 3 }}>
         <Typography variant="subtitle2" sx={{ mb: 1.5 }}>{local ? 'Loaded local departure checklist' : 'Foreign departure checks'}</Typography>
         <Stack spacing={1}>
           {checks.map(([l, ok]) => (
-            <Stack key={l} direction="row" spacing={1} alignItems="center">
+            <Stack key={l} direction="row" spacing={1} alignItems="flex-start">
               {ok ? <CheckCircleRoundedIcon color="success" fontSize="small" /> : <CancelRoundedIcon color="error" fontSize="small" />}
               <Typography variant="body2" color={ok ? 'text.primary' : 'error.main'}>{l}</Typography>
             </Stack>
           ))}
         </Stack>
-        {!allOk && <Alert severity="error" sx={{ mt: 2 }}>Departure is blocked. Conditions are checked again when you record departure.</Alert>}
+        {!allOk && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            Departure is blocked.{' '}
+            {weighing && truck.load === 'Empty' ? 'Send the truck to the weighbridge to be weighed empty; it is already in the weighbridge queue.' : !local && plateRead !== truck.plate ? 'Re-read the plate, or check the vehicle against the entry record.' : 'Conditions are checked again when you record departure.'}
+          </Alert>
+        )}
+        {!local && <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>The Car Pass stays with the driver.</Typography>}
       </Box>
-      <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ p: 3, pt: 0 }}>
-        <Button variant="contained" size="large" disabled={!allOk}>
+      <Stack className="record-actions" direction="row" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ p: 3, pt: 0 }}>
+        {!local && truck.load === 'Empty' && !weighing && <Button variant="outlined" color="inherit" size="large" onClick={() => setOrdering(true)}>Order re-weigh</Button>}
+        <Button variant="contained" size="large" disabled={!allOk} onClick={() => onDepart(truck)}>
           {side === 'border' ? 'Record departure to India' : 'Record departure'}
         </Button>
       </Stack>
+      {ordering && <ReweighOrderDialog truck={truck} onClose={() => setOrdering(false)} onSave={(authority, reason) => { setOrdering(false); onOrder(truck, authority, reason); }} />}
     </Card>
   );
 }
@@ -241,10 +289,17 @@ export default function GateWorkbench({ side }) {
   const [manual, setManual] = useState(false);
   const [toast, setToast] = useState('');
   const [rereadPlates, setRereadPlates] = useState([]);
+  const [departedLocal, setDepartedLocal] = useState([]);
+  const { leaving: leavingForeign, recordDeparture, createOrder } = useTruckWeights();
+  const { addEvent } = useAudit();
+  // Foreign trucks leave empty through the border gate; local trucks leave loaded through the inland gate.
+  const leaving = side === 'border'
+    ? leavingForeign.map((t) => ({ ...t, kind: 'Foreign' }))
+    : leavingTrucks.filter((t) => t.kind === 'Local' && !departedLocal.includes(t.plate));
   // Demo stand-in for the camera: a re-read returns a clean read of the expected plate.
-  const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate);
+  const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate ?? (tab === 'leaving' ? t.plate : undefined));
 
-  const list = tab === 'arriving' ? arriving : leavingTrucks;
+  const list = tab === 'arriving' ? arriving : leaving;
   const filtered = useMemo(
     () => list.filter((t) => `${t.plate} ${reference(t)}`.toLowerCase().includes(search.toLowerCase())),
     [list, search],
@@ -262,7 +317,7 @@ export default function GateWorkbench({ side }) {
       />
       <Tabs value={tab} onChange={(e, v) => { setTab(v); setSelected(null); }} sx={{ mb: 3 }}>
         <Tab value="arriving" label={<Stack direction="row" spacing={1} alignItems="center"><span>Arriving</span><Label color="primary">{arriving.length}</Label></Stack>} />
-        <Tab value="leaving" label={<Stack direction="row" spacing={1} alignItems="center"><span>Leaving</span><Label>{leavingTrucks.length}</Label></Stack>} />
+        <Tab value="leaving" label={<Stack direction="row" spacing={1} alignItems="center"><span>Leaving</span><Label>{leaving.length}</Label></Stack>} />
       </Tabs>
       <Workbench
         queue={
@@ -318,7 +373,30 @@ export default function GateWorkbench({ side }) {
                 }}
               />
             ) : (
-              <LeavingRecord key={current.plate} truck={current} side={side} />
+              <LeavingRecord
+                key={current.plate}
+                truck={current}
+                side={side}
+                plateRead={plateReadFor(current)}
+                onDepart={(t) => {
+                  if (side === 'border') recordDeparture(t.plate);
+                  else setDepartedLocal((d) => [...d, t.plate]);
+                  setSelected(null);
+                  addEvent({
+                    actor: currentUser.name, role: currentUser.role, module: 'Gates', type: 'Record',
+                    text: `Recorded departure of ${t.plate} (${t.manifest}) ${side === 'border' ? 'to India through Border gate 1, lane B2' : 'through the inland gate, lane 2'}; camera plate matched`,
+                  });
+                  setToast(`${t.plate} departed${side === 'border' ? ' to India' : ''}.`);
+                }}
+                onOrder={(t, authority, reason) => {
+                  const id = createOrder({ plate: t.plate, authority, reason });
+                  addEvent({
+                    actor: currentUser.name, role: currentUser.role, module: 'Weighing', type: 'Record', flags: ['Exception'],
+                    text: `Ordered re-weigh ${id} for ${t.plate} on the authority of the ${AUTHORITIES[authority]}: ${reason}`,
+                  });
+                  setToast(`Re-weigh ${id} ordered. The weighbridge is notified and ${t.plate} can't leave until it is weighed empty.`);
+                }}
+              />
             )
           ) : (
             <Card><EmptyState title="Select a truck" description="Choose a truck from the queue to see its checks." sx={{ py: 12 }} /></Card>

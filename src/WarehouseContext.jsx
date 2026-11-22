@@ -128,6 +128,8 @@ export function WarehouseProvider({ children }) {
   const [stock, setStock] = useState(seededStock);
   const [shiftings, setShiftings] = useState(seededShiftings);
   const [workOrders, setWorkOrders] = useState(seededWorkOrders);
+  // Foreign trucks unloaded at a shed, now empty and due to leave through the border gate (Phase 8).
+  const [emptied, setEmptied] = useState([]);
   const updateOrder = (id, change) => setWorkOrders((all) => all.map((o) => (o.id === id ? { ...o, ...(typeof change === 'function' ? change(o) : change) } : o)));
 
   const value = useMemo(() => ({
@@ -136,6 +138,7 @@ export function WarehouseProvider({ children }) {
     stock,
     shiftings,
     workOrders,
+    emptied,
     updateOrder,
     completeRequisition: (id, handling) => setRequisitions((all) => all.map((r) => (r.id === id ? { ...r, status: 'Completed', handling } : r))),
     // An accepted posting sends the truck to its shed. The Bill of Entry usually comes after unloading.
@@ -148,6 +151,7 @@ export function WarehouseProvider({ children }) {
     // A recorded receipt leaves the queue, puts the goods in stock and completes the truck's requisition.
     recordReceipt: (item, receiptKg, handling) => {
       setReceipts((all) => all.filter((r) => r.key !== item.key));
+      setEmptied((all) => [...all, { plate: item.plate, manifest: item.manifest, agency: item.agency, location: item.shed, admitted: 'earlier today' }]);
       setStock((all) => [...all, { id: `LOT-${5104 + all.length}`, manifest: item.manifest, product: item.product, owner: item.agency, bay: item.parts[0].bay, kg: receiptKg }]);
       setRequisitions((all) => all.map((r) => (r.truck === item.plate && r.work === 'Unloading' && r.status === 'Gang assigned' ? { ...r, status: 'Completed', handling } : r)));
     },
@@ -157,7 +161,7 @@ export function WarehouseProvider({ children }) {
       setShiftings((all) => [{ ...s, id: `SH-BEN-${String(119 + all.length - seededShiftings.length).padStart(4, '0')}`, at: 'Just now' }, ...all]);
       setStock((all) => all.map((l) => (l.id === s.lot ? { ...l, bay: s.to } : l)));
     },
-  }), [receipts, requisitions, stock, shiftings, workOrders]);
+  }), [receipts, requisitions, stock, shiftings, workOrders, emptied]);
 
   return <WarehouseContext.Provider value={value}>{children}</WarehouseContext.Provider>;
 }

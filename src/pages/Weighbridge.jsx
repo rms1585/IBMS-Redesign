@@ -9,6 +9,8 @@ import { Workbench, QueueCard, CameraCard, BridgeCameraCard } from '../component
 import Label from '../components/Label';
 import { weighQueue, currentUser, truckClassRates } from '../data/mock';
 import { useAudit } from '../AuditContext';
+import { useCfTrucks } from '../CfTrucksContext';
+import { useTruckWeights, formatDate, TARE_DROP_FLAG_KG } from '../TruckWeightsContext';
 
 function ManualWeight({ open, onClose, onConfirm }) {
   const [kg, setKg] = useState('');
@@ -65,7 +67,30 @@ function weighingBlock(truck, plateRead, inPosition) {
   return null;
 }
 
+// The truck's past empty weighings, newest first, with the change from the one before (#76).
+function TareHistory({ history }) {
+  if (history.length === 0) return null;
+  const rows = history.map((h, i) => ({ ...h, change: i === 0 ? null : h.kg - history[i - 1].kg })).reverse();
+  return (
+    <Box sx={{ px: 3, pb: 2 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>Tare history</Typography>
+      {rows.map((h) => (
+        <DetailRow key={h.date.getTime()} label={formatDate(h.date)}>
+          {formatKg(h.kg)}
+          {h.change != null && (
+            <Typography component="span" variant="caption" color={-h.change > TARE_DROP_FLAG_KG ? 'warning.text' : 'text.secondary'}>
+              {' '}({h.change >= 0 ? '+' : '−'}{formatKg(Math.abs(h.change))})
+            </Typography>
+          )}
+        </DetailRow>
+      ))}
+    </Box>
+  );
+}
+
 function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
+  const { tareFor, emptyWeighingReason } = useTruckWeights();
+  const tare = tareFor(truck.plate);
   const [live, setLive] = useState(truck.live);
   const [captured, setCaptured] = useState(null);
   const [manual, setManual] = useState(false);
@@ -79,8 +104,11 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
 
   const block = weighingBlock(truck, plateRead, inPosition);
   const loaded = truck.reason.startsWith('Loaded');
-  const tareValid = truck.tare && !truck.tareAge.includes('expired');
-  const net = captured && loaded && tareValid ? captured.kg - truck.tare : null;
+  const tareValid = tare.valid;
+  const net = captured && loaded && tareValid ? captured.kg - tare.kg : null;
+  // A new tare well below the last one is information for the operator, never a block (F16, #76).
+  const drop = !loaded && captured && tare.kg ? tare.kg - captured.kg : 0;
+  const emptyReason = loaded ? null : emptyWeighingReason(truck.plate);
   const tolerance = toleranceCheck(net, truck.declaredKg);
 
   return (
@@ -115,11 +143,20 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
         {tolerance && <AssumptionNote code="F18" sx={{ mt: 1.5 }}>The 5% tolerance is proposed, to be confirmed by BLPA and Customs, including whether it applies below the declaration too.</AssumptionNote>}
         {!tareValid && loaded && (
           <Alert severity="warning" sx={{ mt: 2 }}>
-            Stored tare: {truck.tareAge}. This truck must be weighed empty before it leaves, so net weight is not calculated yet.
+            Stored tare: {tare.status}. This truck must be weighed empty before it leaves, so net weight is not calculated yet.
           </Alert>
         )}
-        {!loaded && !tareValid && (
-          <Alert severity="info" sx={{ mt: 2 }}>Tare age: {truck.tareAge}. This empty weighing replaces the stored tare.</Alert>
+        {!loaded && emptyReason && (
+          <Alert severity="info" sx={{ mt: 2 }}>{emptyReason}. This empty weighing becomes the stored tare and clears the truck to leave.</Alert>
+        )}
+        {drop > TARE_DROP_FLAG_KG && (
+          <>
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              This empty weight is {formatKg(drop)} below the last stored tare ({formatKg(tare.kg)} on {formatDate(tare.date)}).
+              It is flagged in the audit log for information. Nothing is blocked.
+            </Alert>
+            <AssumptionNote code="F16" sx={{ mt: 1.5 }}>The {TARE_DROP_FLAG_KG} kg figure is a demo value until BLPA names the scenarios it wants flagged.</AssumptionNote>
+          </>
         )}
       </Box>
       <Grid container spacing={{ xs: 0, xl: 4 }} sx={{ px: 3, pb: 2 }}>
@@ -140,9 +177,10 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
               ? <Typography component="span" variant="body2" color="text.secondary">Set when Customs confirms the class</Typography>
               : formatBDT(weighingCharge(truck))}
           </DetailRow>
-          <DetailRow label="Stored tare">{truck.tare ? `${formatKg(truck.tare)} · ${truck.tareAge}` : truck.tareAge}</DetailRow>
+          <DetailRow label="Stored tare">{tare.kg ? <>{formatKg(tare.kg)} <Typography component="span" variant="caption" color={tare.valid ? 'text.secondary' : 'warning.text'}>· {tare.status}</Typography></> : tare.status}</DetailRow>
         </Grid>
       </Grid>
+      {!loaded && <TareHistory history={tare.history} />}
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Stack className="record-actions" direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
         <Button color="inherit" size="large" disabled={Boolean(block)} onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
@@ -150,7 +188,7 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
           {captured ? (
             <>
               <Button variant="outlined" color="inherit" size="large" onClick={() => setCaptured(null)}>Re-weigh</Button>
-              <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => onConfirmed(truck, captured, tolerance)}>Confirm weight</Button>
+              <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => onConfirmed(truck, captured, tolerance, drop)}>Confirm weight</Button>
             </>
           ) : (
             <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => setCaptured({ kg: live, method: 'scale' })}>Capture weight</Button>
@@ -165,6 +203,17 @@ function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
 export default function Weighbridge() {
   const [tab, setTab] = useState('entry');
   const [queue, setQueue] = useState(weighQueue);
+  const { leaving, tareFor, openOrder, emptyWeighingReason, recordEmptyWeighing } = useTruckWeights();
+  const { foreign } = useCfTrucks();
+  const registered = Object.values(foreign).flat();
+  // Empty foreign trucks that must be weighed before they leave: missing or expired tare, or a re-weigh order (#71, #74).
+  const emptyQueue = leaving.filter((t) => t.load === 'Empty' && emptyWeighingReason(t.plate)).map((t) => {
+    const reg = registered.find((r) => r.plate === t.plate);
+    return {
+      ...t, reason: 'Empty (return)', declaredKg: 0, driver: t.driver ?? reg?.driver ?? '—', cls: reg?.cls ?? '10-wheel truck', customsCls: reg?.cls ?? '10-wheel truck',
+      live: t.live ?? (tareFor(t.plate).kg ?? 11000) + 25,
+    };
+  });
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(weighQueue[0].plate);
   const [toast, setToast] = useState('');
@@ -175,7 +224,7 @@ export default function Weighbridge() {
   const [repositioned, setRepositioned] = useState([]);
   const inPositionFor = (t) => t.inPosition !== false || repositioned.includes(t.plate);
 
-  const tabQueue = queue.filter((t) => (tab === 'entry' ? t.reason.startsWith('Loaded') : !t.reason.startsWith('Loaded')));
+  const tabQueue = tab === 'entry' ? queue : emptyQueue;
   const filtered = tabQueue.filter((t) => `${t.plate} ${t.manifest}`.toLowerCase().includes(search.toLowerCase()));
   const current = tabQueue.find((t) => t.plate === selected);
 
@@ -184,7 +233,7 @@ export default function Weighbridge() {
       <PageHeader title="Weighbridge" links={[{ name: 'Operations' }, { name: 'Weighbridge' }]} />
       <Tabs value={tab} onChange={(e, v) => { setTab(v); setSelected(null); }} sx={{ mb: 3 }}>
         <Tab value="entry" label="Waiting for entry" />
-        <Tab value="empty" label="Empty & returned" />
+        <Tab value="empty" label={<Stack direction="row" spacing={1} alignItems="center"><span>Empty &amp; returned</span><Label color="warning">{emptyQueue.length}</Label></Stack>} />
       </Tabs>
       <Workbench
         queue={
@@ -207,7 +256,7 @@ export default function Weighbridge() {
                 <Typography variant="caption" color="text.secondary" component="div">{t.manifest}</Typography>
                 <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label color={t.reason.startsWith('Loaded') ? 'primary' : 'info'}>{t.reason}</Label>
-                  {(!t.tare || t.tareAge.includes('expired')) && <Label color="warning">Tare needed</Label>}
+                  {openOrder(t.plate) ? <Label color="error">Re-weigh ordered</Label> : !tareFor(t.plate).valid && <Label color="warning">Tare needed</Label>}
                   {weighingBlock(t, plateReadFor(t), inPositionFor(t)) && <Label color="error">Stopped</Label>}
                 </Stack>
               </>
@@ -221,8 +270,10 @@ export default function Weighbridge() {
               truck={current}
               plateRead={plateReadFor(current)}
               inPosition={inPositionFor(current)}
-              onConfirmed={(t, c, tolerance) => {
-                setQueue((q) => q.filter((x) => x.plate !== t.plate));
+              onConfirmed={(t, c, tolerance, drop) => {
+                const empty = !t.reason.startsWith('Loaded');
+                if (empty) recordEmptyWeighing(t.plate, c.kg);
+                else setQueue((q) => q.filter((x) => x.plate !== t.plate));
                 setSelected(null);
                 // Every confirmed weight goes to the audit log; a manual one is flagged for reconciliation (F16).
                 addEvent({
@@ -230,10 +281,14 @@ export default function Weighbridge() {
                   text: (c.method === 'manual'
                     ? `Entered manual weight ${formatKg(c.kg)} for ${t.plate} (${c.reason})`
                     : `Captured ${t.reason.startsWith('Loaded') ? 'loaded' : 'empty'} weight ${formatKg(c.kg)} for ${t.plate} on Scale 1`)
-                    + (tolerance?.outside ? `; net cargo ${(tolerance.share * 100).toFixed(1)}% from declared, flagged for Customs` : ''),
-                  flags: c.method === 'manual' ? ['Override', 'Manual pending reconciliation'] : [],
+                    + (tolerance?.outside ? `; net cargo ${(tolerance.share * 100).toFixed(1)}% from declared, flagged for Customs` : '')
+                    + (empty ? '; saved as the new stored tare' : '')
+                    + (drop > TARE_DROP_FLAG_KG ? `; ${formatKg(drop)} below the previous tare, flagged for information` : ''),
+                  flags: [...(c.method === 'manual' ? ['Override', 'Manual pending reconciliation'] : []), ...(drop > TARE_DROP_FLAG_KG ? ['Exception'] : [])],
                 });
-                setToast(`${formatKg(c.kg)} recorded for ${t.plate} (${c.method}). Weighment charge ${formatBDT(weighingCharge(t))} added.`);
+                setToast(empty
+                  ? `${formatKg(c.kg)} saved as the stored tare for ${t.plate}. The truck can leave through the border gate.`
+                  : `${formatKg(c.kg)} recorded for ${t.plate} (${c.method}). Weighment charge ${formatBDT(weighingCharge(t))} added.`);
               }}
             />
           ) : (

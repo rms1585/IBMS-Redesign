@@ -11,6 +11,7 @@ import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
 import { roles, useRole } from '../RoleContext';
+import { useTruckWeights } from '../TruckWeightsContext';
 import blpaLogo from '../assets/blpa-logo.png';
 import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
 
@@ -144,6 +145,9 @@ function Header({ navWidth, onOpenNav }) {
   const { mode, toggle } = useColorMode();
   const [port, setPort] = useState(currentUser.port);
   const [anchor, setAnchor] = useState(null);
+  // Staff notices (such as a re-weigh order for the weighbridge) come first, then consignment alerts.
+  const { notices } = useTruckWeights();
+  const items = [...notices.map((n) => ({ ...n, sub: n.ref })), ...alerts.map((a) => ({ ...a, sub: a.manifest, path: '/manifests' }))];
   const [userAnchor, setUserAnchor] = useState(null);
   const { role, setRole } = useRole();
 
@@ -192,17 +196,17 @@ function Header({ navWidth, onOpenNav }) {
       </Tooltip>
       <Tooltip title="Notifications">
         <IconButton onClick={(e) => setAnchor(e.currentTarget)}>
-          <Badge badgeContent={alerts.length} color="error"><NotificationsNoneRoundedIcon /></Badge>
+          <Badge badgeContent={items.length} color="error"><NotificationsNoneRoundedIcon /></Badge>
         </IconButton>
       </Tooltip>
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ paper: { sx: { width: 360 } } }}>
         <Typography variant="subtitle1" sx={{ px: 1.5, py: 1 }}>Notifications</Typography>
         <Divider sx={{ borderStyle: 'dashed' }} />
-        {alerts.map((a) => (
-          <MenuItem key={a.text} onClick={() => { setAnchor(null); navigate('/manifests'); }} sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}>
+        {items.map((a) => (
+          <MenuItem key={a.text} onClick={() => { setAnchor(null); navigate(a.path); }} sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}>
             <Box>
               <Typography variant="body2">{a.text}</Typography>
-              <Typography variant="caption" color="text.disabled">{a.at} · {a.manifest}</Typography>
+              <Typography variant="caption" color="text.disabled">{a.at} · {a.sub}</Typography>
             </Box>
           </MenuItem>
         ))}

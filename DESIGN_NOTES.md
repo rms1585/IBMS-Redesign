@@ -286,6 +286,23 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
     transshipment are billed as unloading plus loading (two handlings); true transshipment of perishables is one.
     The rate is a demo value, and who declares sheds jammed waits on BLPA (#70). Both exceptions are flagged
     Exception in the Audit log.
+- **Phase 8, foreign truck exit** (consultation minutes, item 10, F16, F30, F31). One truck-weight record
+  (`TruckWeightsContext`) is shared by the Weighbridge, the Border gate, the Inbox and the C&F portal:
+  - A foreign truck can't leave until its tare is valid. A missing or expired tare, or an open re-weigh order, blocks
+    departure and puts the truck in the Weighbridge's Empty & returned queue. The empty weighing becomes the new tare
+    and clears the block. Trucks emptied at a shed or in transshipment join the gate's Leaving list (#71).
+  - The border gate releases a foreign truck on a plate scan matched to its entry record. A mismatch blocks it, with
+    Re-read plate. No image comparison: BLPA staff have no time for it at the gate. Departures go to the Audit log, and
+    the Car Pass stays with the driver (#72). The Border gate lists foreign trucks only; the inland gate, local ones.
+  - Tare validity is the interval set in Port setup (default 3 months). Age counts from the last empty weighing (#73).
+  - BLPA or Customs can order a re-weigh at any time, with a reason. The weighbridge is told through the header
+    notifications, and the truck can't leave until weighed empty. Who may order is an assumption (#74, #78, #79).
+  - A C&F agent applies for an early re-weigh from the manifest, with a reason. The Customs AC and the BLPA AD each
+    decide in the Inbox, with mandatory remarks; both approvals create the re-weigh order, one rejection closes it, and
+    the C&F agency is told. In the demo one person decides for the pending authority (#75, #78).
+  - The weighbridge record shows the truck's tare history. A new tare more than 300 kg below the last is flagged
+    Exception in the Audit log for information only; nothing is blocked. 300 kg is a demo figure until BLPA decides
+    (#76, #79).
 - **Importer / exporter portal (#50):** each manifest row has View details, opening a read-only page with the summary,
   what still stops the manifest from closing, its trucks and Pay now for a balance due (minutes, item 14: the importer
   can pay the BLPA bill). Operational actions stay with the appointed C&F agency.
