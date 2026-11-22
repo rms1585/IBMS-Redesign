@@ -18,6 +18,16 @@ import { currentUser } from '../data/mock';
 
 const channelColor = { Green: 'success', Yellow: 'warning', Red: 'error' };
 const needsExamination = (item) => ['Yellow', 'Red'].includes(item.customs.channel);
+
+// The Customs status every shed truck carries, so the channel is visible in the queue and the record header (F27, #56).
+function ChannelLabel({ item }) {
+  if (!item.customs.boe) return <Label>No Bill of Entry</Label>;
+  return (
+    <Label color={channelColor[item.customs.channel]}>
+      {item.customs.channel} channel{needsExamination(item) ? ' · examination' : ''}
+    </Label>
+  );
+}
 // Benapole records the higher of the declared and weighbridge weight at receipt (F26).
 const receiptWeight = (item) => Math.max(item.declaredKg, item.weighedKg);
 const toTonnes = (kg) => Math.round(kg / 100) / 10;
@@ -41,14 +51,14 @@ function Elapsed({ since }) {
 function CustomsStatus({ item }) {
   if (!item.customs.boe) {
     return (
-      <Typography variant="body2" color="text.secondary" sx={{ px: 3, pb: 2 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ px: 3, pt: 3 }}>
         Bill of Entry not filed yet. Its number and Customs channel arrive through BNSW once the C&amp;F agent files it.
       </Typography>
     );
   }
   if (!needsExamination(item)) return null;
   return (
-    <Box sx={{ px: 3, pb: 3 }}>
+    <Box sx={{ px: 3, pt: 3 }}>
       <Alert severity={item.customs.channel === 'Red' ? 'error' : 'warning'}>
         <Box component="span" sx={{ fontWeight: 600 }}>Examination notice: {item.customs.channel.toLowerCase()} channel.</Box>{' '}
         Customs will physically examine these goods at this shed. Keep them reachable at {item.parts.map((p) => p.bay).join(', ')} and don&apos;t stack other cargo in front.
@@ -164,11 +174,15 @@ function Record({ item, plateRead, requisition, onRaise, onStart, onFinish }) {
           <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{item.plate}</Typography>
           <Typography variant="body2" color="text.secondary">{item.product} · allocated {item.parts.map((p) => p.bay).join(', ')}</Typography>
         </Box>
-        {block ? <Label color="error">Unloading stopped</Label>
-          : item.stage === 'waiting' ? <Label color="success">Ready to unload</Label>
-            : <Label color="info">Unloading · <Elapsed since={item.startedAt} /></Label>}
+        <Stack direction="row" flexWrap="wrap" gap={1}>
+          <ChannelLabel item={item} />
+          {block ? <Label color="error">Unloading stopped</Label>
+            : item.stage === 'waiting' ? <Label color="success">Ready to unload</Label>
+              : <Label color="info">Unloading · <Elapsed since={item.startedAt} /></Label>}
+        </Stack>
       </Stack>
       <Divider sx={{ borderStyle: 'dashed' }} />
+      <CustomsStatus item={item} />
       <Grid container spacing={{ xs: 0, xl: 4 }} sx={{ p: 3, pb: 2 }}>
         <Grid size={{ xs: 12, xl: 6 }}>
           <DetailRow label="Manifest">{item.manifest}</DetailRow>
@@ -195,7 +209,6 @@ function Record({ item, plateRead, requisition, onRaise, onStart, onFinish }) {
         </Grid>
       </Grid>
       <AssumptionNote code="F26" sx={{ px: 3, pb: 2 }}>Using the higher weight is Benapole&apos;s current rule. BLPA is to confirm it for every port.</AssumptionNote>
-      <CustomsStatus item={item} />
       <Divider sx={{ borderStyle: 'dashed' }} />
       {item.stage === 'waiting' ? (
         <Box sx={{ p: 3 }}>
@@ -364,7 +377,7 @@ export default function Warehousing() {
                       {i.parts.map((p) => <Label key={p.bay}>{p.bay}</Label>)}
                       {i.stage === 'waiting' && i.handheldPlate !== i.plate && <Label color="error">Plate mismatch</Label>}
                       {i.stage === 'waiting' && req?.status !== 'Gang assigned' && <Label color="warning">No gang yet</Label>}
-                      {needsExamination(i) && <Label color={channelColor[i.customs.channel]}>Examination</Label>}
+                      <ChannelLabel item={i} />
                     </Stack>
                   </>
                 );
