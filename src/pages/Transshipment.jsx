@@ -317,7 +317,7 @@ export default function Transshipment() {
     updateOrder(current.id, { done: true });
     addEvent({
       actor: currentUser.name, role: currentUser.role, module: 'Transshipment', type: 'Record', flags: exceptionFlag(current),
-      text: `Finished ${current.id}: ${formatKg(movedKg(current))} of ${current.product} across ${current.receivers.length} trucks; ${handlingsFor(current)} handling${handlingsFor(current) === 1 ? '' : 's'} billed`,
+      text: `Finished ${current.id}: ${formatKg(movedKg(current))} of ${current.product} across ${current.receivers.length} truck${current.receivers.length === 1 ? '' : 's'}; ${handlingsFor(current)} handling${handlingsFor(current) === 1 ? '' : 's'} billed`,
     });
     setDialog(null);
     setSelected(null);
