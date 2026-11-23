@@ -14,6 +14,7 @@ import {
   useWarehouse, requisitionFor, gangByName, isDoubleHandling, SHIFTING_FEE_PER_T,
 } from '../WarehouseContext';
 import { useAudit } from '../AuditContext';
+import { useCustoms } from '../CustomsContext';
 import { currentUser } from '../data/mock';
 
 const channelColor = { Green: 'success', Yellow: 'warning', Red: 'error' };
@@ -56,9 +57,15 @@ function CustomsStatus({ item }) {
       </Typography>
     );
   }
-  if (!needsExamination(item)) return null;
+  const hold = item.customs.onHold && (
+    <Alert severity="error" sx={{ mb: needsExamination(item) ? 1.5 : 0 }}>
+      <Box component="span" sx={{ fontWeight: 600 }}>Customs hold.</Box> {item.customs.hold.reason}. Unloading into the shed can go ahead, but nothing is delivered until Customs lifts the hold.
+    </Alert>
+  );
+  if (!needsExamination(item)) return hold ? <Box sx={{ px: 3, pt: 3 }}>{hold}</Box> : null;
   return (
     <Box sx={{ px: 3, pt: 3 }}>
+      {hold}
       <Alert severity={item.customs.channel === 'Red' ? 'error' : 'warning'}>
         <Box component="span" sx={{ fontWeight: 600 }}>Examination notice: {item.customs.channel.toLowerCase()} channel.</Box>{' '}
         Customs will physically examine these goods at this shed. Keep them reachable at {item.parts.map((p) => p.bay).join(', ')} and don&apos;t stack other cargo in front.
@@ -312,8 +319,11 @@ function Shifting({ shiftings, onRecord }) {
 
 export default function Warehousing() {
   const {
-    receipts, requisitions, stock, shiftings, updateReceipt, recordReceipt, raiseRequisition, addShifting,
+    receipts: shedReceipts, requisitions, stock, shiftings, updateReceipt, recordReceipt, raiseRequisition, addShifting,
   } = useWarehouse();
+  const { customsFor } = useCustoms();
+  // Each truck's Customs status comes from the one shared record for its manifest (#80).
+  const receipts = shedReceipts.map((r) => ({ ...r, customs: customsFor(r.manifest) }));
   const { addEvent } = useAudit();
   const [tab, setTab] = useState('waiting');
   const [search, setSearch] = useState('');

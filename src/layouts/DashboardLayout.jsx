@@ -12,6 +12,7 @@ import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
 import { roles, useRole } from '../RoleContext';
 import { useTruckWeights } from '../TruckWeightsContext';
+import { useCustoms } from '../CustomsContext';
 import blpaLogo from '../assets/blpa-logo.png';
 import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
 
@@ -145,9 +146,10 @@ function Header({ navWidth, onOpenNav }) {
   const { mode, toggle } = useColorMode();
   const [port, setPort] = useState(currentUser.port);
   const [anchor, setAnchor] = useState(null);
-  // Staff notices (such as a re-weigh order for the weighbridge) come first, then consignment alerts.
+  // Staff notices (a Customs release or hold, a re-weigh order for the weighbridge) come first, then consignment alerts.
   const { notices } = useTruckWeights();
-  const items = [...notices.map((n) => ({ ...n, sub: n.ref })), ...alerts.map((a) => ({ ...a, sub: a.manifest, path: '/manifests' }))];
+  const { notices: customsNotices } = useCustoms();
+  const items = [...customsNotices.map((n) => ({ ...n, sub: n.ref })), ...notices.map((n) => ({ ...n, sub: n.ref })), ...alerts.map((a) => ({ ...a, sub: a.manifest, path: '/manifests' }))];
   const [userAnchor, setUserAnchor] = useState(null);
   const { role, setRole } = useRole();
 

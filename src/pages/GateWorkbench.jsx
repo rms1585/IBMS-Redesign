@@ -10,9 +10,10 @@ import Label from '../components/Label';
 import { arrivingTrucks, inlandArriving, leavingTrucks, vehicleTypes, truckDataStatus, truckClassRates, currentUser } from '../data/mock';
 import { useAudit } from '../AuditContext';
 import { useTruckWeights, AUTHORITIES, formatDate } from '../TruckWeightsContext';
+import { useCustoms } from '../CustomsContext';
+import { CustomsLabel } from '../components/CustomsSteps';
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, TimerOutlinedIcon } from '../components/icons';
 
-const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
 const awaitingIgm = (t) => t.igm === 'Awaiting';
 const reference = (t) => t.manifest ?? t.preArrival;
 
@@ -100,7 +101,7 @@ function ArrivingRecord({ truck, plateRead, side, onAdmit, onRefresh }) {
           </Stack>
           <Typography variant="body2" color="text.secondary">{truck.kind} · {feeCls ?? truck.cls} · expected {truck.eta}</Typography>
         </Box>
-        {awaitingIgm(truck) ? <Label color="error">No IGM yet</Label> : <Label color={customsColor[truck.customs]}>Customs: {truck.customs}</Label>}
+        {awaitingIgm(truck) ? <Label color="error">No IGM yet</Label> : truck.customs && <CustomsLabel customs={truck.customs} prefix="Customs: " />}
       </Stack>
       <Divider sx={{ borderStyle: 'dashed' }} />
       <Grid container spacing={4} sx={{ p: 3 }}>
@@ -230,10 +231,10 @@ function LeavingRecord({ truck, side, plateRead, onDepart, onOrder }) {
   const weighing = local ? null : emptyWeighingReason(truck.plate);
   // A foreign truck leaves on a plate scan matched to its entry record, empty and with a valid tare (Phase 8).
   const checks = local
-    ? [['Customs released', truck.release === 'Released'], ['No Customs or BLPA hold', truck.release !== 'Hold'], ['BLPA charges paid in full', true], ['Exit pass signed by all three approvers (expires end of operating day)', truck.pass !== '—']]
+    ? [['Customs released', Boolean(truck.customs?.released)], ['No Customs or BLPA hold', !truck.customs?.onHold], ['BLPA charges paid in full', true], ['Exit pass issued (expires end of operating day)', truck.pass !== '—']]
     : [
       ['Truck is empty', truck.load === 'Empty'],
-      ['No Customs or BLPA hold', truck.release !== 'Hold'],
+      ['No Customs or BLPA hold', !truck.customs?.onHold],
       [truck.admitted ? `Entry record found: admitted ${truck.admitted} at Border gate 1` : 'No entry record for this plate', Boolean(truck.admitted)],
       [plateRead === truck.plate ? 'Camera plate matches the entry record' : plateRead ? `Camera read ${plateRead}, which doesn't match` : 'No camera plate read', plateRead === truck.plate],
       [weighing ? `${weighing}: weigh empty before departure` : `Stored tare valid until ${formatDate(tare.expiresOn)}`, !weighing],
@@ -292,6 +293,7 @@ export default function GateWorkbench({ side }) {
   const [departedLocal, setDepartedLocal] = useState([]);
   const { leaving: leavingForeign, recordDeparture, createOrder } = useTruckWeights();
   const { addEvent } = useAudit();
+  const { customsFor } = useCustoms();
   // Foreign trucks leave empty through the border gate; local trucks leave loaded through the inland gate.
   const leaving = side === 'border'
     ? leavingForeign.map((t) => ({ ...t, kind: 'Foreign' }))
@@ -299,7 +301,8 @@ export default function GateWorkbench({ side }) {
   // Demo stand-in for the camera: a re-read returns a clean read of the expected plate.
   const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate ?? (tab === 'leaving' ? t.plate : undefined));
 
-  const list = tab === 'arriving' ? arriving : leaving;
+  // Every truck shows its manifest's one shared Customs status (#80).
+  const list = (tab === 'arriving' ? arriving : leaving).map((t) => (t.manifest ? { ...t, customs: customsFor(t.manifest) } : t));
   const filtered = useMemo(
     () => list.filter((t) => `${t.plate} ${reference(t)}`.toLowerCase().includes(search.toLowerCase())),
     [list, search],
@@ -342,8 +345,7 @@ export default function GateWorkbench({ side }) {
                 <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
                   <Label>{t.kind}</Label>
                   {t.perishable && <PerishableLabel />}
-                  {awaitingIgm(t) ? <Label color="error">No IGM yet</Label> : t.customs && <Label color={customsColor[t.customs]}>{t.customs}</Label>}
-                  {t.release && <Label color={customsColor[t.release]}>{t.release}</Label>}
+                  {awaitingIgm(t) ? <Label color="error">No IGM yet</Label> : t.customs && (tab === 'arriving' || t.kind === 'Local' || t.customs.onHold) && <CustomsLabel customs={t.customs} />}
                 </Stack>
               </>
             )}

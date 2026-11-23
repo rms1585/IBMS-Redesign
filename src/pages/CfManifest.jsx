@@ -14,8 +14,9 @@ import { useCfTrucks } from '../CfTrucksContext';
 import { useAudit } from '../AuditContext';
 import { useTruckWeights } from '../TruckWeightsContext';
 import { AddRoundedIcon, KeyboardArrowDownRoundedIcon } from '../components/icons';
+import CustomsSteps, { CustomsLabel } from '../components/CustomsSteps';
+import { useCustoms } from '../CustomsContext';
 
-const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
 const sides = { foreign: 'Indian', local: 'Bangladeshi' };
 
 function AddTruckButton({ disabled, onPick }) {
@@ -95,7 +96,7 @@ function ReweighApplication({ truck, onClose, onSave }) {
 }
 
 // Pre-arrival consignments have no IGM yet, so they show what is expected instead of Customs and billing.
-function summaryFor(m) {
+function summaryFor(m, customs) {
   if (m.preArrival) {
     return [
       ['Customs', <Label color="error">No IGM yet</Label>],
@@ -106,7 +107,7 @@ function summaryFor(m) {
     ];
   }
   return [
-    ['Customs', <Label color={customsColor[m.customs]}>{m.customs}</Label>],
+    ['Customs', <CustomsLabel customs={customs} />],
     ['Land-port bill', m.balance > 0 ? <Label color="warning">{formatBDT(m.balance)} due</Label> : <Label color="success">Paid</Label>],
     ['Declared', formatKg(m.declaredKg)],
     ['Still in port', formatKg(m.remainingKg)],
@@ -127,6 +128,7 @@ export default function CfManifest() {
   const [applying, setApplying] = useState(null);
   const { tareFor, openOrder, applications, applyForReweigh } = useTruckWeights();
   const { addEvent } = useAudit();
+  const { customsFor } = useCustoms();
   const [toast, setToast] = useState('');
 
   const links = [{ name: 'Operations' }, { name: 'C&F portal', href: '/cf-portal' }, { name: manifestId }];
@@ -140,7 +142,8 @@ export default function CfManifest() {
   }
 
   const closed = manifest.status === 'Closed';
-  const summary = summaryFor(manifest);
+  const customs = customsFor(manifest.id);
+  const summary = summaryFor(manifest, customs);
   const rows = [...foreign.map((t) => ({ ...t, side: 'foreign' })), ...local.map((t) => ({ ...t, side: 'local' }))];
   const save = (side, truck) => {
     if (side === 'foreign') setForeignFor(manifestId, [...foreign, truck]);
@@ -182,6 +185,11 @@ export default function CfManifest() {
           ))}
         </Grid>
       </Card>
+      {!manifest.preArrival && (
+        <SectionCard title="Customs" subheader="Each step as it reaches IBMS" sx={{ mb: 3 }}>
+          <Box sx={{ px: 3, pb: 3 }}><CustomsSteps customs={customs} /></Box>
+        </SectionCard>
+      )}
       <SectionCard title="Vehicles" subheader={`${foreign.length} Indian · ${local.length} Bangladeshi`}>
         <VehiclesTable rows={rows} renderAction={reweighAction} />
       </SectionCard>

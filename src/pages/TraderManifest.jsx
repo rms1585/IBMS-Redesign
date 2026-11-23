@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Typography, Button, Grid2 as Grid, LinearProgress, Stack, Alert, Snackbar } from '@mui/material';
+import { Box, Card, Typography, Button, Grid2 as Grid, LinearProgress, Stack, Alert, Snackbar } from '@mui/material';
 import { PageHeader, SectionCard, EmptyState, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
 import PayDialog from '../components/PayDialog';
@@ -8,14 +8,15 @@ import { VehiclesTable } from './CfManifest';
 import { useManifests } from '../ManifestsContext';
 import { useCfTrucks } from '../CfTrucksContext';
 import { TRADER } from './TraderPortal';
+import CustomsSteps, { CustomsLabel } from '../components/CustomsSteps';
+import { useCustoms } from '../CustomsContext';
 
-const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
 
 // What still stops the manifest from closing, in the importer's words.
-function outstanding(m) {
+function outstanding(m, customs) {
   return [
-    m.customs === 'Hold' && 'Customs has placed a hold. Your C&F agency deals with Customs.',
-    m.customs === 'Pending' && 'Customs release is pending.',
+    customs.onHold && 'Customs has placed a hold. Your C&F agency deals with Customs.',
+    !customs.released && !customs.onHold && `Customs release is pending (last step: ${customs.label}).`,
     m.remainingKg > 0 && `${formatKg(m.remainingKg)} of cargo is still in the port.`,
     m.balance > 0 && `${formatBDT(m.balance)} land-port bill is unpaid.`,
   ].filter(Boolean);
@@ -26,6 +27,7 @@ export default function TraderManifest() {
   const { manifestId } = useParams();
   const { manifests } = useManifests();
   const { foreign, local } = useCfTrucks();
+  const { customsFor } = useCustoms();
   const [paying, setPaying] = useState(false);
   const [toast, setToast] = useState('');
   const m = manifests.find((x) => x.id === manifestId && x.trader === TRADER);
@@ -45,9 +47,10 @@ export default function TraderManifest() {
     ...(foreign[m.id] ?? []).map((t) => ({ ...t, side: 'foreign' })),
     ...(local[m.id] ?? []).map((t) => ({ ...t, side: 'local' })),
   ];
-  const todo = outstanding(m);
+  const customs = customsFor(m.id);
+  const todo = outstanding(m, customs);
   const summary = [
-    ['Customs', <Label color={customsColor[m.customs]}>{m.customs}</Label>],
+    ['Customs', <CustomsLabel customs={customs} />],
     ['Appointed agency', m.agency],
     ['Cargo cleared', (
       <Stack direction="row" alignItems="center" spacing={1}>
@@ -84,6 +87,9 @@ export default function TraderManifest() {
             : <Typography variant="body2" color="success.main">Nothing outstanding.</Typography>}
           <Typography variant="caption" color="text.secondary">Trucks, Customs and the shed are handled by your appointed C&amp;F agency.</Typography>
         </Stack>
+      </SectionCard>
+      <SectionCard title="Customs" subheader="Each step as it reaches IBMS" sx={{ mb: 3 }}>
+        <Box sx={{ px: 3, pb: 3 }}><CustomsSteps customs={customs} /></Box>
       </SectionCard>
       <SectionCard title="Vehicles" subheader={`${(foreign[m.id] ?? []).length} Indian · ${(local[m.id] ?? []).length} Bangladeshi`}>
         <VehiclesTable rows={rows} />

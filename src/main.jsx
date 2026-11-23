@@ -12,6 +12,7 @@ import { CfTrucksProvider } from './CfTrucksContext';
 import { AuditProvider } from './AuditContext';
 import { CfAlertsProvider } from './CfAlertsContext';
 import { ManifestsProvider } from './ManifestsContext';
+import { CustomsProvider } from './CustomsContext';
 import { WarehouseProvider } from './WarehouseContext';
 import { TruckWeightsProvider } from './TruckWeightsContext';
 import App from './App';
@@ -25,11 +26,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <CfTrucksProvider>
               <CfAlertsProvider>
                 <ManifestsProvider>
-                  <WarehouseProvider>
-                    <TruckWeightsProvider>
-                      <App />
-                    </TruckWeightsProvider>
-                  </WarehouseProvider>
+                  <CustomsProvider>
+                    <WarehouseProvider>
+                      <TruckWeightsProvider>
+                        <App />
+                      </TruckWeightsProvider>
+                    </WarehouseProvider>
+                  </CustomsProvider>
                 </ManifestsProvider>
               </CfAlertsProvider>
             </CfTrucksProvider>

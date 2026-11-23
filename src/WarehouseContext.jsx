@@ -41,22 +41,19 @@ const seededReceipts = [
   {
     key: 'W1', plate: 'WB-19-C-0788', handheldPlate: 'WB-19-C-0788', manifest: 'BEN-IGM-2026-08829', product: 'Rice (non-basmati)', category: 'Food',
     agency: 'Rupsha Clearing & Forwarding', declaredKg: 30000, weighedKg: 30410, parts: [{ bay: 'S5A-R2-C03', m3: 45 }], shed: 'Shed 5', stage: 'waiting',
-    customs: { boe: 'C-48211', channel: 'Green' },
   },
   {
     key: 'W2', plate: 'WB-23-K-4402', handheldPlate: 'WB-23-K-4402', manifest: 'BEN-IGM-2026-08860', product: 'Industrial solvent', category: 'Chemical',
     agency: 'Padma Border Agents', declaredKg: 22000, weighedKg: 21940, parts: [{ bay: 'S5B-R3-C01', m3: 30 }], shed: 'Shed 5', stage: 'unloading',
-    startedAt: Date.now() - 34 * 60000, customs: { boe: 'C-48190', channel: 'Red' },
+    startedAt: Date.now() - 34 * 60000,
   },
   {
     key: 'W3', plate: 'WB-37-A-1650', handheldPlate: 'WB-37-A-1658', manifest: 'BEN-IGM-2026-08866', product: 'Cotton yarn', category: 'Textile',
     agency: 'Meghna Trade Logistics', declaredKg: 18000, weighedKg: 17880, parts: [{ bay: 'S5A-R4-C02', m3: 52 }], shed: 'Shed 5', stage: 'waiting',
-    customs: { boe: 'C-48230', channel: 'Yellow' },
   },
   {
     key: 'W4', plate: 'WB-11-F-3307', handheldPlate: 'WB-11-F-3307', manifest: 'BEN-IGM-2026-08874', product: 'Motor cars (3 units)', category: 'General',
     agency: 'Rupsha Clearing & Forwarding', declaredKg: 4200, weighedKg: 4350, parts: [{ bay: 'S5B-R1-C04', m3: 60 }], shed: 'Shed 5', stage: 'waiting',
-    customs: { boe: null, channel: null },
   },
 ];
 
@@ -144,8 +141,7 @@ export function WarehouseProvider({ children }) {
     // An accepted posting sends the truck to its shed. The Bill of Entry usually comes after unloading.
     addPosted: (line, shed) => setReceipts((all) => [...all, {
       key: `P${nextKey++}`, plate: line.plate, handheldPlate: line.plate, manifest: line.manifest, product: line.product, category: line.category,
-      agency: line.agency, declaredKg: line.declaredKg, weighedKg: line.weighedKg, sharedTruck: line.sharedTruck, parts: line.parts, shed, stage: 'waiting',
-      customs: { boe: null, channel: null }, fromPosting: true,
+      agency: line.agency, declaredKg: line.declaredKg, weighedKg: line.weighedKg, sharedTruck: line.sharedTruck, parts: line.parts, shed, stage: 'waiting', fromPosting: true,
     }]),
     updateReceipt: (key, change) => setReceipts((all) => all.map((r) => (r.key === key ? { ...r, ...change } : r))),
     // A recorded receipt leaves the queue, puts the goods in stock and completes the truck's requisition.

@@ -13,10 +13,11 @@ import { preArrivals } from '../data/mock';
 import { useManifests } from '../ManifestsContext';
 import { useCfTrucks } from '../CfTrucksContext';
 import { useCfAlerts } from '../CfAlertsContext';
+import { CustomsLabel } from '../components/CustomsSteps';
+import { useCustoms } from '../CustomsContext';
 import { LocalShippingRoundedIcon, NotificationsActiveRoundedIcon, PaymentsRoundedIcon, ReceiptLongRoundedIcon } from '../components/icons';
 
 const AGENCY = 'Rupsha Clearing & Forwarding';
-const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
 
 // Expected consignments with no IGM yet sit above the agency's manifests, so their trucks can be added in advance.
 const preArrivalRows = preArrivals
@@ -32,6 +33,7 @@ export default function CfPortal() {
   const [trucksFor, setTrucksFor] = useState(null);
   const [localsFor, setLocalsFor] = useState(null);
   const { manifests } = useManifests();
+  const { customsFor } = useCustoms();
   const own = manifests.filter((m) => m.agency === AGENCY);
   const consignments = [...preArrivalRows, ...own];
   const rows = consignments.filter((m) => {
@@ -86,7 +88,7 @@ export default function CfPortal() {
                         {(locals[m.id] ?? []).length} {(locals[m.id] ?? []).length === 1 ? 'truck' : 'trucks'}
                       </Button>
                     </TableCell>
-                    <TableCell>{m.preArrival ? <Label color="error">No IGM yet</Label> : <Label color={customsColor[m.customs]}>{m.customs}</Label>}</TableCell>
+                    <TableCell>{m.preArrival ? <Label color="error">No IGM yet</Label> : <CustomsLabel customs={customsFor(m.id)} />}</TableCell>
                     <TableCell>
                       {m.preArrival ? (
                         <Typography variant="body2" color="text.disabled">Not billed yet</Typography>

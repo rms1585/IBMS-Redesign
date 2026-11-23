@@ -4,16 +4,19 @@ import { PageHeader, DetailRow, formatKg, EmptyState, AssumptionNote } from '../
 import { Workbench, QueueCard } from '../components/Workbench';
 import Label from '../components/Label';
 import { CheckCircleRoundedIcon } from '../components/icons';
+import { CustomsLabel } from '../components/CustomsSteps';
+import { useCustoms } from '../CustomsContext';
 
 const approvers = [
   { key: 'shed', role: 'Shed in-charge', name: 'Mahmud Karim' },
-  { key: 'customs', role: 'Customs ARO', name: 'Selina Parvin' },
   { key: 'cf', role: "C&F agent's authorised signer", name: 'Ayesha Siddiqua' },
 ];
+// Customs approves by releasing the goods through BNSW, not by signing here (Phase 9, #83).
 const initialPasses = [
+  { id: 'BEN-PASS-004420', plate: 'JESSORE-TA-11-2250', manifest: 'BEN-IGM-2026-08852', product: 'Cotton fabric', kg: 8000, agency: 'Meghna Trade Logistics', signatures: { shed: '27 Oct, 11:20' } },
   { id: 'BEN-PASS-004418', plate: 'JESSORE-TA-11-2101', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', kg: 16000, agency: 'Rupsha Clearing & Forwarding', signatures: { shed: '27 Oct, 11:05' } },
   { id: 'BEN-PASS-004419', plate: 'JESSORE-TA-11-1987', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', kg: 8000, agency: 'Rupsha Clearing & Forwarding', signatures: {} },
-  { id: 'BEN-PASS-004412', plate: 'JESSORE-TA-11-2034', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', kg: 16000, agency: 'Rupsha Clearing & Forwarding', issued: true, signatures: { shed: '27 Oct, 08:10', customs: '27 Oct, 08:22', cf: '27 Oct, 08:31' } },
+  { id: 'BEN-PASS-004412', plate: 'JESSORE-TA-11-2034', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', kg: 16000, agency: 'Rupsha Clearing & Forwarding', issued: true, signatures: { shed: '27 Oct, 08:10', cf: '27 Oct, 08:31' } },
 ];
 
 function SignDialog({ approver, pass, onClose, onSign }) {
@@ -41,8 +44,12 @@ function SignDialog({ approver, pass, onClose, onSign }) {
 
 function PassRecord({ pass, onSign, onIssue }) {
   const [signing, setSigning] = useState(null);
+  const { customsFor } = useCustoms();
+  const customs = customsFor(pass.manifest);
   const signedCount = approvers.filter((a) => pass.signatures[a.key]).length;
   const allSigned = signedCount === approvers.length;
+  const customsReady = customs.released && !customs.onHold;
+  const releaseStep = customs.steps.find((s) => s.name === 'Released');
   return (
     <Card>
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
@@ -62,6 +69,20 @@ function PassRecord({ pass, onSign, onIssue }) {
       <Box sx={{ p: 3 }}>
         <Typography variant="subtitle2">Approvals</Typography>
         <Stack divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1} sx={{ py: 1.5 }}>
+            <Box>
+              <Typography variant="subtitle2">Customs release</Typography>
+              <Typography variant="body2" color="text.secondary">{releaseStep?.source === 'Paper' ? `From paper, Release Order ${releaseStep.ref}` : 'Arrives through BNSW, no signature'}</Typography>
+            </Box>
+            {customsReady ? (
+              <Stack direction="row" spacing={0.75} alignItems="center">
+                <CheckCircleRoundedIcon color="success" fontSize="small" />
+                <Typography variant="body2">Released {releaseStep.at}</Typography>
+              </Stack>
+            ) : (
+              <CustomsLabel customs={customs} prefix={customs.onHold ? '' : 'Waiting · '} />
+            )}
+          </Stack>
           {approvers.map((a) => (
             <Stack key={a.key} direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1} sx={{ py: 1.5 }}>
               <Box>
@@ -79,11 +100,16 @@ function PassRecord({ pass, onSign, onIssue }) {
             </Stack>
           ))}
         </Stack>
-        <AssumptionNote code="F45" sx={{ mt: 1 }}>Whether Customs officers sign in IBMS is still to be confirmed with NBR.</AssumptionNote>
+        {!pass.issued && !customsReady && (
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            Can&apos;t be issued until Customs releases {pass.manifest}{customs.onHold ? ' and lifts its hold' : ''}. The pass becomes ready by itself when the release arrives.
+          </Alert>
+        )}
+        <AssumptionNote code="F45" sx={{ mt: 1.5 }}>The Customs row ticks itself when the release arrives. Whether Customs officers sign in IBMS is still to be confirmed with NBR.</AssumptionNote>
       </Box>
       {!pass.issued && (
         <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ p: 3, pt: 0 }}>
-          <Button variant="contained" size="large" disabled={!allSigned} onClick={() => onIssue(pass)}>Issue exit pass</Button>
+          <Button variant="contained" size="large" disabled={!allSigned || !customsReady} onClick={() => onIssue(pass)}>Issue exit pass</Button>
         </Stack>
       )}
       {signing && (
@@ -109,7 +135,7 @@ export default function ExitPass() {
 
   return (
     <>
-      <PageHeader title="Exit pass" links={[{ name: 'Operations' }, { name: 'Exit pass' }]} subtitle="A pass is issued only after the shed in-charge, the Customs ARO and the C&F agent's authorised signer have each signed it." />
+      <PageHeader title="Exit pass" links={[{ name: 'Operations' }, { name: 'Exit pass' }]} subtitle="A pass is issued once Customs has released the goods and the shed in-charge and the C&F agent's authorised signer have both signed it." />
       <Workbench
         queue={
           <QueueCard
@@ -128,7 +154,7 @@ export default function ExitPass() {
                 <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{p.plate}</Typography>
                 <Typography variant="caption" color="text.secondary" component="div" noWrap>{p.id}</Typography>
                 <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
-                  {p.issued ? <Label color="success">Issued</Label> : <Label color="warning">{Object.keys(p.signatures).length} of 3 signed</Label>}
+                  {p.issued ? <Label color="success">Issued</Label> : <Label color="warning">{Object.keys(p.signatures).length} of 2 signed</Label>}
                 </Stack>
               </>
             )}

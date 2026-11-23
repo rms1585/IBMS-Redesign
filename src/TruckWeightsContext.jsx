@@ -37,11 +37,11 @@ const seededTares = {
 
 // Empty foreign trucks inside the port, waiting to leave for India through the border gate.
 const seededLeaving = [
-  { plate: 'WB-19-C-0755', driver: 'Gopal Biswas', manifest: 'BEN-IGM-2026-08799', agency: 'Rupsha Clearing & Forwarding', location: 'Shed 5', load: 'Empty', admitted: '06:48', release: 'Released', live: 11335 },
-  { plate: 'WB-37-A-1612', driver: 'Tapan Roy', manifest: 'BEN-IGM-2026-08866', agency: 'Meghna Trade Logistics', location: 'Shed 5', load: 'Empty', admitted: '07:05', release: 'Released', live: 10980 },
-  { plate: 'WB-19-C-0760', driver: 'Sanjay Mondal', manifest: 'BEN-IGM-2026-08799', agency: 'Rupsha Clearing & Forwarding', location: 'Transshipment yard T1', load: 'Empty', admitted: '07:20', release: 'Released', live: 11040 },
-  { plate: 'WB-41-B-1150', driver: 'Nikhil Sen', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', location: 'Open yard 1', load: 'Empty', admitted: '07:31', release: 'Released', cameraPlate: 'WB-41-B-1158', live: 13920 },
-  { plate: 'WB-23-K-4402', driver: 'Asit Mondal', manifest: 'BEN-IGM-2026-08860', agency: 'Padma Border Agents', location: 'Shed 5', load: 'Unloading', admitted: '09:05', release: 'Hold', live: 12050 },
+  { plate: 'WB-19-C-0755', driver: 'Gopal Biswas', manifest: 'BEN-IGM-2026-08799', agency: 'Rupsha Clearing & Forwarding', location: 'Shed 5', load: 'Empty', admitted: '06:48', live: 11335 },
+  { plate: 'WB-37-A-1612', driver: 'Tapan Roy', manifest: 'BEN-IGM-2026-08866', agency: 'Meghna Trade Logistics', location: 'Shed 5', load: 'Empty', admitted: '07:05', live: 10980 },
+  { plate: 'WB-19-C-0760', driver: 'Sanjay Mondal', manifest: 'BEN-IGM-2026-08799', agency: 'Rupsha Clearing & Forwarding', location: 'Transshipment yard T1', load: 'Empty', admitted: '07:20', live: 11040 },
+  { plate: 'WB-41-B-1150', driver: 'Nikhil Sen', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', location: 'Open yard 1', load: 'Empty', admitted: '07:31', cameraPlate: 'WB-41-B-1158', live: 13920 },
+  { plate: 'WB-23-K-4402', driver: 'Asit Mondal', manifest: 'BEN-IGM-2026-08860', agency: 'Padma Border Agents', location: 'Shed 5', load: 'Unloading', admitted: '09:05', live: 12050 },
 ];
 
 const seededOrders = [
@@ -105,8 +105,8 @@ export function TruckWeightsProvider({ children }) {
 
     // Trucks emptied in the port join the leaving list: unloaded at a shed, or finished in transshipment (#71).
     const fromWarehouse = [
-      ...emptied.map((e) => ({ ...e, load: 'Empty', release: 'Released' })),
-      ...workOrders.filter((o) => o.done).map((o) => ({ plate: o.plate, manifest: o.manifest, agency: o.agency, location: 'Transshipment yard T1', load: 'Empty', release: 'Released', admitted: clockOf(o.arrivedAt) })),
+      ...emptied.map((e) => ({ ...e, load: 'Empty' })),
+      ...workOrders.filter((o) => o.done).map((o) => ({ plate: o.plate, manifest: o.manifest, agency: o.agency, location: 'Transshipment yard T1', load: 'Empty', admitted: clockOf(o.arrivedAt) })),
     ];
     const emptiedPlates = new Set(fromWarehouse.map((t) => t.plate));
     const leaving = [

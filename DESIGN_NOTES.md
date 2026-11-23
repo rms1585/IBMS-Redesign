@@ -311,6 +311,19 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
   - The weighbridge record shows the truck's tare history. A new tare more than 300 kg below the last is flagged
     Exception in the Audit log for information only; nothing is blocked. 300 kg is a demo figure until BLPA decides
     (#76, #79).
+- **Phase 9, assessment, duty and Customs release** (consultation minutes, items 11 and 2, F5, F45). BLPA takes no
+  Customs decision; it acts on the result:
+  - One Customs status per consignment (`CustomsContext`) is read by Manifest tracking, the C&F and Importer portals,
+    Warehouse receipt, both gates and the Exit pass, so no two screens can disagree. Its steps: Bill of Entry filed
+    (with its channel), Examined for Yellow and Red, Assessed, Duty paid, Released; a hold can stop any step. Each
+    step arrives through BNSW; in the demo the manifest's Customs tab has buttons that stand in for it (#80).
+  - Screens show each step with its time and source, never the duty amount: BLPA needs signals, not confidential
+    Customs data. Released covers every agency certificate, so BLPA checks nothing else (#81).
+  - A release or a hold alerts the C&F agency and appears in the header bell, and goes to the Audit log (#82).
+  - The Exit pass takes Customs' release as its Customs approval; no Customs officer signs in IBMS. The shed in-charge
+    and the C&F signer still sign, and the pass can't be issued before the release or during a hold (#83, F45).
+  - If BNSW sends nothing, an officer records the release from the paper Release Order number. A second officer
+    confirms it in the Inbox, the maker can't confirm their own, and the step shows "From paper" everywhere (#84, F5).
 - **Importer / exporter portal (#50):** each manifest row has View details, opening a read-only page with the summary,
   what still stops the manifest from closing, its trucks and Pay now for a balance due (minutes, item 14: the importer
   can pay the BLPA bill). Operational actions stay with the appointed C&F agency.

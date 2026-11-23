@@ -81,32 +81,32 @@ export const truckClassRates = {
 export const manifests = [
   {
     id: 'BEN-IGM-2026-08841', direction: 'Import', agency: 'Rupsha Clearing & Forwarding', trader: 'Delta Agro Foods Ltd.',
-    product: 'Rice (non-basmati)', declaredKg: 64000, remainingKg: 32000, customs: 'Released', status: 'Open', balance: 4295.46,
+    product: 'Rice (non-basmati)', declaredKg: 64000, remainingKg: 32000, status: 'Open', balance: 4295.46,
     foreignTrucks: 2, localTrucks: 3, updated: '10:42',
   },
   {
     id: 'BEN-IGM-2026-08852', direction: 'Import', agency: 'Meghna Trade Logistics', trader: 'Northern Textiles PLC',
-    product: 'Cotton fabric', declaredKg: 18500, remainingKg: 18500, customs: 'Pending', status: 'Open', balance: 184.7,
+    product: 'Cotton fabric', declaredKg: 18500, remainingKg: 18500, status: 'Open', balance: 184.7,
     foreignTrucks: 1, localTrucks: 0, updated: '10:15',
   },
   {
     id: 'BEN-IGM-2026-08860', direction: 'Import', agency: 'Padma Border Agents', trader: 'Coastal Chemicals Ltd.',
-    product: 'Industrial solvent', declaredKg: 22000, remainingKg: 0, customs: 'Hold', status: 'Open', balance: 6380.12,
+    product: 'Industrial solvent', declaredKg: 22000, remainingKg: 0, status: 'Open', balance: 6380.12,
     foreignTrucks: 1, localTrucks: 1, updated: '09:58',
   },
   {
     id: 'BEN-IGM-2026-08799', direction: 'Import', agency: 'Rupsha Clearing & Forwarding', trader: 'Delta Agro Foods Ltd.',
-    product: 'Onion', declaredKg: 30000, remainingKg: 0, customs: 'Released', status: 'Closed', balance: 0,
+    product: 'Onion', declaredKg: 30000, remainingKg: 0, status: 'Closed', balance: 0,
     foreignTrucks: 2, localTrucks: 4, updated: 'Yesterday',
   },
   {
     id: 'BEN-EGM-2026-01204', direction: 'Export', agency: 'Meghna Trade Logistics', trader: 'Northern Textiles PLC',
-    product: 'Garment cartons', declaredKg: 12000, remainingKg: 12000, customs: 'Released', status: 'Open', balance: 0,
+    product: 'Garment cartons', declaredKg: 12000, remainingKg: 12000, status: 'Open', balance: 0,
     foreignTrucks: 0, localTrucks: 1, updated: '08:31',
   },
   {
     id: 'BEN-IGM-2026-08871', direction: 'Import', agency: 'Padma Border Agents', trader: 'Coastal Chemicals Ltd.',
-    product: 'Detergent', declaredKg: 26000, remainingKg: 26000, customs: 'Pending', status: 'Open', balance: 0,
+    product: 'Detergent', declaredKg: 26000, remainingKg: 26000, status: 'Open', balance: 0,
     foreignTrucks: 2, localTrucks: 0, updated: '08:05',
   },
 ];
@@ -142,16 +142,16 @@ export const registeredTrucks = {
 // igm: 'Received' | 'Awaiting'. igmOnKey is the number Customs gives the IGM when it keys it at zero point.
 // cls is the class the C&F agent entered; customsCls is the one Customs records when it validates the truck.
 export const arrivingTrucks = [
-  { plate: 'WB-19-C-0835', kind: 'Foreign', cls: '6-wheel truck', manifest: null, preArrival: 'PA-BEN-2026-0112', igmOnKey: 'BEN-IGM-2026-08893', agency: 'Rupsha Clearing & Forwarding', driver: 'Bikash Pal', driverCard: 'DC-IN-20931', declaredKg: 9000, eta: '10:20', firstVisit: false, cargo: 'Ginger', perishable: true, customs: 'Pending', igm: 'Awaiting', truckData: truckDataStatus.entered, fee: 184.7, cameraPlate: 'WB-19-C-0835' },
-  { plate: 'WB-23-K-4471', kind: 'Foreign', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08852', agency: 'Meghna Trade Logistics', driver: 'Ramesh Kumar Das', driverCard: 'DC-IN-88213', declaredKg: 18500, eta: '10:30', firstVisit: true, cargo: 'Cotton fabric', perishable: false, customs: 'Pending', igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-23-K-4471' },
-  { plate: 'WB-41-B-1192', kind: 'Foreign', cls: '14-wheel trailer', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', driver: 'Subrata Ghosh', driverCard: 'DC-IN-55120', declaredKg: 13000, eta: '10:55', firstVisit: false, cargo: 'Detergent', perishable: false, customs: 'Pending', igm: 'Received', truckData: truckDataStatus.entered, fee: 184.7, cameraPlate: 'WB-41-B-1192' },
-  { plate: 'WB-41-B-1207', kind: 'Foreign', cls: '14-wheel trailer', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', driver: 'Anil Mondal', driverCard: 'DC-IN-55982', declaredKg: 13000, eta: '11:20', firstVisit: false, cargo: 'Detergent', perishable: false, customs: 'Pending', igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-41-B-1201' },
-  { plate: 'WB-19-C-0803', kind: 'Foreign', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Prakash Roy', driverCard: 'DC-IN-10477', declaredKg: 32000, eta: '11:45', firstVisit: false, cargo: 'Rice (non-basmati)', perishable: false, customs: 'Released', igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-19-C-0803' },
+  { plate: 'WB-19-C-0835', kind: 'Foreign', cls: '6-wheel truck', manifest: null, preArrival: 'PA-BEN-2026-0112', igmOnKey: 'BEN-IGM-2026-08893', agency: 'Rupsha Clearing & Forwarding', driver: 'Bikash Pal', driverCard: 'DC-IN-20931', declaredKg: 9000, eta: '10:20', firstVisit: false, cargo: 'Ginger', perishable: true, igm: 'Awaiting', truckData: truckDataStatus.entered, fee: 184.7, cameraPlate: 'WB-19-C-0835' },
+  { plate: 'WB-23-K-4471', kind: 'Foreign', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08852', agency: 'Meghna Trade Logistics', driver: 'Ramesh Kumar Das', driverCard: 'DC-IN-88213', declaredKg: 18500, eta: '10:30', firstVisit: true, cargo: 'Cotton fabric', perishable: false, igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-23-K-4471' },
+  { plate: 'WB-41-B-1192', kind: 'Foreign', cls: '14-wheel trailer', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', driver: 'Subrata Ghosh', driverCard: 'DC-IN-55120', declaredKg: 13000, eta: '10:55', firstVisit: false, cargo: 'Detergent', perishable: false, igm: 'Received', truckData: truckDataStatus.entered, fee: 184.7, cameraPlate: 'WB-41-B-1192' },
+  { plate: 'WB-41-B-1207', kind: 'Foreign', cls: '14-wheel trailer', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', driver: 'Anil Mondal', driverCard: 'DC-IN-55982', declaredKg: 13000, eta: '11:20', firstVisit: false, cargo: 'Detergent', perishable: false, igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-41-B-1201' },
+  { plate: 'WB-19-C-0803', kind: 'Foreign', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Prakash Roy', driverCard: 'DC-IN-10477', declaredKg: 32000, eta: '11:45', firstVisit: false, cargo: 'Rice (non-basmati)', perishable: false, igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-19-C-0803' },
 ];
 
 // Local trucks leaving loaded through the inland gate. Foreign trucks leaving empty come from TruckWeightsContext.
 export const leavingTrucks = [
-  { plate: 'JESSORE-TA-11-2034', kind: 'Local', location: 'Inland gate lane 2', load: 'Loaded · 16,000 kg', admitted: '08:40', manifest: 'BEN-IGM-2026-08841', release: 'Released', pass: 'BEN-PASS-004412' },
+  { plate: 'JESSORE-TA-11-2034', kind: 'Local', location: 'Inland gate lane 2', load: 'Loaded · 16,000 kg', admitted: '08:40', manifest: 'BEN-IGM-2026-08841', pass: 'BEN-PASS-004412' },
 ];
 
 // cls is the class the C&F agent entered; customsCls is the one Customs recorded at zero point (charges follow it).
@@ -220,7 +220,6 @@ export const inboxRequests = [
   { id: 'REQ-1043', kind: 'Sensitive role assignment', summary: 'Assign "Bill approver" to Rakib Hasan at BEN', requester: 'Imran Hossain', port: 'BEN', at: '27 Oct, 09:40', mine: false },
   { id: 'REQ-1044', kind: 'Bill adjustment', summary: 'Reduce documentation charge on BEN-IGM-2026-08841 (duplicate document)', requester: 'Farhana Rahman', port: 'BEN', at: '27 Oct, 10:02', mine: true },
   { id: 'REQ-1045', kind: 'Storage-rule override', summary: 'Allow Textile next to Chemical at S5B-R1-C02 for 48 h', requester: 'Mahmud Karim', port: 'BEN', at: '27 Oct, 10:21', mine: false },
-  { id: 'REQ-1046', kind: 'Manual-status confirmation', summary: 'Paper release for BEN-IGM-2026-08852 (feed down, consent ref CNS-118)', requester: 'Shahidul Islam', port: 'BEN', at: '27 Oct, 10:33', mine: false },
 ];
 
 export const decidedRequests = [
@@ -316,6 +315,6 @@ export const brtaFitness = {
 };
 
 export const inlandArriving = [
-  { plate: 'JESSORE-TA-11-2101', kind: 'Local', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Abdul Malek', driverCard: 'DC-BD-30211', declaredKg: 16000, eta: '11:10', firstVisit: false, cargo: 'Rice (non-basmati)', customs: 'Released', fee: 153.58, cameraPlate: 'JESSORE-TA-11-2101' },
-  { plate: 'KHULNA-DA-14-0587', kind: 'Local', cls: '6-wheel truck', manifest: 'BEN-IGM-2026-08860', agency: 'Padma Border Agents', driver: 'Jahangir Alam', driverCard: 'DC-BD-11873', declaredKg: 11000, eta: '12:30', firstVisit: true, cargo: 'Industrial solvent', customs: 'Hold', fee: 153.58, cameraPlate: null },
+  { plate: 'JESSORE-TA-11-2101', kind: 'Local', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Abdul Malek', driverCard: 'DC-BD-30211', declaredKg: 16000, eta: '11:10', firstVisit: false, cargo: 'Rice (non-basmati)', fee: 153.58, cameraPlate: 'JESSORE-TA-11-2101' },
+  { plate: 'KHULNA-DA-14-0587', kind: 'Local', cls: '6-wheel truck', manifest: 'BEN-IGM-2026-08860', agency: 'Padma Border Agents', driver: 'Jahangir Alam', driverCard: 'DC-BD-11873', declaredKg: 11000, eta: '12:30', firstVisit: true, cargo: 'Industrial solvent', fee: 153.58, cameraPlate: null },
 ];

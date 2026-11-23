@@ -9,6 +9,7 @@ import { inboxRequests, decidedRequests, currentUser } from '../data/mock';
 import { useTruckWeights, AUTHORITIES } from '../TruckWeightsContext';
 import { useCfAlerts } from '../CfAlertsContext';
 import { useAudit } from '../AuditContext';
+import { useCustoms } from '../CustomsContext';
 
 const kindColor = {
   'Port go-live': 'primary', 'Sensitive role assignment': 'error', 'Bill adjustment': 'warning',
@@ -74,6 +75,13 @@ const asRequest = (a) => ({
   app: a, decision: a.status === 'Waiting' ? undefined : a.status,
 });
 
+// A paper release recorded when BNSW sent nothing; a second officer confirms it before it counts (F5, #84).
+const asPaperRequest = (p) => ({
+  id: p.id, kind: 'Manual-status confirmation', summary: `Paper release for ${p.manifest}: Release Order ${p.ro} (${p.reason})`,
+  requester: p.requester, port: 'BEN', at: p.at, mine: p.mine, paper: p,
+  decision: p.status === 'Waiting' ? undefined : p.status, decider: p.decider, reason: p.remarks,
+});
+
 export default function Inbox() {
   const [tab, setTab] = useState('waiting');
   const [waiting, setWaiting] = useState(inboxRequests);
@@ -85,11 +93,14 @@ export default function Inbox() {
   const { applications, decideApplication } = useTruckWeights();
   const { addAlert } = useCfAlerts();
   const { addEvent } = useAudit();
+  const { paperRequests, decidePaperRelease } = useCustoms();
+  const paperWaiting = paperRequests.filter((p) => p.status === 'Waiting').map(asPaperRequest);
+  const paperDecided = paperRequests.filter((p) => p.status !== 'Waiting').map(asPaperRequest);
   const reweighWaiting = applications.filter((a) => a.status === 'Waiting').map(asRequest);
   const reweighDecided = applications.filter((a) => a.status !== 'Waiting').map(asRequest);
 
   const match = (r) => `${r.summary} ${r.requester} ${r.port ?? ''}`.toLowerCase().includes(search.toLowerCase());
-  const list = (tab === 'waiting' ? [...reweighWaiting, ...waiting] : [...reweighDecided, ...decided]).filter(match);
+  const list = (tab === 'waiting' ? [...paperWaiting, ...reweighWaiting, ...waiting] : [...paperDecided, ...reweighDecided, ...decided]).filter(match);
 
   const recordReweigh = (authority, decision, remarks) => {
     const app = deciding;
@@ -109,6 +120,13 @@ export default function Inbox() {
 
   const record = (reason) => {
     const { req, decision } = decide;
+    if (req.paper) {
+      decidePaperRelease(req.id, decision, reason);
+      addEvent({ actor: currentUser.name, role: currentUser.role, module: 'Approvals', type: 'Approval', text: `${decision} paper release ${req.id} for ${req.paper.manifest} (Release Order ${req.paper.ro}): ${reason}` });
+      setToast(decision === 'Approved' ? `${req.paper.manifest} released from paper. The C&F agency is told.` : `${req.id} rejected. The release still waits for BNSW.`);
+      setDecide(null);
+      return;
+    }
     setWaiting((w) => w.filter((x) => x.id !== req.id));
     setDecided((d) => [{ ...req, decision, decider: currentUser.name, at: 'Just now', reason }, ...d]);
     setToast(`${req.id} ${decision.toLowerCase()}.`);
@@ -120,7 +138,7 @@ export default function Inbox() {
       <PageHeader title="Inbox" links={[{ name: 'Administration' }, { name: 'Inbox' }]} subtitle="Maker-checker decisions. A reviewer must hold the relevant permission and cannot decide their own request." />
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Tabs value={tab} onChange={(e, v) => setTab(v)}>
-          <Tab value="waiting" label={<Stack direction="row" spacing={1} alignItems="center"><span>Waiting for you</span><Label color="error">{waiting.filter((r) => !r.mine).length + reweighWaiting.length}</Label></Stack>} />
+          <Tab value="waiting" label={<Stack direction="row" spacing={1} alignItems="center"><span>Waiting for you</span><Label color="error">{waiting.filter((r) => !r.mine).length + reweighWaiting.length + paperWaiting.filter((r) => !r.mine).length}</Label></Stack>} />
           <Tab value="decided" label="Decided" />
         </Tabs>
         <SearchField placeholder="Search summary, person or port" value={search} onChange={setSearch} />

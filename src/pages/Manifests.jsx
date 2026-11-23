@@ -3,15 +3,15 @@ import {
   Box, Card, Stack, Typography, Table, TableHead, TableRow, TableCell, TableBody, Drawer, IconButton, Divider,
   Tabs, Tab, LinearProgress, MenuItem, TextField, Button, Alert, Snackbar,
 } from '@mui/material';
-import { PageHeader, SearchField, DetailRow, EmptyState, TableScroll, ReasonDialog, formatBDT, formatKg } from '../components/common';
+import { PageHeader, SearchField, DetailRow, EmptyState, TableScroll, ReasonDialog, AssumptionNote, formatBDT, formatKg } from '../components/common';
 import Label from '../components/Label';
 import { agencies, currentUser } from '../data/mock';
 import { useManifests } from '../ManifestsContext';
 import { useAudit } from '../AuditContext';
 import { useCfAlerts } from '../CfAlertsContext';
 import { CloseRoundedIcon } from '../components/icons';
-
-const customsColor = { Released: 'success', Pending: 'warning', Hold: 'error' };
+import CustomsSteps, { CustomsLabel } from '../components/CustomsSteps';
+import { useCustoms } from '../CustomsContext';
 
 const timeline = [
   ['27 Oct, 10:55', 'Kamal Hasan recorded loaded weight 43,310 kg for WB-19-C-0803 on Scale 1.'],
@@ -51,15 +51,82 @@ function ChangeAgentDialog({ manifest, open, onClose, onConfirm }) {
   );
 }
 
-function ManifestDrawer({ m, onClose, onChangeAgent }) {
-  const [tab, setTab] = useState('trucks');
+// If BNSW sends nothing, an officer records the release from the paper Release Order; a second officer confirms
+// it in the Inbox before it counts (F5, #84).
+function PaperReleaseDialog({ manifest, open, onClose, onConfirm }) {
+  const [ro, setRo] = useState('');
+  const close = () => { setRo(''); onClose(); };
+  return (
+    <ReasonDialog
+      open={open}
+      title="Record release from paper"
+      description={`Use this only when BNSW hasn't sent the Customs release for ${manifest.id}. Another officer confirms it in the Inbox, and it shows as from paper everywhere.`}
+      confirmLabel="Send for confirmation"
+      canConfirm={Boolean(ro.trim())}
+      onClose={close}
+      onConfirm={(reason) => { onConfirm(ro.trim().toUpperCase(), reason); setRo(''); }}
+      extra={<TextField fullWidth required label="Release Order number" value={ro} onChange={(e) => setRo(e.target.value)} placeholder="e.g. RO-BEN-2026-1190" sx={{ mb: 2 }} />}
+    />
+  );
+}
+
+function CustomsPanel({ m, onToast }) {
+  const { customsFor, receiveNext, placeHold, liftHold, requestPaperRelease } = useCustoms();
+  const [paperOpen, setPaperOpen] = useState(false);
+  const customs = customsFor(m.id);
+  const paper = customs.paperRequest;
+  return (
+    <Box sx={{ p: 3 }}>
+      <CustomsSteps customs={customs} />
+      {!customs.released && !customs.onHold && (
+        paper ? (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Paper release {paper.id} (Release Order <Box component="span" sx={{ fontFamily: 'monospace' }}>{paper.ro}</Box>) is waiting for {paper.mine ? 'another officer' : 'a second officer'} to confirm it in the Inbox.
+          </Alert>
+        ) : (
+          <Box sx={{ mt: 2 }}>
+            <Button size="small" variant="outlined" color="inherit" onClick={() => setPaperOpen(true)}>Record release from paper</Button>
+            <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>Only when BNSW hasn&apos;t sent the release.</Typography>
+          </Box>
+        )
+      )}
+      <Box sx={{ mt: 3, p: 2, borderRadius: 1.5, border: 1, borderStyle: 'dashed', borderColor: 'divider' }}>
+        <Typography variant="subtitle2">Demo: stands in for BNSW</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>In IBMS these statuses arrive from Customs on their own.</Typography>
+        <Stack direction="row" flexWrap="wrap" gap={1}>
+          <Button size="small" variant="outlined" color="inherit" disabled={!customs.next} onClick={() => onToast(`${receiveNext(m.id)} received for ${m.id}.`)}>
+            {customs.next ? `Send ${customs.next}` : 'Nothing left to send'}
+          </Button>
+          {customs.onHold ? (
+            <Button size="small" variant="outlined" color="inherit" onClick={() => { liftHold(m.id); onToast(`Hold lifted on ${m.id}. The C&F agency is told.`); }}>Lift hold</Button>
+          ) : (
+            <Button size="small" variant="outlined" color="error" disabled={customs.released} onClick={() => { placeHold(m.id, 'Documents under review by Customs'); onToast(`Hold placed on ${m.id}. The C&F agency is told.`); }}>Place hold</Button>
+          )}
+        </Stack>
+      </Box>
+      <AssumptionNote code="F5" sx={{ mt: 2 }}>Which Customs statuses BNSW sends, and when, is to be confirmed with NBR.</AssumptionNote>
+      <PaperReleaseDialog
+        manifest={m}
+        open={paperOpen}
+        onClose={() => setPaperOpen(false)}
+        onConfirm={(ro, reason) => { setPaperOpen(false); onToast(`${requestPaperRelease(m.id, ro, reason)} sent to the Inbox. Another officer must confirm it.`); }}
+      />
+    </Box>
+  );
+}
+
+function ManifestDrawer({ m, onClose, onChangeAgent, onToast }) {
+  const [tab, setTab] = useState('customs');
   const [changing, setChanging] = useState(false);
+  const { customsFor } = useCustoms();
   if (!m) return null;
+  const customs = customsFor(m.id);
   const pct = m.declaredKg ? ((m.declaredKg - m.remainingKg) / m.declaredKg) * 100 : 0;
   const blockers = [
     m.remainingKg > 0 && `${formatKg(m.remainingKg)} of cargo still in port`,
     m.balance > 0 && `${formatBDT(m.balance)} balance unpaid`,
-    m.customs === 'Hold' && 'Customs hold in place',
+    customs.onHold && 'Customs hold in place',
+    !customs.released && !customs.onHold && 'Customs release not received yet',
   ].filter(Boolean);
 
   return (
@@ -69,7 +136,7 @@ function ManifestDrawer({ m, onClose, onChangeAgent }) {
           <Typography variant="h6" sx={{ fontFamily: 'monospace' }}>{m.id}</Typography>
           <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
             <Label color={m.status === 'Open' ? 'info' : 'default'}>{m.status}</Label>
-            <Label color={customsColor[m.customs]}>Customs: {m.customs}</Label>
+            <CustomsLabel customs={customs} prefix="Customs: " />
             <Label>{m.direction}</Label>
           </Stack>
         </Box>
@@ -107,12 +174,14 @@ function ManifestDrawer({ m, onClose, onChangeAgent }) {
         )}
       </Box>
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ px: 3, mt: 2 }}>
+        <Tab value="customs" label="Customs" />
         <Tab value="trucks" label="Trucks" />
         <Tab value="cargo" label="Cargo" />
         <Tab value="timeline" label="Timeline" />
         <Tab value="docs" label="Documents" />
       </Tabs>
       <Divider />
+      {tab === 'customs' && <CustomsPanel m={m} onToast={onToast} />}
       {tab === 'trucks' && (
         <TableScroll>
           <Table size="small">
@@ -176,6 +245,7 @@ export default function Manifests() {
   const [openId, setOpenId] = useState(null);
   const [toast, setToast] = useState('');
   const { manifests, changeAgency } = useManifests();
+  const { customsFor } = useCustoms();
   const { addEvent } = useAudit();
   const { addAlert } = useCfAlerts();
   const open = manifests.find((m) => m.id === openId) ?? null;
@@ -227,7 +297,7 @@ export default function Manifests() {
                 <TableCell>{m.direction}</TableCell>
                 <TableCell>{m.agency}</TableCell>
                 <TableCell>{m.foreignTrucks}</TableCell>
-                <TableCell><Label color={customsColor[m.customs]}>{m.customs}</Label></TableCell>
+                <TableCell><CustomsLabel customs={customsFor(m.id)} /></TableCell>
                 <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(m.balance)}</TableCell>
                 <TableCell sx={{ pr: 3 }}><Label color={m.status === 'Open' ? 'info' : 'default'}>{m.status}</Label></TableCell>
               </TableRow>
@@ -237,7 +307,7 @@ export default function Manifests() {
         {rows.length === 0 && <EmptyState title="No manifests match" description="Try a different search or status." />}
       </Card>
       <Drawer anchor="right" open={Boolean(open)} onClose={() => setOpenId(null)}>
-        <ManifestDrawer key={openId} m={open} onClose={() => setOpenId(null)} onChangeAgent={changeAgent} />
+        <ManifestDrawer key={openId} m={open} onClose={() => setOpenId(null)} onChangeAgent={changeAgent} onToast={setToast} />
       </Drawer>
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
