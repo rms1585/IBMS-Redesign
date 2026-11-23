@@ -100,7 +100,7 @@ function CustomsPanel({ m, onToast }) {
           {customs.onHold ? (
             <Button size="small" variant="outlined" color="inherit" onClick={() => { liftHold(m.id); onToast(`Hold lifted on ${m.id}. The C&F agency is told.`); }}>Lift hold</Button>
           ) : (
-            <Button size="small" variant="outlined" color="error" disabled={customs.released} onClick={() => { placeHold(m.id, 'Documents under review by Customs'); onToast(`Hold placed on ${m.id}. The C&F agency is told.`); }}>Place hold</Button>
+            <Button size="small" variant="outlined" color="error" onClick={() => { placeHold(m.id, 'Documents under review by Customs'); onToast(`Hold placed on ${m.id}. The C&F agency is told.`); }}>Place hold</Button>
           )}
         </Stack>
       </Box>
