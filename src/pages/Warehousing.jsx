@@ -154,6 +154,8 @@ function Record({ item, plateRead, requisition, onRaise, onStart, onFinish }) {
   const receiptKg = receiptWeight(item);
   const totalT = toTonnes(receiptKg);
   const diff = kg ? Number(kg) - receiptKg : 0;
+  const source = item.weighedKg > item.declaredKg ? 'weighbridge' : item.weighedKg < item.declaredKg ? 'declared' : 'same';
+  const countNote = diff < 0 ? `${(-diff).toLocaleString()} kg short of the receipt weight` : diff > 0 ? `${diff.toLocaleString()} kg over the receipt weight` : 'Matches the receipt weight';
 
   const sent = requisition?.sent ?? [];
   const liftsFor = (eq) => Number(requisition?.captured?.[eq] ?? lifts[eq] ?? 0);
@@ -195,15 +197,19 @@ function Record({ item, plateRead, requisition, onRaise, onStart, onFinish }) {
           </DetailRow>
         </Grid>
         <Grid size={{ xs: 12, xl: 6 }}>
-          <DetailRow label="Declared">{formatKg(item.declaredKg)}</DetailRow>
+          <Typography variant="subtitle2">Weight BLPA charges on</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Two weights are on file. The higher one becomes the receipt weight.</Typography>
+          <DetailRow label="Declared">
+            {formatKg(item.declaredKg)} {source === 'declared' && <Label color="info">Higher</Label>}
+          </DetailRow>
           <DetailRow label="Weighbridge net">
-            {formatKg(item.weighedKg)}
+            {formatKg(item.weighedKg)} {source === 'weighbridge' && <Label color="info">Higher</Label>}
             {item.sharedTruck && <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>The truck carries several consignments: its net weight is split by declared weight.</Typography>}
           </DetailRow>
           <DetailRow label="Receipt weight">
             <Box component="span" sx={{ fontWeight: 600 }}>{formatKg(receiptKg)}</Box>
             <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
-              The higher of declared and weighbridge ({item.weighedKg > item.declaredKg ? 'weighbridge' : 'declared'})
+              {source === 'same' ? 'Both weights are the same.' : `Taken from the ${source} weight.`} Storage and handling are charged on this.
             </Typography>
           </DetailRow>
         </Grid>
@@ -224,7 +230,7 @@ function Record({ item, plateRead, requisition, onRaise, onStart, onFinish }) {
         <Box sx={{ p: 3 }}>
           <Typography variant="subtitle2" sx={{ mb: 2 }}>Record what was received · {requisition?.gang ?? 'no gang'} · {equipmentText(sent)}</Typography>
           <Box className="record-fields" sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-            <Box><TextField fullWidth required label="Unloaded quantity (kg)" value={kg} onChange={(e) => setKg(e.target.value.replace(/\D/g, ''))} helperText={kg ? `${diff >= 0 ? '+' : ''}${diff.toLocaleString()} kg vs receipt weight` : 'Physical count, for shortage or damage'} /></Box>
+            <Box><TextField fullWidth required label="Counted at the shed (kg)" value={kg} onChange={(e) => setKg(e.target.value.replace(/\D/g, ''))} helperText={kg ? countNote : 'For shortage or damage only. The charge stays on the receipt weight.'} /></Box>
             <Box>
               <TextField select fullWidth label="Measurement method" value={method} onChange={(e) => setMethod(e.target.value)}>
                 {['Scale weight (gross − tare)', 'Package count × unit weight', 'Declared (not measured)'].map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
