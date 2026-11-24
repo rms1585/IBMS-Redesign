@@ -1,64 +1,109 @@
-import { Card, Typography, Table, TableHead, TableRow, TableCell, TableBody, Grid2 as Grid, Button, LinearProgress, Stack } from '@mui/material';
-import { PageHeader, KpiCard, formatBDT } from '../components/common';
-import Label from '../components/Label';
-import { useNavigate } from 'react-router-dom';
-import { useManifests } from '../ManifestsContext';
+import { useState } from 'react';
+import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { useRole } from '../RoleContext';
+import { agencyName, billTotals, importerName, usePort } from '../demo/PortStore';
+import { formatBDT, formatKg } from '../demo/format';
+import { Confirmation, Id, Plate, SectionTitle, StatusPill } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-export const TRADER = 'Delta Agro Foods Ltd.';
+// M-15: the importer sees only its own lines, by consignee BIN, and tags the agency that acts on them.
+function TagControl({ m, bin, onDone }) {
+  const p = usePort();
+  const current = m.tags[bin] ?? '';
+  const [ain, setAin] = useState(current);
+  const v = p.visitOfManifest(m.id);
+  const retag = Boolean(current);
+  const unloaded = v?.receipt?.locked;
+  return (
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
+      <TextField select size="small" label={retag ? 'Re-tag to another agency' : 'Tag a C&F agency'} value={ain} onChange={(e) => setAin(e.target.value)} sx={{ minWidth: 260 }}>
+        {p.parties.agencies.map((a) => <MenuItem key={a.ain} value={a.ain}>{a.name} · AIN {a.ain}</MenuItem>)}
+      </TextField>
+      <Button
+        variant="contained"
+        disabled={!ain || ain === current}
+        onClick={() => { p.tagAgency(m.id, bin, ain); onDone(retag ? `Re-tagged to ${agencyName(ain)}` : `Tagged ${agencyName(ain)}`); }}
+      >
+        {retag ? 'Re-tag lines' : 'Tag agency'}
+      </Button>
+      {retag && <Typography variant="caption" color="text.secondary">{unloaded ? 'Every line moves at once; the previous agency loses access.' : 'Re-tagging moves every line at once and the previous agency loses access.'}</Typography>}
+    </Stack>
+  );
+}
 
 export default function TraderPortal() {
-  const navigate = useNavigate();
-  const { manifests } = useManifests();
-  const own = manifests.filter((m) => m.trader === TRADER);
+  const p = usePort();
+  const t = useT();
+  const { role } = useRole();
+  const [picked, setPicked] = useState('000234567-0202');
+  const bin = role.importer ?? picked;
+  const [msg, setMsg] = useState('');
+  const mine = p.state.manifests.filter((m) => m.lines.some((l) => l.importer === bin));
   return (
     <>
       <PageHeader
-        title="Importer / exporter portal"
-        links={[{ name: 'Operations' }, { name: TRADER }]}
-        subtitle="Progress and charges for your own manifests at this port. Operational actions are done by your appointed C&F agency."
+        title={t('Importer portal')}
+        subtitle={`${importerName(bin)} · BIN ${bin}`}
+        action={!role.importer && (
+          <TextField select size="small" label="Viewing as importer (demo)" value={bin} onChange={(e) => setPicked(e.target.value)} sx={{ minWidth: 260 }}>
+            {p.parties.importers.map((i) => <MenuItem key={i.bin} value={i.bin}>{i.name}</MenuItem>)}
+          </TextField>
+        )}
       />
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Balance due" value={formatBDT(own.reduce((s, m) => s + m.balance, 0))} color="warning" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Active manifests" value={own.filter((m) => m.status === 'Open').length} /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Trucks inside" value="3" color="info" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Alerts" value="2" color="error" /></Grid>
-      </Grid>
-      <Card>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ pl: 3 }}>Manifest</TableCell>
-              <TableCell>Goods</TableCell>
-              <TableCell>Appointed agency</TableCell>
-              <TableCell>Trucks</TableCell>
-              <TableCell sx={{ width: 200 }}>Progress</TableCell>
-              <TableCell>Balance</TableCell>
-              <TableCell sx={{ pr: 3 }} />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {own.map((m) => {
-              const pct = ((m.declaredKg - m.remainingKg) / m.declaredKg) * 100;
-              return (
-                <TableRow key={m.id} hover>
-                  <TableCell sx={{ pl: 3 }}><Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{m.id}</Typography><Typography variant="caption" color="text.secondary">{m.direction}</Typography></TableCell>
-                  <TableCell>{m.product}</TableCell>
-                  <TableCell>{m.agency}</TableCell>
-                  <TableCell>{m.foreignTrucks + m.localTrucks}</TableCell>
-                  <TableCell>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <LinearProgress variant="determinate" value={pct} sx={{ flex: 1 }} />
-                      <Typography variant="caption">{Math.round(pct)}%</Typography>
+      <Stack spacing={2.5}>
+        {mine.length === 0 && <Alert severity="info">No manifest names your BIN yet. When Customs' manifest reaches IBMS through BNSW it appears here, and you tag your C&F agency.</Alert>}
+        {mine.map((m) => {
+          const lines = m.lines.filter((l) => l.importer === bin);
+          const v = p.visitOfManifest(m.id);
+          const bills = p.state.bills.filter((b) => b.for.kind === 'dr' && p.boe(p.dr(b.for.id)?.boe)?.importer === bin && p.boe(p.dr(b.for.id)?.boe)?.manifest === m.id);
+          return (
+            <Card key={m.id} sx={{ p: 3 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 1 }}>
+                <Typography variant="h6"><Id sx={{ typography: 'h6' }}>{m.id}</Id></Typography>
+                <Typography variant="body2" color="text.secondary">{m.alias}</Typography>
+                {!m.tags[bin] && <StatusPill word="Open" />}
+              </Stack>
+              {!m.tags[bin] && <Alert severity="warning" sx={{ mb: 2 }}>No agency is tagged to your lines. Until you tag one, no agency can act and the truck is not admitted.</Alert>}
+              <SectionTitle>Your lines</SectionTitle>
+              {lines.map((l) => (
+                <Stack key={l.id} direction="row" justifyContent="space-between" spacing={2} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">Line {l.no}: {l.goods}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{formatKg(l.declaredKg)} declared</Typography>
+                </Stack>
+              ))}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1.5 }}>Tagged agency: <strong>{m.tags[bin] ? agencyName(m.tags[bin]) : 'None'}</strong></Typography>
+                <TagControl m={m} bin={bin} onDone={setMsg} />
+              </Box>
+              {v && (
+                <>
+                  <SectionTitle>Truck</SectionTitle>
+                  <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                    <Plate>{v.plate}</Plate>
+                    <StatusPill word={v.stage} />
+                    {v.posting?.accepted && <Typography variant="body2" color="text.secondary">Drop point {v.posting.shed}</Typography>}
+                  </Stack>
+                </>
+              )}
+              {bills.length > 0 && (
+                <>
+                  <SectionTitle>Bills</SectionTitle>
+                  {bills.map((b) => (
+                    <Stack key={b.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ py: 0.5 }}>
+                      <Id>{b.paymentId}</Id>
+                      <Typography variant="body2">{formatBDT(billTotals(b).total)}</Typography>
+                      <StatusPill word={b.status} />
+                      {b.status === 'Payment due' && <Button size="small" variant="contained" onClick={() => { p.payBill(b.id); setMsg('Paid. The provider confirmed the payment'); }}>Pay online</Button>}
                     </Stack>
-                  </TableCell>
-                  <TableCell>{m.balance > 0 ? formatBDT(m.balance) : <Label color="success">Paid</Label>}</TableCell>
-                  <TableCell sx={{ pr: 3 }}><Button size="small" color="inherit" onClick={() => navigate(`/trader-portal/${m.id}`)}>View details</Button></TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+                  ))}
+                </>
+              )}
+            </Card>
+          );
+        })}
+      </Stack>
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }

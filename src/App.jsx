@@ -6,7 +6,6 @@ import Dashboard from './pages/Dashboard';
 import CfPortal from './pages/CfPortal';
 import CfManifest from './pages/CfManifest';
 import TraderPortal from './pages/TraderPortal';
-import TraderManifest from './pages/TraderManifest';
 import Manifests from './pages/Manifests';
 import GateWorkbench from './pages/GateWorkbench';
 import Weighbridge from './pages/Weighbridge';
@@ -27,16 +26,17 @@ import Roles from './pages/Roles';
 import Users from './pages/Users';
 import Inbox from './pages/Inbox';
 import Labour from './pages/Labour';
-import ExitPass from './pages/ExitPass';
-import PartDelivery from './pages/PartDelivery';
 import VehicleTerminal from './pages/VehicleTerminal';
 import Auction from './pages/Auction';
 import ExportCargo from './pages/ExportCargo';
 import RailCargo from './pages/RailCargo';
 import Passenger from './pages/Passenger';
 import Exceptions from './pages/Exceptions';
-import TruckQueue from './pages/TruckQueue';
 import AuditLog from './pages/AuditLog';
+import InlandGate from './pages/InlandGate';
+import CustomsWorkspace from './pages/CustomsWorkspace';
+import ExternalStatus from './pages/ExternalStatus';
+import Licences from './pages/Licences';
 
 export default function App() {
   useAutoHideScrollbars();
@@ -48,11 +48,13 @@ export default function App() {
         <Route path="cf-portal" element={<CfPortal />} />
         <Route path="cf-portal/:manifestId" element={<CfManifest />} />
         <Route path="trader-portal" element={<TraderPortal />} />
-        <Route path="trader-portal/:manifestId" element={<TraderManifest />} />
         <Route path="manifests" element={<Manifests />} />
-        {/* Keys give each gate its own state; without them the inland gate kept the border queue. */}
-        <Route path="border-gate" element={<GateWorkbench key="border" side="border" />} />
-        <Route path="inland-gate" element={<GateWorkbench key="inland" side="inland" />} />
+        <Route path="manifests/:manifestId" element={<Manifests />} />
+        <Route path="border-gate" element={<GateWorkbench />} />
+        <Route path="inland-gate" element={<InlandGate />} />
+        <Route path="customs" element={<CustomsWorkspace />} />
+        <Route path="external" element={<ExternalStatus />} />
+        <Route path="licences" element={<Licences />} />
         <Route path="weighbridge" element={<Weighbridge />} />
         <Route path="posting" element={<Posting />} />
         <Route path="warehousing" element={<Warehousing />} />
@@ -72,15 +74,16 @@ export default function App() {
         <Route path="inbox" element={<Inbox />} />
         <Route path="audit" element={<AuditLog />} />
         <Route path="labour" element={<Labour />} />
-        <Route path="exit-pass" element={<ExitPass />} />
-        <Route path="part-delivery" element={<PartDelivery />} />
+        {/* The Exit Pass and Part delivery screens are replaced by the inland gate and the Delivery Request (M2 3.4.10). */}
+        <Route path="exit-pass" element={<Navigate to="/inland-gate" replace />} />
+        <Route path="part-delivery" element={<Navigate to="/cf-portal" replace />} />
         <Route path="vehicle-terminal" element={<VehicleTerminal />} />
         <Route path="auction" element={<Auction />} />
         <Route path="export" element={<ExportCargo />} />
         <Route path="rail" element={<RailCargo />} />
         <Route path="passenger" element={<Passenger />} />
         <Route path="exceptions" element={<Exceptions />} />
-        <Route path="truck-queue" element={<TruckQueue />} />
+        <Route path="truck-queue" element={<Navigate to="/posting" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

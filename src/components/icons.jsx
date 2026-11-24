@@ -8,7 +8,7 @@ import {
   DocumentValidationIcon, Download01Icon, FileUploadIcon, ForkliftIcon, Globe02Icon, GridViewIcon, Home01Icon, InboxIcon,
   Invoice01Icon, LockIcon, Menu01Icon, Moon02Icon, MoreHorizontalIcon, MoreVerticalIcon, Notification01Icon, Notification03Icon,
   Plug01Icon, Route01Icon, Search01Icon, SignpostIcon, SlidersHorizontalIcon, StopWatchIcon, Store01Icon, Sun03Icon,
-  Tick02Icon, Train01Icon, UnavailableIcon, UserGroupIcon, UserShield01Icon, Video01Icon, WarehouseIcon, WeightScaleIcon,
+  Tick02Icon, Train01Icon, InformationCircleIcon, Alert02Icon, WifiDisconnected01Icon, FullScreenIcon, TranslateIcon, Shield01Icon, UnavailableIcon, UserGroupIcon, UserShield01Icon, Video01Icon, WarehouseIcon, WeightScaleIcon,
 } from '@hugeicons/core-free-icons';
 
 // Icons follow the IBMS Figma design system: Hugeicons, Stroke Rounded, 1.5px stroke.
@@ -104,3 +104,9 @@ export const VideocamOutlinedIcon = createIcon(Video01Icon, 'VideocamOutlinedIco
 export const VideocamRoundedIcon = createIcon(Video01Icon, 'VideocamRoundedIcon');
 export const ViewQuiltRoundedIcon = createIcon(DashboardSquare01Icon, 'ViewQuiltRoundedIcon');
 export const WarehouseRoundedIcon = createIcon(WarehouseIcon, 'WarehouseRoundedIcon');
+export const InfoOutlinedIcon = createIcon(InformationCircleIcon, 'InfoOutlinedIcon');
+export const WarningAmberRoundedIcon = createIcon(Alert02Icon, 'WarningAmberRoundedIcon');
+export const CloudOffRoundedIcon = createIcon(WifiDisconnected01Icon, 'CloudOffRoundedIcon');
+export const FullscreenRoundedIcon = createIcon(FullScreenIcon, 'FullscreenRoundedIcon');
+export const TranslateRoundedIcon = createIcon(TranslateIcon, 'TranslateRoundedIcon');
+export const ShieldRoundedIcon = createIcon(Shield01Icon, 'ShieldRoundedIcon');

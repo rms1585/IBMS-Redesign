@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Box, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
-  Menu, MenuItem, ListItemText, Select, Collapse, Drawer, useMediaQuery,
+  Alert, Box, Button, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
+  Menu, MenuItem, ListItemText, Collapse, Drawer, Paper, TextField, useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { navConfig } from './navConfig';
-import { currentUser, ports, alerts } from '../data/mock';
 import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
 import { roles, useRole } from '../RoleContext';
-import { useTruckWeights } from '../TruckWeightsContext';
-import { useCustoms } from '../CustomsContext';
+import { usePort } from '../demo/PortStore';
+import { formatDateTime } from '../demo/format';
+import { useLanguage, useT } from '../i18n/LanguageContext';
 import blpaLogo from '../assets/blpa-logo.png';
-import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, DarkModeOutlinedIcon, KeyboardArrowDownRoundedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, VideocamOutlinedIcon } from '../components/icons';
+import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, CloudOffRoundedIcon, FullscreenRoundedIcon, InfoOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, SearchRoundedIcon, TranslateRoundedIcon, WarningAmberRoundedIcon } from '../components/icons';
 
 const NAV_WIDTH = 280;
 const NAV_MINI = 88;
 const HEADER = 72;
+
 
 function Logo({ mini }) {
   return (
@@ -42,6 +43,7 @@ function Logo({ mini }) {
 
 function NavItem({ item, mini }) {
   const theme = useTheme();
+  const t = useT();
   const { pathname } = useLocation();
   const active = item.path === '/' ? pathname === '/' : pathname.startsWith(item.path);
   const light = theme.palette.mode === 'light';
@@ -93,7 +95,7 @@ function NavItem({ item, mini }) {
           ...(mini ? { fontSize: 10, lineHeight: 1.2, maxWidth: '100%', textAlign: 'center' } : { flex: 1, textAlign: 'left' }),
         }}
       >
-        {item.title}
+        {t(item.title)}
       </Typography>
       {!mini && item.badge ? <Label color="error">{item.badge}</Label> : null}
       {!mini && item.disabled ? <Label>Soon</Label> : null}
@@ -101,7 +103,7 @@ function NavItem({ item, mini }) {
   );
 
   return mini ? (
-    <Tooltip title={item.title} placement="right" arrow>
+    <Tooltip title={t(item.title)} placement="right" arrow>
       <Box>{content}</Box>
     </Tooltip>
   ) : (
@@ -111,10 +113,12 @@ function NavItem({ item, mini }) {
 
 function NavGroup({ group, mini }) {
   const [open, setOpen] = useState(true);
+  const t = useT();
   return (
     <Box component="li" sx={{ listStyle: 'none', mb: mini ? 1 : 0.5 }}>
       {!mini && (
         <ListSubheader
+          component="div"
           disableSticky
           onClick={() => setOpen((o) => !o)}
           sx={{
@@ -123,7 +127,7 @@ function NavGroup({ group, mini }) {
             display: 'flex', alignItems: 'center', gap: 0.5, '&:hover': { color: 'text.primary' },
           }}
         >
-          {group.subheader}
+          {t(group.subheader)}
         </ListSubheader>
       )}
       <Collapse in={mini || open}>
@@ -140,18 +144,61 @@ function NavGroup({ group, mini }) {
   );
 }
 
+// Lookup on every screen: plate, manifest, Bill of Entry, pass number or the port's alias (Annex 24.3).
+function Lookup() {
+  const navigate = useNavigate();
+  const { lookup } = usePort();
+  const t = useT();
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const results = lookup(q);
+  const go = (r) => { setQ(''); setOpen(false); navigate(r.to); };
+  return (
+    <Box sx={{ position: 'relative', width: { xs: 160, sm: 240, lg: 300 } }}>
+      <TextField
+        size="small"
+        fullWidth
+        value={q}
+        placeholder={t('Plate, manifest, Bill of Entry or pass')}
+        inputProps={{ 'aria-label': t('Lookup') }}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) go(results[0]); if (e.key === 'Escape') setOpen(false); }}
+        InputProps={{ startAdornment: <SearchRoundedIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> }}
+      />
+      {open && q.trim().length >= 3 && (
+        <Paper sx={{ position: 'absolute', top: 44, left: 0, right: 0, zIndex: 1300, boxShadow: 8, py: 0.5 }}>
+          {results.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ px: 1.5, py: 1 }}>{t('Nothing matches')}. Try the plate without spaces, or the manifest number.</Typography>}
+          {results.map((r) => (
+            <MenuItem key={`${r.kind}-${r.label}`} onMouseDown={() => go(r)} sx={{ display: 'block', whiteSpace: 'normal' }}>
+              <Typography variant="caption" color="text.secondary" component="div">{t(r.kind)}</Typography>
+              <Typography variant="subtitle2" sx={{ whiteSpace: 'nowrap' }}>{r.label}</Typography>
+              <Typography variant="caption" color="text.secondary">{r.sub}</Typography>
+            </MenuItem>
+          ))}
+        </Paper>
+      )}
+    </Box>
+  );
+}
+
+// Top bar in the standard's fixed order: menu, environment | lookup, port, language, bell, full screen, user.
 function Header({ navWidth, onOpenNav }) {
   const theme = useTheme();
   const navigate = useNavigate();
   const { mode, toggle } = useColorMode();
-  const [port, setPort] = useState(currentUser.port);
+  const { lang, setLang } = useLanguage();
+  const t = useT();
+  const { state, reset } = usePort();
   const [anchor, setAnchor] = useState(null);
-  // Staff notices (a Customs release or hold, a re-weigh order for the weighbridge) come first, then consignment alerts.
-  const { notices } = useTruckWeights();
-  const { notices: customsNotices } = useCustoms();
-  const items = [...customsNotices.map((n) => ({ ...n, sub: n.ref })), ...notices.map((n) => ({ ...n, sub: n.ref })), ...alerts.map((a) => ({ ...a, sub: a.manifest, path: '/manifests' }))];
+  const items = state.events.slice(0, 10);
   const [userAnchor, setUserAnchor] = useState(null);
   const { role, setRole } = useRole();
+  const fullScreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else document.documentElement.requestFullscreen?.();
+  };
 
   return (
     <Box
@@ -159,94 +206,113 @@ function Header({ navWidth, onOpenNav }) {
       sx={{
         position: 'fixed', top: 0, right: 0, left: navWidth, height: HEADER, zIndex: 1100, px: { xs: 2, sm: 3, lg: 5 },
         display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 },
-        bgcolor: alpha(theme.palette.background.default, 0.8), backdropFilter: 'blur(6px)',
+        bgcolor: alpha(theme.palette.background.default, 0.92), backdropFilter: 'blur(6px)',
         transition: theme.transitions.create('left', { duration: 200 }),
       }}
     >
       {onOpenNav && (
         <IconButton onClick={onOpenNav} aria-label="Open navigation" edge="start"><MenuRoundedIcon /></IconButton>
       )}
-      <Select
-        size="small"
-        value={port}
-        onChange={(e) => setPort(e.target.value)}
-        IconComponent={KeyboardArrowDownRoundedIcon}
-        sx={{ minWidth: { xs: 150, sm: 220 }, '& .MuiSelect-select': { py: 0.9, fontWeight: 600, fontSize: 14 } }}
-        renderValue={(v) => {
-          const p = ports.find((x) => x.code === v);
-          return `${p.name} (${p.code})`;
-        }}
-      >
-        {ports.map((p) => (
-          <MenuItem key={p.code} value={p.code}>
-            <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }} spacing={2}>
-              <span>{p.name} ({p.code})</span>
-              <Label color={p.state === 'Live' ? 'success' : 'warning'}>{p.state === 'Live' ? 'Live' : 'Setup'}</Label>
-            </Stack>
-          </MenuItem>
-        ))}
-      </Select>
-      <Label color="warning" sx={{ ml: 0.5, display: { xs: 'none', sm: 'inline-flex' } }}>DEMO DATA</Label>
+      <Label color="warning" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}>{t('Demonstration system')}</Label>
 
       <Box sx={{ flex: 1 }} />
 
-      <Tooltip title="Live cameras">
-        <IconButton onClick={() => navigate('/border-gate')} sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><VideocamOutlinedIcon /></IconButton>
-      </Tooltip>
-      <Tooltip title={mode === 'light' ? 'Dark mode' : 'Light mode'}>
-        <IconButton onClick={toggle}>{mode === 'light' ? <DarkModeOutlinedIcon /> : <LightModeOutlinedIcon />}</IconButton>
-      </Tooltip>
+      <Lookup />
+      <Typography variant="subtitle2" sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap' }}>{t('Port')}: Benapole</Typography>
+      <Button
+        size="small"
+        variant="outlined"
+        color="inherit"
+        onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
+        aria-label={`${t('Language')}: ${lang === 'en' ? 'English' : 'বাংলা'}`}
+        startIcon={<TranslateRoundedIcon fontSize="small" />}
+        sx={{ minWidth: 0, display: { xs: 'none', sm: 'inline-flex' } }}
+      >
+        {lang === 'en' ? 'বাংলা' : 'English'}
+      </Button>
       <Tooltip title="Notifications">
-        <IconButton onClick={(e) => setAnchor(e.currentTarget)}>
+        <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Notifications">
           <Badge badgeContent={items.length} color="error"><NotificationsNoneRoundedIcon /></Badge>
         </IconButton>
       </Tooltip>
-      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ paper: { sx: { width: 360 } } }}>
-        <Typography variant="subtitle1" sx={{ px: 1.5, py: 1 }}>Notifications</Typography>
+      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} slotProps={{ paper: { sx: { width: 380 } } }}>
+        <Typography variant="subtitle1" sx={{ px: 1.5, py: 1 }}>Latest events</Typography>
         <Divider sx={{ borderStyle: 'dashed' }} />
         {items.map((a) => (
-          <MenuItem key={a.text} onClick={() => { setAnchor(null); navigate(a.path); }} sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}>
+          <MenuItem key={a.id} onClick={() => { setAnchor(null); navigate(state.manifests.some((m) => m.id === a.record) ? `/manifests/${encodeURIComponent(a.record)}` : '/audit'); }} sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.25 }}>
             <Box>
               <Typography variant="body2">{a.text}</Typography>
-              <Typography variant="caption" color="text.disabled">{a.at} · {a.sub}</Typography>
+              <Typography variant="caption" color="text.secondary">{formatDateTime(a.at)} · {a.by}</Typography>
             </Box>
           </MenuItem>
         ))}
       </Menu>
+      <Tooltip title={t('Full screen')}>
+        <IconButton onClick={fullScreen} aria-label={t('Full screen')} sx={{ display: { xs: 'none', sm: 'inline-flex' } }}><FullscreenRoundedIcon /></IconButton>
+      </Tooltip>
 
-      <ButtonBase onClick={(e) => setUserAnchor(e.currentTarget)} sx={{ borderRadius: 1.5, p: 0.5, pr: 1, gap: 1.25, '&:hover': { bgcolor: 'action.hover' } }}>
-        <UserAvatar name={currentUser.name} size={36} />
-        <Box sx={{ textAlign: 'left', display: { xs: 'none', md: 'block' } }}>
-          <Typography variant="subtitle2" sx={{ lineHeight: 1.3 }}>{currentUser.name}</Typography>
-          <Typography variant="caption" color="text.secondary">{role.name}</Typography>
+      <ButtonBase onClick={(e) => setUserAnchor(e.currentTarget)} aria-label={t('Switch role')} sx={{ borderRadius: 1.5, p: 0.5, pr: 1, gap: 1.25, '&:hover': { bgcolor: 'action.hover' } }}>
+        <UserAvatar name={role.person} size={36} />
+        <Box sx={{ textAlign: 'left', display: { xs: 'none', md: 'block' }, maxWidth: 200 }}>
+          <Typography variant="subtitle2" noWrap sx={{ lineHeight: 1.3 }}>{role.person}</Typography>
+          <Typography variant="caption" color="text.secondary" noWrap component="div">{role.name}</Typography>
         </Box>
       </ButtonBase>
-      <Menu anchorEl={userAnchor} open={Boolean(userAnchor)} onClose={() => setUserAnchor(null)} slotProps={{ paper: { sx: { width: 220 } } }}>
+      <Menu anchorEl={userAnchor} open={Boolean(userAnchor)} onClose={() => setUserAnchor(null)} slotProps={{ paper: { sx: { width: 320, maxHeight: '80vh' } } }}>
         <Box sx={{ px: 1.5, py: 1 }}>
-          <Typography variant="subtitle2">{currentUser.name}</Typography>
-          <Typography variant="body2" color="text.secondary" noWrap>{currentUser.email}</Typography>
+          <Typography variant="subtitle2">{role.person}</Typography>
+          <Typography variant="body2" color="text.secondary">{role.name} · Benapole</Typography>
         </Box>
         <Divider sx={{ borderStyle: 'dashed' }} />
-        {/* Demo role switcher: the left navigation shows only the modules the chosen role can use. */}
-        <Typography variant="overline" color="text.disabled" sx={{ display: 'block', px: 1, pt: 1, pb: 0.5 }}>Role</Typography>
+        <MenuItem onClick={() => { setUserAnchor(null); navigate('/external'); }}>BNSW simulator (demo tool)</MenuItem>
+        <MenuItem onClick={() => { reset(); setUserAnchor(null); navigate(role.landing); }}>{t('Reset demo')}</MenuItem>
+        <MenuItem onClick={() => { setLang(lang === 'en' ? 'bn' : 'en'); setUserAnchor(null); }}>{t('Language')}: {lang === 'en' ? 'English' : 'বাংলা'}</MenuItem>
+        <MenuItem onClick={() => { toggle(); setUserAnchor(null); }}>{mode === 'light' ? 'Dark mode' : 'Light mode'}</MenuItem>
+        <Divider sx={{ borderStyle: 'dashed' }} />
+        {/* Demo role switcher with the Annex 8 template roles. */}
+        <Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 1.5, pt: 1, pb: 0.5 }}>{t('Switch role')} (demo)</Typography>
         {roles.map((r) => (
-          <MenuItem key={r.id} selected={r.id === role.id} onClick={() => { setRole(r.id); setUserAnchor(null); }}>
-            <ListItemText primary={r.name} primaryTypographyProps={{ variant: 'body2', fontWeight: r.id === role.id ? 600 : 400 }} />
+          <MenuItem key={r.id} selected={r.id === role.id} onClick={() => { setRole(r.id); setUserAnchor(null); navigate(r.landing); }}>
+            <ListItemText primary={r.name} secondary={r.person} primaryTypographyProps={{ variant: 'body2', fontWeight: r.id === role.id ? 600 : 400 }} secondaryTypographyProps={{ variant: 'caption' }} />
             {r.id === role.id && <CheckRoundedIcon fontSize="small" color="primary" />}
           </MenuItem>
         ))}
-        <Divider sx={{ borderStyle: 'dashed' }} />
-        <MenuItem onClick={() => setUserAnchor(null)}>Profile</MenuItem>
-        <MenuItem onClick={() => setUserAnchor(null)}>Language: English</MenuItem>
-        <Divider sx={{ borderStyle: 'dashed' }} />
-        <MenuItem onClick={() => setUserAnchor(null)} sx={{ color: 'error.main', fontWeight: 600 }}>Sign out</MenuItem>
       </Menu>
     </Box>
   );
 }
 
+// Any state that changes what a user can do shows as a full-width strip on every screen (Annex 24.10).
+function StatusStrips() {
+  const { state } = usePort();
+  const t = useT();
+  const keyed = state.boes.filter((b) => b.source === 'Keyed by the agency').length + state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").length;
+  return (
+    <Stack spacing={1} sx={{ mb: 2, '&:empty': { display: 'none' } }}>
+      {state.bnswDown && (
+        <Alert severity="warning" icon={<CloudOffRoundedIcon />}>
+          <Typography variant="subtitle2">{t('BNSW-down mode')}</Typography>
+          <Typography variant="body2">{t("BNSW is down. The port works in BNSW-down mode: the gate keys manifest lines from the Car Pass, the C&F agency keys the Bill of Entry number and the revenue desk records releases from Customs' reference. The importer's tag and the agency's truck entry are still required.")}</Typography>
+        </Alert>
+      )}
+      {state.exitCheckDown && (
+        <Alert severity="warning" icon={<WarningAmberRoundedIcon />}>
+          <Typography variant="subtitle2">Exit check down</Typography>
+          <Typography variant="body2">{t('The exit check is down. Every truck at the exit lanes is held at the barrier until it is repaired or another gate is used.')}</Typography>
+        </Alert>
+      )}
+      {!state.bnswDown && keyed > 0 && (
+        <Alert severity="warning" icon={<InfoOutlinedIcon />}>
+          <Typography variant="body2">{keyed} keyed value{keyed === 1 ? '' : 's'} waiting to be checked against BNSW.</Typography>
+        </Alert>
+      )}
+    </Stack>
+  );
+}
+
 function NavContent({ mini, onToggle }) {
   const theme = useTheme();
+  const { state } = usePort();
   const { canOpen } = useRole();
   const groups = navConfig
     .map((g) => ({ ...g, items: g.items.filter((item) => canOpen(item.path)) }))
@@ -279,9 +345,9 @@ function NavContent({ mini, onToggle }) {
         <Box sx={{ p: 2.5, pt: 0 }}>
           <Box sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
             <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'primary.light' : 'primary.text' }}>
-              Benapole (BEN) · Live
+              Benapole · {state.bnswDown ? 'BNSW-down mode' : 'BNSW live'}
             </Typography>
-            <Typography variant="caption" color="text.secondary">NSW feed healthy · Synced 10:58</Typography>
+            <Typography variant="caption" color="text.secondary">Demo data. Reset from the user menu.</Typography>
           </Box>
         </Box>
       )}
@@ -292,7 +358,7 @@ function NavContent({ mini, onToggle }) {
 export default function DashboardLayout() {
   const theme = useTheme();
   const { pathname } = useLocation();
-  const { canOpen } = useRole();
+  const { canOpen, role } = useRole();
   // ≥1200px: full navigation. 900–1199px (iPad landscape): icon rail by default.
   // <900px (iPad portrait): navigation slides in from the menu button.
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
@@ -342,7 +408,8 @@ export default function DashboardLayout() {
         {/* Named container: page layouts use @container main queries against this width. */}
         <Box sx={{ px: { xs: 2, sm: 3, lg: 5 }, pb: 8, maxWidth: 1600, mx: 'auto', containerType: 'inline-size', containerName: 'main' }}>
           {/* Screens outside the current role's modules send the user back to Home. */}
-          {canOpen(pathname) ? <Outlet /> : <Navigate to="/" replace />}
+          <StatusStrips />
+          {canOpen(pathname) ? <Outlet /> : <Navigate to={role.landing} replace />}
         </Box>
       </Box>
     </Box>

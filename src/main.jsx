@@ -15,12 +15,16 @@ import { ManifestsProvider } from './ManifestsContext';
 import { CustomsProvider } from './CustomsContext';
 import { WarehouseProvider } from './WarehouseContext';
 import { TruckWeightsProvider } from './TruckWeightsContext';
+import { PortProvider } from './demo/PortStore';
+import { LanguageProvider } from './i18n/LanguageContext';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ColorModeProvider>
+      <LanguageProvider>
       <RoleProvider>
+      <PortProvider>
         <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuditProvider>
             <CfTrucksProvider>
@@ -38,7 +42,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             </CfTrucksProvider>
           </AuditProvider>
         </HashRouter>
+      </PortProvider>
       </RoleProvider>
+      </LanguageProvider>
     </ColorModeProvider>
   </React.StrictMode>,
 );

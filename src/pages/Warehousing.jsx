@@ -1,461 +1,234 @@
-import { useState, useEffect } from 'react';
-import {
-  Box, Card, Stack, Typography, Button, Divider, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Tabs, Tab, Link,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-} from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import { PageHeader, DetailRow, formatKg, formatBDT, EmptyState, AssumptionNote } from '../components/common';
-import { Workbench, QueueCard, CameraCard } from '../components/Workbench';
-import DataTable from '../components/DataTable';
-import Label from '../components/Label';
-import { AddRoundedIcon } from '../components/icons';
-import { RaiseDialog, equipmentText, equipmentPhrase, sameEquipment } from './Labour';
-import {
-  useWarehouse, requisitionFor, gangByName, isDoubleHandling, SHIFTING_FEE_PER_T,
-} from '../WarehouseContext';
-import { useAudit } from '../AuditContext';
-import { useCustoms } from '../CustomsContext';
-import { currentUser } from '../data/mock';
+import { useCallback, useState } from 'react';
+import { Alert, Box, Button, Card, Checkbox, FormControlLabel, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { useRole } from '../RoleContext';
+import { importerName, usePort } from '../demo/PortStore';
+import { daysSince, formatBoe, formatDateTime, formatKg } from '../demo/format';
+import { ActionFoot, ApprovalRow, Bench, Checklist, Confirmation, Fact, Facts, HoldRow, Id, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const channelColor = { Green: 'success', Yellow: 'warning', Red: 'error' };
-const needsExamination = (item) => ['Yellow', 'Red'].includes(item.customs.channel);
+// M-06: shed work on the handheld; the warehouse manager enters job times; loads lock with the Customs ARO's co-approval.
 
-// The Customs status every shed truck carries, so the channel is visible in the queue and the record header (F27, #56).
-function ChannelLabel({ item }) {
-  if (!item.customs.boe) return <Label>No Bill of Entry</Label>;
+const ASSOCIATIONS = ['Benapole Port Labour Association No. 1', 'Benapole Port Labour Association No. 2', 'Benapole Port Labour Association No. 3'];
+
+const toLocalInput = (iso) => (iso ? new Date(new Date(iso).getTime() + 6 * 3600000).toISOString().slice(0, 16) : '');
+const fromLocalInput = (v) => new Date(`${v}:00+06:00`).toISOString();
+
+function JobTimes({ v, onDone }) {
+  const p = usePort();
+  const { role } = useRole();
+  const canEnter = role.id === 'warehouse-manager' || role.id === 'super-admin' || role.id === 'port-incharge';
+  const [start, setStart] = useState(toLocalInput(v.receipt?.times?.start));
+  const [end, setEnd] = useState(toLocalInput(v.receipt?.times?.end));
+  const bad = start && end && end < start;
+  if (v.receipt?.times && !canEnter) return <Typography variant="body2">Unloading {formatDateTime(v.receipt.times.start)} to {formatDateTime(v.receipt.times.end)} · entered by {v.receipt.times.by}</Typography>;
+  if (!canEnter) return <Typography variant="body2" color="text.secondary">The warehouse manager enters the start and end times of the unloading. The handheld has no Start or End button.</Typography>;
   return (
-    <Label color={channelColor[item.customs.channel]}>
-      {item.customs.channel} channel{needsExamination(item) ? ' · examination' : ''}
-    </Label>
-  );
-}
-// Benapole records the higher of the declared and weighbridge weight at receipt (F26).
-const receiptWeight = (item) => Math.max(item.declaredKg, item.weighedKg);
-const toTonnes = (kg) => Math.round(kg / 100) / 10;
-const tonnes = (t) => `${t.toLocaleString('en-US', { maximumFractionDigits: 1 })} t`;
-
-// Unloading starts only for the expected truck, with a gang the contractor and labour union assigned.
-function unloadingBlock(item, plateRead, requisition) {
-  if (plateRead !== item.plate) return `The handheld read ${plateRead}, which doesn't match this truck. Unloading stays stopped until the plate matches.`;
-  if (!requisition) return 'No labour requisition for this truck yet. Raise one so the contractor and labour union can send a gang.';
-  if (requisition.status !== 'Gang assigned') return `${requisition.id} is waiting for the contractor and labour union to assign a gang.`;
-  return null;
-}
-
-function Elapsed({ since }) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
-  const s = Math.floor((now - since) / 1000);
-  return <>{String(Math.floor(s / 3600)).padStart(2, '0')}:{String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:{String(s % 60).padStart(2, '0')}</>;
-}
-
-function CustomsStatus({ item }) {
-  if (!item.customs.boe) {
-    return (
-      <Typography variant="body2" color="text.secondary" sx={{ px: 3, pt: 3 }}>
-        Bill of Entry not filed yet. Its number and Customs channel arrive through BNSW once the C&amp;F agent files it.
-      </Typography>
-    );
-  }
-  const hold = item.customs.onHold && (
-    <Alert severity="error" sx={{ mb: needsExamination(item) ? 1.5 : 0 }}>
-      <Box component="span" sx={{ fontWeight: 600 }}>Customs hold.</Box> {item.customs.hold.reason}. Unloading into the shed can go ahead, but nothing is delivered until Customs lifts the hold.
-    </Alert>
-  );
-  if (!needsExamination(item)) return hold ? <Box sx={{ px: 3, pt: 3 }}>{hold}</Box> : null;
-  return (
-    <Box sx={{ px: 3, pt: 3 }}>
-      {hold}
-      <Alert severity={item.customs.channel === 'Red' ? 'error' : 'warning'}>
-        <Box component="span" sx={{ fontWeight: 600 }}>Examination notice: {item.customs.channel.toLowerCase()} channel.</Box>{' '}
-        Customs will physically examine these goods at this shed. Keep them reachable at {item.parts.map((p) => p.bay).join(', ')} and don&apos;t stack other cargo in front.
-      </Alert>
-      <AssumptionNote code="F27" sx={{ mt: 1.5 }}>The notice arrives as a BNSW status in this demo. How Customs reaches IBMS is to be confirmed with NBR (#61).</AssumptionNote>
-    </Box>
-  );
-}
-
-export function LabourPanel({ requisition, onRaise }) {
-  if (!requisition) {
-    return (
-      <Alert severity="info" action={<Button variant="outlined" color="inherit" size="small" onClick={onRaise}>Raise requisition</Button>}>
-        No labour requisition for this truck yet.
-      </Alert>
-    );
-  }
-  if (requisition.status !== 'Gang assigned') {
-    return (
-      <Alert severity="warning">
-        <Link component={RouterLink} to="/labour" color="inherit" sx={{ fontWeight: 600 }}>{requisition.id}</Link> asks for {requisition.workers} workers
-        and {equipmentPhrase(requisition.requested)}. Waiting for the contractor and labour union to assign a gang.
-      </Alert>
-    );
-  }
-  const gang = gangByName(requisition.gang);
-  return (
-    <>
-      <DetailRow label="Gang">
-        {gang.name} · <Link component={RouterLink} to="/labour">{requisition.id}</Link>
-        <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
-          {gang.labourers.length} labourers named by the contractor: {gang.labourers.map((l) => l.name).join(', ')}
-        </Typography>
-      </DetailRow>
-      <DetailRow label="Equipment sent">
-        {equipmentText(requisition.sent)}
-        {!sameEquipment(requisition.sent, requisition.requested) && (
-          <Box sx={{ mt: 0.5 }}><Label color="warning">Requested: {equipmentPhrase(requisition.requested)}</Label></Box>
-        )}
-      </DetailRow>
-      <AssumptionNote code="F24" sx={{ mt: 1.5 }}>How the contractor or labour union confirms the gang is for BLPA to decide (#60). Here the assignment in Labour requisitions stands for it.</AssumptionNote>
-    </>
-  );
-}
-
-// Tonnes by hand and by equipment, lifts per equipment item, and double handling (F25). Lifts captured by the
-// contractor's device are shown as such; anything else is entered by the in-charge.
-export function HandlingFields({ totalT: total, requisition, manual, setManual, lifts, setLifts }) {
-  const sent = requisition.sent;
-  if (!sent.length) {
-    return <Typography variant="body2" color="text.secondary">No equipment was sent: all {tonnes(total)} is handled by hand.</Typography>;
-  }
-  const manualT = Number(manual || 0);
-  return (
-    <>
-      <Box className="record-fields" sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-        <Box>
-          <TextField
-            fullWidth required label="Handled by hand (t)" value={manual}
-            onChange={(e) => setManual(e.target.value.replace(/[^\d.]/g, ''))}
-            error={manualT > total}
-            helperText={manualT > total ? `More than the ${tonnes(total)} received` : `With equipment: ${tonnes(Math.max(0, Math.round((total - manualT) * 10) / 10))}`}
-          />
-        </Box>
-        {sent.map((eq) => {
-          const captured = requisition.captured?.[eq];
-          return (
-            <Box key={eq}>
-              <TextField
-                fullWidth required label={`Lifts · ${eq}`} value={captured ?? lifts[eq] ?? ''} disabled={captured != null}
-                onChange={(e) => setLifts({ ...lifts, [eq]: e.target.value.replace(/\D/g, '') })}
-                helperText={captured != null ? 'Captured by the contractor’s device' : 'Entered by you'}
-              />
-            </Box>
-          );
-        })}
+    <Stack spacing={1.5}>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+        <TextField type="datetime-local" label="Unloading started" value={start} onChange={(e) => setStart(e.target.value)} InputLabelProps={{ shrink: true }} />
+        <TextField type="datetime-local" label="Unloading ended" value={end} onChange={(e) => setEnd(e.target.value)} InputLabelProps={{ shrink: true }} error={Boolean(bad)} helperText={bad ? 'The end cannot be earlier than the start.' : ' '} />
       </Box>
-      {isDoubleHandling(sent) && (
-        <Alert severity="info" sx={{ mt: 2 }}>Crane and forklift both used: the equipment tonnes are billed as double handling.</Alert>
+      <Box><Button variant="outlined" disabled={!start || !end || Boolean(bad)} onClick={() => { p.setJobTimes(v.id, fromLocalInput(start), fromLocalInput(end)); onDone('Unloading times entered'); }}>Enter times</Button></Box>
+    </Stack>
+  );
+}
+
+function UnloadingBench({ onDone }) {
+  const p = usePort();
+  const queue = p.state.visits.filter((v) => (v.posting && v.posting.accepted === null) || (v.stage === 'Posted' && !v.receipt?.locked));
+  const [sel, setSel] = useState(queue[0]?.id);
+  const v = queue.find((x) => x.id === sel) ?? queue[0];
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
+  const [counts, setCounts] = useState({});
+  const lines = v ? p.linesOfVisit(v) : [];
+  const deciding = v && v.posting.accepted === null;
+  const checks = v && !deciding ? [
+    { label: 'Labour association tagged', state: v.receipt?.association ? 'pass' : 'fail', text: v.receipt?.association ?? 'Tag the labour association to the job first.' },
+    { label: 'Each line counted or taken from the declaration', state: 'pass', text: `${lines.length} line${lines.length === 1 ? '' : 's'}` },
+    { label: 'Unloading times', state: 'info', text: v.receipt?.times ? 'Entered by the warehouse manager' : 'The warehouse manager can enter them after the lock.' },
+  ] : [];
+  const lock = useCallback(() => {
+    if (!v || deciding || checks.some((c) => c.state === 'fail')) return;
+    p.lockReceipt(v.id, counts);
+    onDone(`Receipt of ${v.plate} locked`);
+    setCounts({});
+  }, [v, deciding, checks, counts, p, onDone]);
+  useKeyAction('l', lock, Boolean(v) && !deciding);
+  const accept = useCallback(() => {
+    if (!v || !deciding) return;
+    p.decidePosting(v.id, true);
+    onDone('Posting accepted. The agency has the drop point');
+  }, [v, deciding, p, onDone]);
+  useKeyAction('a', accept, Boolean(v) && deciding && !rejecting);
+  const single = lines.length === 1;
+  const diff = v?.weigh ? v.weigh.kg - lines.reduce((s, l) => s + l.declaredKg, 0) : 0;
+  return (
+    <Bench
+      context={[{ label: 'Port', value: 'Benapole' }, { label: 'Shed', value: 'All sheds (demo)' }, { label: 'Arriving', value: queue.length }]}
+      queue={<QueueList title="Proposed to this shed" items={queue} selected={v?.id} onSelect={(id) => { setSel(id); setRejecting(false); }} empty="No truck is posted to this shed." render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.posting.shed} · {x.posting.accepted === null ? 'Proposal to decide' : 'Accepted, to receive'}</Typography></>} />}
+      center={v ? (
+        <Stack spacing={2.5}>
+          <Plate size="hero">{v.plate}</Plate>
+          <Facts cols={2}>
+            <Fact label="Proposed place">{v.posting.shed}</Fact>
+            <Fact label="Weighbridge net">{formatKg(v.weigh?.kg)}</Fact>
+            <Fact label="Proposed by">{v.posting.proposedBy ?? '–'}</Fact>
+          </Facts>
+          {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
+          {deciding ? (
+            rejecting ? (
+              <Stack spacing={1.5}>
+                <ReasonField value={reason} onChange={setReason} label="Reason for the rejection" />
+                <Stack direction="row" spacing={1}>
+                  <Button variant="contained" color="error" disabled={!reason.trim()} onClick={() => { p.decidePosting(v.id, false, reason.trim()); setRejecting(false); setReason(''); onDone('Posting rejected'); }}>Reject posting</Button>
+                  <Button onClick={() => setRejecting(false)}>Cancel</Button>
+                </Stack>
+              </Stack>
+            ) : <Box><Button onClick={() => setRejecting(true)}>Reject with a reason</Button></Box>
+          ) : (
+            <>
+              <SectionTitle>Labour association</SectionTitle>
+              <TextField select label="Tag the labour association to this job" value={v.receipt?.association ?? ''} onChange={(e) => { p.tagAssociation(v.id, e.target.value); onDone('Labour association tagged and notified'); }} helperText="The association chooses who comes. IBMS never tags individual labourers." sx={{ maxWidth: 420 }}>
+                {ASSOCIATIONS.map((a) => <MenuItem key={a} value={a}>{a}</MenuItem>)}
+              </TextField>
+              <SectionTitle>Receipt per line</SectionTitle>
+              {lines.map((l) => {
+                const c = counts[l.id] ?? { packages: l.packages, counted: true };
+                const receiptKg = single ? Math.max(l.declaredKg, v.weigh?.kg ?? 0) : l.declaredKg;
+                return (
+                  <Card key={l.id} variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2">Line {l.no}: {l.goods} · {importerName(l.importer)}</Typography>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} sx={{ mt: 1.5 }}>
+                      <TextField size="small" type="number" label="Packages counted" value={c.packages} disabled={!c.counted} onChange={(e) => setCounts({ ...counts, [l.id]: { ...c, packages: Number(e.target.value) } })} sx={{ width: 180 }} />
+                      <FormControlLabel control={<Checkbox checked={!c.counted} onChange={(e) => setCounts({ ...counts, [l.id]: { packages: l.packages, counted: !e.target.checked } })} />} label="Taken from the declaration" />
+                      {!c.counted && <SourceMarker source="Declared" />}
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Receipt weight {formatKg(receiptKg)}: {single ? 'the higher of the declared weight and the weighbridge net.' : 'this line\'s own declared weight.'}</Typography>
+                  </Card>
+                );
+              })}
+              {!single && diff !== 0 && <Alert severity="warning">The truck weighed {formatKg(Math.abs(diff))} {diff > 0 ? 'more' : 'less'} than its lines declare. The difference is flagged on the truck and never spread over the lines; each importer pays on its own line's weight.</Alert>}
+              <SectionTitle>Job times</SectionTitle>
+              <JobTimes v={v} onDone={onDone} />
+            </>
+          )}
+        </Stack>
+      ) : <Typography variant="body2" color="text.secondary">Nothing to receive.</Typography>}
+      right={v ? (
+        deciding ? (
+          <>
+            <Checklist checks={[{ label: 'Free space confirmed by posting', state: 'pass', text: v.posting.shed }]} />
+            <ActionFoot label="Accept posting" keyHint="A" onClick={accept} />
+          </>
+        ) : (<><Checklist checks={checks} /><ActionFoot checks={checks} label="Lock receipt" keyHint="L" onClick={lock} /></>)
+      ) : null}
+    />
+  );
+}
+
+function LoadingBench({ onDone }) {
+  const p = usePort();
+  const queue = p.state.deliveryRequests.flatMap((d) => d.slots.map((s, i) => ({ d, s, i, id: `${d.id}-${i}` }))).filter((x) => x.s.enteredAt && !x.s.load);
+  const [sel, setSel] = useState(queue[0]?.id);
+  const item = queue.find((x) => x.id === sel) ?? queue[0];
+  const [kg, setKg] = useState('');
+  const b = item && p.boe(item.d.boe);
+  const lockedOnDr = item ? item.d.slots.reduce((s, x) => s + (x.load?.kg ?? 0), 0) : 0;
+  const drLeft = item ? item.d.kg - lockedOnDr : 0;
+  const balance = b ? p.releasedBalance(b) - p.inFlightKg(b) : 0;
+  const holds = b ? [...p.holdsOnBoe(b), ...p.holdsOnPlate(item.s.plate)] : [];
+  const n = Number(kg);
+  const checks = item ? [
+    { label: 'Entry Pass scanned', state: 'pass', text: item.s.entryPass },
+    { label: 'Paid Delivery Request', state: p.bill(item.d.bill).status === 'Paid' ? 'pass' : 'fail', text: item.d.id },
+    { label: 'No hold on the goods', state: holds.length ? 'fail' : 'pass', text: holds.length ? `${holds[0].body} hold: ${holds[0].reason}` : 'None open.' },
+    { label: 'Within the request and the released balance', state: !n ? 'info' : n <= Math.min(drLeft, balance) ? 'pass' : 'fail', text: `Up to ${formatKg(Math.min(drLeft, balance))} on this truck.` },
+  ] : [];
+  const lockLoad = useCallback(() => {
+    if (!item || !n || checks.some((c) => c.state === 'fail')) return;
+    p.lockLoad(item.d.id, item.i, n);
+    onDone(`Load locked on ${item.s.plate}. Exit Pass prepared and approved by the shed`);
+    setKg('');
+  }, [item, n, checks, p, onDone]);
+  const changes = p.state.truckChanges.filter((tc) => !tc.done && !tc.shed);
+  return (
+    <>
+      <Bench
+        context={[{ label: 'Port', value: 'Benapole' }, { label: 'Local trucks to load', value: queue.length }]}
+        queue={<QueueList title="Local trucks inside" items={queue} selected={item?.id} onSelect={setSel} empty="No local truck is waiting to load. Trucks appear once admitted at the inland gate on an Entry Pass." render={(x) => <><Plate>{x.s.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.s.entryPass}</Typography></>} />}
+        center={item ? (
+          <Stack spacing={2.5}>
+            <Plate size="hero">{item.s.plate}</Plate>
+            <Facts cols={2}>
+              <Fact label="Delivery Request">{item.d.id}</Fact>
+              <Fact label="Bill of Entry"><Id>{formatBoe(b)}</Id></Fact>
+              <Fact label="Left on the request">{formatKg(drLeft)}</Fact>
+            </Facts>
+            <TextField type="number" label="Quantity loaded (kg)" value={kg} onChange={(e) => setKg(e.target.value)} sx={{ maxWidth: 260 }} />
+            <Typography variant="body2" color="text.secondary">Locking the load approves the Exit Pass for these goods as shed in-charge. The Customs Assistant Revenue Officer co-approves it in the Customs workspace.</Typography>
+          </Stack>
+        ) : <Typography variant="body2" color="text.secondary">No truck selected.</Typography>}
+        right={item ? (<><Checklist checks={checks} /><ActionFoot checks={checks} label="Lock load" keyHint="L" onClick={lockLoad} disabled={!n} /></>) : null}
+      />
+      {changes.length > 0 && (
+        <Card sx={{ p: 3, mt: 3 }}>
+          <SectionTitle>Truck changes waiting for the shed in-charge</SectionTitle>
+          {changes.map((tc) => (
+            <Box key={tc.id} sx={{ mb: 2 }}>
+              <Typography variant="body2">{tc.pass}: {tc.from} to {tc.to}. {tc.reason} (proposed by {tc.proposedBy})</Typography>
+              <ApprovalRow title="Shed in-charge" approval={tc.shed} action={<Button size="small" variant="contained" onClick={() => { p.approveTruckChange(tc.id, 'shed'); onDone('Truck change approved'); }}>Approve truck change</Button>} />
+            </Box>
+          ))}
+        </Card>
       )}
     </>
   );
 }
 
-function Record({ item, plateRead, requisition, onRaise, onStart, onFinish }) {
-  const [kg, setKg] = useState('');
-  const [method, setMethod] = useState('Scale weight (gross − tare)');
-  const [actualBay, setActualBay] = useState(item.parts[0].bay);
-  const [note, setNote] = useState('');
-  const [manual, setManual] = useState('');
-  const [lifts, setLifts] = useState({});
-  const block = item.stage === 'waiting' ? unloadingBlock(item, plateRead, requisition) : null;
-  const receiptKg = receiptWeight(item);
-  const totalT = toTonnes(receiptKg);
-  const diff = kg ? Number(kg) - receiptKg : 0;
-  const source = item.weighedKg > item.declaredKg ? 'weighbridge' : item.weighedKg < item.declaredKg ? 'declared' : 'same';
-  const countNote = diff < 0 ? `${(-diff).toLocaleString()} kg short of the receipt weight` : diff > 0 ? `${diff.toLocaleString()} kg over the receipt weight` : 'Matches the receipt weight';
-
-  const sent = requisition?.sent ?? [];
-  const liftsFor = (eq) => Number(requisition?.captured?.[eq] ?? lifts[eq] ?? 0);
-  const manualT = sent.length ? Number(manual || 0) : totalT;
-  const handlingDone = !sent.length || (manual !== '' && manualT <= totalT && sent.every((eq) => liftsFor(eq) > 0));
-  const handling = () => ({
-    manualT,
-    equipmentT: Math.round((totalT - manualT) * 10) / 10,
-    lifts: Object.fromEntries(sent.map((eq) => [eq, liftsFor(eq)])),
-    double: isDoubleHandling(sent),
-    source: sent.some((eq) => requisition.captured?.[eq] != null) ? 'Contractor device and in-charge' : 'In-charge',
-  });
-
+function Custody() {
+  const p = usePort();
+  const lots = p.state.visits.filter((v) => v.receipt?.locked).flatMap((v) => p.linesOfVisit(v).map((l) => ({ v, l, b: p.boeOfLine(l.id) }))).filter(({ b }) => !b?.closed);
   return (
-    <Card>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
-        <Box>
-          <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{item.plate}</Typography>
-          <Typography variant="body2" color="text.secondary">{item.product} · allocated {item.parts.map((p) => p.bay).join(', ')}</Typography>
-        </Box>
-        <Stack direction="row" flexWrap="wrap" gap={1}>
-          <ChannelLabel item={item} />
-          {block ? <Label color="error">Unloading stopped</Label>
-            : item.stage === 'waiting' ? <Label color="success">Ready to unload</Label>
-              : <Label color="info">Unloading · <Elapsed since={item.startedAt} /></Label>}
-        </Stack>
-      </Stack>
-      <Divider sx={{ borderStyle: 'dashed' }} />
-      <CustomsStatus item={item} />
-      <Grid container spacing={{ xs: 0, xl: 4 }} sx={{ p: 3, pb: 2 }}>
-        <Grid size={{ xs: 12, xl: 6 }}>
-          <DetailRow label="Manifest">{item.manifest}</DetailRow>
-          <DetailRow label="Category">{item.category}</DetailRow>
-          <DetailRow label="C&amp;F agency">{item.agency}</DetailRow>
-          <DetailRow label="Bill of Entry">
-            {item.customs.boe
-              ? <><Box component="span" sx={{ fontFamily: 'monospace' }}>{item.customs.boe}</Box> <Label color={channelColor[item.customs.channel]}>{item.customs.channel} channel</Label></>
-              : <Label>Not filed yet</Label>}
-          </DetailRow>
-        </Grid>
-        <Grid size={{ xs: 12, xl: 6 }}>
-          <Typography variant="subtitle2">Weight BLPA charges on</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Two weights are on file. The higher one becomes the receipt weight.</Typography>
-          <DetailRow label="Declared">
-            {formatKg(item.declaredKg)} {source === 'declared' && <Label color="info">Higher</Label>}
-          </DetailRow>
-          <DetailRow label="Weighbridge net">
-            {formatKg(item.weighedKg)} {source === 'weighbridge' && <Label color="info">Higher</Label>}
-            {item.sharedTruck && <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>The truck carries several consignments: its net weight is split by declared weight.</Typography>}
-          </DetailRow>
-          <DetailRow label="Receipt weight">
-            <Box component="span" sx={{ fontWeight: 600 }}>{formatKg(receiptKg)}</Box>
-            <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
-              {source === 'same' ? 'Both weights are the same.' : `Taken from the ${source} weight.`} Storage and handling are charged on this.
-            </Typography>
-          </DetailRow>
-        </Grid>
-      </Grid>
-      <AssumptionNote code="F26" sx={{ px: 3, pb: 2 }}>Using the higher weight is Benapole&apos;s current rule. BLPA is to confirm it for every port.</AssumptionNote>
-      <Divider sx={{ borderStyle: 'dashed' }} />
-      {item.stage === 'waiting' ? (
-        <Box sx={{ p: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Check the truck at the shed door, then start unloading</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>The contractor and labour union assign the gang and equipment from your requisition.</Typography>
-          <LabourPanel requisition={requisition} onRaise={onRaise} />
-          {block && plateRead !== item.plate && <Alert severity="error" sx={{ mt: 2 }}>{block}</Alert>}
-          <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-            <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => onStart(item)}>Start unloading</Button>
-          </Stack>
-        </Box>
-      ) : (
-        <Box sx={{ p: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 2 }}>Record what was received · {requisition?.gang ?? 'no gang'} · {equipmentText(sent)}</Typography>
-          <Box className="record-fields" sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-            <Box><TextField fullWidth required label="Counted at the shed (kg)" value={kg} onChange={(e) => setKg(e.target.value.replace(/\D/g, ''))} helperText={kg ? countNote : 'For shortage or damage only. The charge stays on the receipt weight.'} /></Box>
-            <Box>
-              <TextField select fullWidth label="Measurement method" value={method} onChange={(e) => setMethod(e.target.value)}>
-                {['Scale weight (gross − tare)', 'Package count × unit weight', 'Declared (not measured)'].map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-              </TextField>
-            </Box>
-            <Box><TextField fullWidth label="Actual bay" value={actualBay} onChange={(e) => setActualBay(e.target.value)} /></Box>
-            <Box><TextField fullWidth label="Shortage / damage note" value={note} onChange={(e) => setNote(e.target.value)} /></Box>
-          </Box>
-          {actualBay !== item.parts[0].bay && <Alert severity="warning" sx={{ mt: 2 }}>The actual bay differs from the allocation. Capacity, category and separation rules will be checked again for {actualBay}.</Alert>}
-          <Typography variant="subtitle2" sx={{ mt: 3, mb: 0.5 }}>How it was handled</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Split the {tonnes(totalT)} receipt weight between hand and equipment, and count the lifts. This feeds the contractor bill.</Typography>
-          {requisition && <HandlingFields totalT={totalT} requisition={requisition} manual={manual} setManual={setManual} lifts={lifts} setLifts={setLifts} />}
-          <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
-            <Button variant="contained" size="large" disabled={!kg || !handlingDone} onClick={() => onFinish(item, receiptKg, handling())}>Finish and record receipt</Button>
-          </Stack>
-          <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1, textAlign: 'right' }}>The receipt is locked after recording. Changes need a correction request.</Typography>
-        </Box>
-      )}
+    <Card sx={{ p: 3 }}>
+      <ResponsiveTable
+        rowKey={(r) => r.l.id}
+        rows={lots}
+        empty="No cargo in custody."
+        columns={[
+          { label: 'Line', render: (r) => <Id>{r.l.id}</Id> },
+          { label: 'Goods', render: (r) => r.l.goods },
+          { label: 'Place', render: (r) => r.v.posting?.shed },
+          { label: 'In custody', align: 'right', render: (r) => formatKg(r.v.receipt.lines[r.l.id].receiptKg - (r.b?.deliveredKg ?? 0)) },
+          { label: 'Storage', align: 'right', priority: 'low', render: (r) => `${daysSince(r.v.receipt.at)} days` },
+          { label: 'Status', render: (r) => { const h = p.holdsOnManifest(r.l.manifest); const d = daysSince(r.v.receipt.at); return <StatusPill word={h.length ? 'Customs hold' : d > 30 ? 'Overdue' : r.b?.release ? 'Released' : 'Awaiting Customs'} />; } },
+        ]}
+      />
     </Card>
   );
 }
 
-// Goods moved inside a shed to make room pay a fee per tonne, charged to the owner of the goods moved (Item 8, Bhomra).
-function ShiftingDialog({ open, stock, onClose, onSave }) {
-  const empty = { lot: '', to: '', t: '', reason: '' };
-  const [f, setF] = useState(empty);
-  const lot = stock.find((l) => l.id === f.lot);
-  const maxT = lot ? toTonnes(lot.kg) : 0;
-  const t = Number(f.t || 0);
-  const valid = lot && f.to.trim() && f.to.trim().toUpperCase() !== lot.bay && t > 0 && t <= maxT && f.reason.trim();
-  const set = (k) => (e) => setF({ ...f, [k]: k === 't' ? e.target.value.replace(/[^\d.]/g, '') : e.target.value });
-  const close = () => { setF(empty); onClose(); };
-  return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
-      <DialogTitle>Record shifting</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2} sx={{ pt: 1 }}>
-          <Grid size={12}>
-            <TextField select fullWidth required label="Goods moved" value={f.lot} onChange={set('lot')}>
-              {stock.map((l) => <MenuItem key={l.id} value={l.id}>{l.product} · {l.manifest} · {l.bay} · {tonnes(toTonnes(l.kg))}</MenuItem>)}
-            </TextField>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth disabled label="From bay" value={lot?.bay ?? ''} /></Grid>
-          <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth required label="To bay" value={f.to} onChange={set('to')} error={Boolean(lot && f.to.trim().toUpperCase() === lot.bay)} helperText={lot && f.to.trim().toUpperCase() === lot.bay ? 'Same as the current bay' : ' '} /></Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField fullWidth required label="Tonnes moved" value={f.t} onChange={set('t')} error={t > maxT} helperText={lot ? (t > maxT ? `At most ${tonnes(maxT)}` : `Fee ${formatBDT(t * SHIFTING_FEE_PER_T)}`) : ' '} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth disabled label="Charged to" value={lot?.owner ?? ''} helperText="Owner of the goods moved" /></Grid>
-          <Grid size={12}><TextField fullWidth required label="Reason" value={f.reason} onChange={set('reason')} placeholder="For example: make room for the solvent drums" /></Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={close}>Cancel</Button>
-        <Button variant="contained" disabled={!valid} onClick={() => { onSave({ lot, to: f.to.trim().toUpperCase(), tonnes: t, reason: f.reason.trim() }); setF(empty); }}>Record shifting</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-function Shifting({ shiftings, onRecord }) {
-  return (
-    <>
-      <AssumptionNote code="Item 8" sx={{ mb: 2 }}>The shifting fee of {formatBDT(SHIFTING_FEE_PER_T)} per tonne is a demonstration rate until BLPA confirms it.</AssumptionNote>
-      <DataTable
-        rows={shiftings} rowKey={(r) => r.id} searchKeys={['id', 'manifest', 'product', 'owner']} searchPlaceholder="Search shifting, manifest or goods"
-        toolbar={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={onRecord} sx={{ flexShrink: 0 }}>Record shifting</Button>}
-        columns={[
-          { key: 'id', label: 'Shifting', render: (r) => <><Typography variant="subtitle2">{r.id}</Typography><Typography variant="caption" color="text.secondary">{r.at} · {r.by}</Typography></> },
-          { key: 'goods', label: 'Goods moved', render: (r) => <>{r.product}<Typography variant="caption" color="text.secondary" component="div" sx={{ fontFamily: 'monospace' }}>{r.manifest}</Typography></> },
-          { key: 'move', label: 'Move', render: (r) => <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{r.from} → {r.to}</Typography> },
-          { key: 'tonnes', label: 'Tonnes', render: (r) => tonnes(r.tonnes) },
-          { key: 'fee', label: 'Fee', render: (r) => formatBDT(r.tonnes * SHIFTING_FEE_PER_T) },
-          { key: 'owner', label: 'Charged to', render: (r) => <>{r.owner}<Typography variant="caption" color="text.secondary" component="div">{r.reason}</Typography></> },
-        ]}
-      />
-    </>
-  );
-}
-
 export default function Warehousing() {
-  const {
-    receipts: shedReceipts, requisitions, stock, shiftings, updateReceipt, recordReceipt, raiseRequisition, addShifting,
-  } = useWarehouse();
-  const { customsFor } = useCustoms();
-  // Each truck's Customs status comes from the one shared record for its manifest (#80).
-  const receipts = shedReceipts.map((r) => ({ ...r, customs: customsFor(r.manifest) }));
-  const { addEvent } = useAudit();
-  const [tab, setTab] = useState('waiting');
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState(receipts[0]?.key ?? null);
-  const [raising, setRaising] = useState(false);
-  const [shifting, setShifting] = useState(false);
-  const [toast, setToast] = useState('');
-  const list = receipts.filter((i) => i.stage === tab && `${i.plate} ${i.manifest}`.toLowerCase().includes(search.toLowerCase()));
-  const current = receipts.find((i) => i.key === selected && i.stage === tab);
-  const currentReq = current && requisitionFor(requisitions, current.plate);
-  const count = (stage) => receipts.filter((i) => i.stage === stage).length;
-
-  const start = (item) => {
-    updateReceipt(item.key, { stage: 'unloading', startedAt: Date.now() });
-    setTab('unloading');
-    setToast(`Unloading started for ${item.plate}.`);
-  };
-  const finish = (item, receiptKg, handling) => {
-    recordReceipt(item, receiptKg, handling);
-    addEvent({
-      actor: currentUser.name, role: currentUser.role, module: 'Warehouse', type: 'Record',
-      text: `Recorded receipt of ${item.product} from ${item.plate} into ${item.parts[0].bay}: ${formatKg(receiptKg)}; ${tonnes(handling.manualT)} by hand, ${tonnes(handling.equipmentT)} with equipment${handling.double ? ' (double handling)' : ''}`,
-    });
-    setSelected(null);
-    setToast(`Receipt recorded: ${formatKg(receiptKg)} into ${item.parts[0].bay}. The requisition is complete.`);
-  };
-  const recordShifting = ({ lot, to, tonnes: t, reason }) => {
-    addShifting({ lot: lot.id, manifest: lot.manifest, product: lot.product, owner: lot.owner, from: lot.bay, to, tonnes: t, reason, by: currentUser.name });
-    addEvent({
-      actor: currentUser.name, role: currentUser.role, module: 'Warehouse', type: 'Record',
-      text: `Shifted ${tonnes(t)} of ${lot.product} (${lot.manifest}) from ${lot.bay} to ${to}; fee ${formatBDT(t * SHIFTING_FEE_PER_T)} charged to ${lot.owner}`,
-    });
-    setShifting(false);
-    setToast(`Shifting recorded. ${formatBDT(t * SHIFTING_FEE_PER_T)} is charged to ${lot.owner}.`);
-  };
-
+  const t = useT();
+  const [tab, setTab] = useState('unload');
+  const [msg, setMsg] = useState('');
   return (
     <>
-      <PageHeader title="Warehouse receipt" links={[{ name: 'Operations' }, { name: 'Warehousing' }]} />
-      <Tabs value={tab} onChange={(e, v) => { setTab(v); setSelected(null); }} sx={{ mb: 3 }} variant="scrollable" allowScrollButtonsMobile>
-        <Tab value="waiting" label={<Stack direction="row" spacing={1} alignItems="center"><span>Waiting</span><Label>{count('waiting')}</Label></Stack>} />
-        <Tab value="unloading" label={<Stack direction="row" spacing={1} alignItems="center"><span>Unloading</span><Label>{count('unloading')}</Label></Stack>} />
-        <Tab value="shifting" label="Shifting" />
-      </Tabs>
-      {tab === 'shifting' ? (
-        <Shifting shiftings={shiftings} onRecord={() => setShifting(true)} />
-      ) : (
-        <Workbench
-          queue={
-            <QueueCard
-              title={tab === 'waiting' ? 'Waiting at shed' : 'Unloading now'}
-              count={list.length}
-              search={search}
-              onSearch={setSearch}
-              placeholder="Search plate or manifest"
-              items={list}
-              getKey={(i) => i.key}
-              selectedKey={selected}
-              onSelect={setSelected}
-              renderItem={(i) => {
-                const req = requisitionFor(requisitions, i.plate);
-                return (
-                  <>
-                    <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{i.plate}</Typography>
-                    <Typography variant="body2" noWrap>{i.product}</Typography>
-                    <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
-                      {i.parts.map((p) => <Label key={p.bay}>{p.bay}</Label>)}
-                      {i.stage === 'waiting' && i.handheldPlate !== i.plate && <Label color="error">Plate mismatch</Label>}
-                      {i.stage === 'waiting' && req?.status !== 'Gang assigned' && <Label color="warning">No gang yet</Label>}
-                      <ChannelLabel item={i} />
-                    </Stack>
-                  </>
-                );
-              }}
-            />
-          }
-          center={
-            current ? (
-              <Record
-                key={current.key + current.stage}
-                item={current}
-                plateRead={current.handheldPlate}
-                requisition={currentReq}
-                onRaise={() => setRaising(true)}
-                onStart={start}
-                onFinish={finish}
-              />
-            ) : (
-              <Card><EmptyState title={list.length ? 'Select a truck' : 'No trucks here'} description={list.length ? undefined : 'Trucks appear when the warehouse in-charge accepts their posting.'} sx={{ py: 12 }} /></Card>
-            )
-          }
-          rail={[
-            current && (
-              <CameraCard
-                key="handheld"
-                lane={`${current.shed} door · handheld`}
-                title="Handheld plate read"
-                source="Handheld"
-                before="unloading"
-                plate={current.handheldPlate}
-                expected={current.plate}
-                onReread={current.handheldPlate !== current.plate ? () => updateReceipt(current.key, { handheldPlate: current.plate }) : undefined}
-              />
-            ),
-            <Card key="moves" sx={{ p: 2.5 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Shed 5 today</Typography>
-              <Stack spacing={1.25}>
-                {[['Waiting at the door', count('waiting'), 'warning'], ['Unloading', count('unloading'), 'primary'], ['Examination notices', receipts.filter(needsExamination).length, 'error']].map(([l, n, c]) => (
-                  <Stack key={l} direction="row" justifyContent="space-between"><Typography variant="body2">{l}</Typography><Label color={c}>{n}</Label></Stack>
-                ))}
-              </Stack>
-            </Card>,
-          ].filter(Boolean)}
-        />
-      )}
-      {current && (
-        <RaiseDialog
-          key={current.key}
-          open={raising}
-          initial={{ truck: current.plate, shed: current.shed }}
-          onClose={() => setRaising(false)}
-          onSave={(f) => {
-            raiseRequisition(f);
-            setRaising(false);
-            setToast('Requisition sent to the contractor and labour union.');
-          }}
-        />
-      )}
-      <ShiftingDialog open={shifting} stock={stock} onClose={() => setShifting(false)} onSave={recordShifting} />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
-      </Snackbar>
+      <PageHeader
+        title={t('Warehousing')}
+        action={
+          <ToggleButtonGroup exclusive size="small" value={tab} onChange={(_, v) => v && setTab(v)} aria-label="Warehousing view">
+            <ToggleButton value="unload">Unloading</ToggleButton>
+            <ToggleButton value="load">Loading</ToggleButton>
+            <ToggleButton value="custody">Custody</ToggleButton>
+          </ToggleButtonGroup>
+        }
+      />
+      {tab === 'unload' && <UnloadingBench onDone={setMsg} />}
+      {tab === 'load' && <LoadingBench onDone={setMsg} />}
+      {tab === 'custody' && <Custody />}
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }

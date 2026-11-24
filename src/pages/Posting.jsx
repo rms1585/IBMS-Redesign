@@ -1,426 +1,129 @@
-import { useState } from 'react';
-import {
-  Box, Card, Stack, Typography, Button, Divider, Alert, Snackbar, LinearProgress, Link, Tabs, Tab, TextField, InputAdornment,
-  MenuItem, RadioGroup, Radio, FormControl, FormLabel, FormControlLabel,
-} from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import { PageHeader, DetailRow, formatKg, formatBDT, EmptyState, ReasonDialog, AssumptionNote } from '../components/common';
-import { Workbench, QueueCard } from '../components/Workbench';
-import { BayGrid, BayLegend } from '../components/BayGrid';
-import Label from '../components/Label';
-import { facilities, bayState, storageRules, currentUser } from '../data/mock';
-import { useCfAlerts } from '../CfAlertsContext';
-import { useAudit } from '../AuditContext';
-import { useWarehouse } from '../WarehouseContext';
-import { FitnessRow } from '../components/Fitness';
+import { useCallback, useState } from 'react';
+import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { importerName, usePort } from '../demo/PortStore';
+import { billableTonnes, formatDuration, formatKg } from '../demo/format';
+import { ActionFoot, Bench, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ResponsiveTable, SectionTitle, StatusPill, useKeyAction } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const cargoLines = [
-  { key: 'L1', plate: 'WB-19-C-0803', manifest: 'BEN-IGM-2026-08841', product: 'Rice (non-basmati)', category: 'Food', packages: 640, declaredKg: 32000, grossKg: 32070, weighedKg: 32070, outstandingKg: 32000, volumeM3: 48, packing: 'Bags', wait: '18m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
-  { key: 'L2', plate: 'WB-41-B-1192', manifest: 'BEN-IGM-2026-08871', product: 'Detergent', category: 'Chemical', packages: 520, declaredKg: 13000, grossKg: 12960, weighedKg: 12960, outstandingKg: 13000, volumeM3: 26, packing: 'Cartons', wait: '6m', agency: 'Padma Border Agents', stage: 'propose', parts: [] },
-  { key: 'L3', plate: 'WB-41-B-1207', manifest: 'BEN-IGM-2026-08871', product: 'Detergent', category: 'Chemical', packages: 520, declaredKg: 13000, grossKg: 13040, weighedKg: 13040, outstandingKg: 13000, volumeM3: 26, packing: 'Cartons', wait: '24m', agency: 'Padma Border Agents', stage: 'waiting', proposedBy: 'Rokeya Begum', parts: [{ bay: 'S5B-R1-C03', m3: 14 }, { bay: 'S9A-R2-C04', m3: 12 }] },
-  // One Indian truck often carries several consignments for different sheds; each line is posted to its own zone (F21).
-  { key: 'L4', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Lentils (masur)', category: 'Food', packages: 400, declaredKg: 10000, grossKg: 27130, weighedKg: 10180, outstandingKg: 10000, volumeM3: 16, packing: 'Bags', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'propose', parts: [] },
-  { key: 'L5', plate: 'WB-19-C-0826', manifest: 'BEN-IGM-2026-08841', product: 'Paint (water-based)', category: 'Chemical', packages: 300, declaredKg: 6000, grossKg: 27130, weighedKg: 6105, outstandingKg: 6000, volumeM3: 12, packing: 'Drums', wait: '31m', agency: 'Rupsha Clearing & Forwarding', stage: 'waiting', proposedBy: 'Rokeya Begum', parts: [{ bay: 'S5B-R2-C05', m3: 12 }] },
-  // Indian manifests often name goods only as "... and others" (F22), so the category is a guess.
-  { key: 'L7', plate: 'WB-23-K-4502', manifest: 'BEN-IGM-2026-08852', product: 'Spare parts and others', category: 'General', packages: 85, declaredKg: 9000, grossKg: 20120, weighedKg: 9150, outstandingKg: 9000, volumeM3: 20, packing: 'Crates', wait: '14m', agency: 'Meghna Trade Logistics', stage: 'propose', parts: [] },
-  { key: 'L6', plate: 'WB-58-D-2290', manifest: 'BEN-IGM-2026-08877', product: 'Stone boulders', category: 'Stone', packages: null, declaredKg: 24000, grossKg: 35210, weighedKg: 24350, outstandingKg: 24000, volumeM3: 15, packing: 'Loose bulk', wait: '9m', agency: 'Padma Border Agents', stage: 'propose', parts: [] },
-];
+// M-05: route each line, check free space, propose a shed; the holding area is only for trucks with nowhere to go.
 
-// Stone and cotton cannot be unloaded in the port: they go to an outside yard instead of a bay (Item 7, Bhomra).
-// Who approves that route is still open in the exception catalogue (F62, EX-01 and EX-02).
-const OUTSIDE_YARD_CATEGORIES = ['Stone', 'Cotton'];
-const isOutsideYard = (line) => OUTSIDE_YARD_CATEGORIES.includes(line.category);
-const outsideYards = [
-  { id: 'OYD-01', name: 'Shapla Stone Yard, Jessore Road' },
-  { id: 'OYD-02', name: 'Benapole Cotton Depot, Putkhali' },
-];
-// Demonstration outing fee per truck trip: not a legal rate.
-const OUTING_FEE = 250;
-// Lines that left the posting queue; they still count when showing a truck's consignments.
-const DONE_STAGES = ['posted', 'outside'];
-const stageLabel = { propose: 'To propose', waiting: 'Waiting for in-charge', posted: 'Posted', outside: 'Outside yard' };
-// A goods description that does not name the goods: "and others", "etc.", "miscellaneous" (F20, F22).
-const isVagueDescription = (line) => /\b(and others|others|etc\.?|misc(ellaneous)?|assorted|various)\b/i.test(line.product);
-const facilityOf = (bay) => facilities.find((f) => f.zones.some((z) => bay.startsWith(`${z.code}-`)))?.name ?? 'Unknown facility';
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const ROUTE = { perishable: 'Transshipment', heavy: 'Open yard B', chemicals: 'Shed 31', general: 'Shed 12' };
 
-// Volume and packing decide whether cargo fits a shed, so free space is shown in cubic metres (F21).
-const freeSpace = [['Shed 5', 940, 4800], ['Shed 9', 1120, 2400], ['Open yard 1', 2560, 4800]];
-const usedM3 = (line) => line.parts.reduce((sum, p) => sum + p.m3, 0);
-
-// Applies active storage-separation rules (symmetric) for the cargo category being placed.
-function makeDisallowed(category) {
-  const active = storageRules.filter((r) => r.state === 'Active');
-  const conflicts = active
-    .filter((r) => r.a === category || r.b === category)
-    .map((r) => ({ other: r.a === category ? r.b : r.a, scope: r.scope, gap: r.gap ?? 0 }));
-  return (code, zone, r, c) => {
-    if (!zone.categories.includes('Any') && !zone.categories.includes(category)) return true;
-    return conflicts.some((cf) => {
-      if (cf.scope === 'zone') {
-        for (let rr = 0; rr < zone.rows; rr += 1) for (let cc = 0; cc < zone.cols; cc += 1) if (bayState(zone.code, rr, cc).category === cf.other) return true;
-        return false;
-      }
-      if (cf.scope !== 'adjacent') return false;
-      for (let dr = -cf.gap; dr <= cf.gap; dr += 1) {
-        for (let dc = -cf.gap; dc <= cf.gap; dc += 1) {
-          const rr = r + dr; const cc = c + dc;
-          if (rr < 0 || cc < 0 || rr >= zone.rows || cc >= zone.cols || (dr === 0 && dc === 0)) continue;
-          if (bayState(zone.code, rr, cc).category === cf.other) return true;
-        }
-      }
-      return false;
-    });
-  };
-}
-
-function CargoDetails({ line }) {
-  return (
-    <>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>BL / manifest</Typography>
-      <DetailRow labelWidth={96} label="Manifest">{line.manifest}</DetailRow>
-      <DetailRow labelWidth={96} label="Agency">{line.agency}</DetailRow>
-      <DetailRow labelWidth={96} label="Packing">{line.packages ? `${line.packages} · ${line.packing}` : line.packing}</DetailRow>
-      <DetailRow labelWidth={96} label="Volume">{line.volumeM3} m³</DetailRow>
-      <DetailRow labelWidth={96} label="Declared">{formatKg(line.declaredKg)}</DetailRow>
-      <DetailRow labelWidth={96} label="Truck gross">{formatKg(line.grossKg)}</DetailRow>
-      {/* Posting handles Indian trucks; BRTA has no fitness record for them (F19). */}
-      <FitnessRow plate={line.plate} labelWidth={96} />
-      <AssumptionNote code="F19" sx={{ mt: 1 }}>A fitness check for Indian trucks needs a source IBMS can reach. BLPA to decide whether to pursue one.</AssumptionNote>
-    </>
-  );
-}
-
-function FreeSpaceCard() {
-  return (
-    <Card key="free" sx={{ p: 2.5 }}>
-      <Typography variant="subtitle2" sx={{ mb: 2 }}>Free space</Typography>
-      <Stack spacing={2}>
-        {freeSpace.map(([name, free, capacity]) => (
-          <Box key={name}>
-            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
-              <Typography variant="body2">{name}</Typography>
-              <Typography variant="body2" color="text.secondary">{free.toLocaleString('en-US')} m³ free</Typography>
-            </Stack>
-            <LinearProgress variant="determinate" value={((capacity - free) / capacity) * 100} />
-          </Box>
-        ))}
-      </Stack>
-      <Link component={RouterLink} to="/warehouse-layout" variant="body2" sx={{ display: 'block', mt: 2 }}>Open free space view</Link>
-    </Card>
-  );
-}
-
-// The posting officer builds the proposal here; one truck can be split across several bays and sheds.
-function ProposalCard({ line, bay, onClearBay, onChange, onSend }) {
-  const remaining = line.volumeM3 - usedM3(line);
-  const [m3, setM3] = useState('');
-  const amount = Number(m3);
-  const canAdd = bay && amount > 0 && amount <= remaining && !line.parts.some((p) => p.bay === bay);
-  return (
-    <Card key="ctx" sx={{ p: 2.5 }}>
-      <CargoDetails line={line} />
-      <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>Selected bay</Typography>
-      <Typography variant="h6" sx={{ fontFamily: 'monospace', mb: 2 }}>{bay ?? '—'}</Typography>
-      <TextField
-        fullWidth size="small" label="Volume" value={m3}
-        onChange={(e) => setM3(e.target.value.replace(/\D/g, ''))}
-        helperText={`${remaining} m³ still to place`}
-        slotProps={{ input: { endAdornment: <InputAdornment position="end">m³</InputAdornment> } }}
-      />
-      <Button fullWidth variant="outlined" color="inherit" sx={{ mt: 1 }} disabled={!canAdd} onClick={() => { onChange([...line.parts, { bay, m3: amount }]); setM3(''); onClearBay(); }}>Add bay</Button>
-      {line.parts.length > 0 && (
-        <Stack spacing={0.5} sx={{ mt: 2 }}>
-          {line.parts.map((p) => (
-            <Stack key={p.bay} direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-              <Typography variant="caption" component="p" sx={{ fontFamily: 'monospace' }}>{p.bay} · {p.m3} m³</Typography>
-              <Button size="small" color="error" sx={{ minWidth: 0, px: 1 }} onClick={() => onChange(line.parts.filter((x) => x.bay !== p.bay))}>Remove</Button>
-            </Stack>
-          ))}
-        </Stack>
-      )}
-      <Typography id="send-proposal-note" variant="body2" color="text.secondary" sx={{ mt: 2 }}>Send proposal to warehouse in-charge for approval</Typography>
-      <Button fullWidth variant="contained" size="large" sx={{ mt: 1 }} disabled={remaining !== 0} aria-describedby="send-proposal-note" onClick={onSend}>Send</Button>
-    </Card>
-  );
-}
-
-// Shows every consignment on the same truck, so the officer knows the truck is not done after one product.
-function TruckConsignments({ line, lines }) {
-  const onTruck = lines.filter((l) => l.plate === line.plate);
-  if (onTruck.length < 2) return null;
-  return (
-    <Alert severity="info" sx={{ mb: 2 }}>
-      <b>{line.plate}</b> carries {onTruck.length} consignments. Each one is posted to its own zone.
-      <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2.5 }}>
-        {onTruck.map((l) => (
-          <li key={l.key}>{l.product} ({l.category}): {stageLabel[l.stage]}{l.key === line.key ? ', this one' : ''}</li>
-        ))}
-      </Box>
-    </Alert>
-  );
-}
-
-// Warning only: posting goes ahead, but the officer and the in-charge see that the storage rules rest on a guess.
-function VagueDescriptionWarning({ line }) {
-  if (!isVagueDescription(line)) return null;
-  return (
-    <>
-      <Alert severity="warning" sx={{ mb: 1.5 }}>
-        <b>Goods description incomplete.</b> The manifest line reads &ldquo;{line.product}&rdquo;, so storage rules are checked for {line.category} goods only. Ask {line.agency} for the invoice or packing list if the goods might need a separate zone.
-      </Alert>
-      <AssumptionNote code="F22" sx={{ mb: 2 }}>
-        Warning only. The lasting fix is an NBR rule that each IGM line names its goods, with product data through BNSW (#48).
-      </AssumptionNote>
-    </>
-  );
-}
-
-function OutsideYardRoute({ line, lines, onRoute }) {
-  const [yard, setYard] = useState(outsideYards[0].id);
-  const [carrier, setCarrier] = useState('foreign');
-  const [count, setCount] = useState('');
-  const trips = carrier === 'foreign' ? 1 : Number(count);
-  const yardName = outsideYards.find((y) => y.id === yard).name;
-  return (
-    <Card>
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ mb: 1.5 }}>Route {line.product} to an outside yard</Typography>
-        <TruckConsignments line={line} lines={lines} />
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          {line.category} cannot be unloaded in the port, so it goes to an outside yard instead of a bay.
-        </Alert>
-        <AssumptionNote code="F62" sx={{ mb: 3 }}>
-          BLPA has not yet named who approves this route (Exception catalogue, EX-01 and EX-02). Until then the posting officer routes it directly. The outing fee is a demo rate.
-        </AssumptionNote>
-        <Stack spacing={2.5}>
-          <TextField select fullWidth label="Outside yard" value={yard} onChange={(e) => setYard(e.target.value)}>
-            {outsideYards.map((y) => <MenuItem key={y.id} value={y.id}>{y.name}</MenuItem>)}
-          </TextField>
-          <FormControl>
-            <FormLabel id="carrier-label">Carried by</FormLabel>
-            <RadioGroup aria-labelledby="carrier-label" value={carrier} onChange={(e) => setCarrier(e.target.value)}>
-              <FormControlLabel value="foreign" control={<Radio />} label={`This Indian truck, ${line.plate}, which returns empty`} />
-              <FormControlLabel value="local" control={<Radio />} label="Bangladeshi trucks, counted, not recorded by plate" />
-            </RadioGroup>
-          </FormControl>
-          {carrier === 'local' && (
-            <TextField
-              label="Number of truck trips" value={count} sx={{ maxWidth: 240 }}
-              onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
-              slotProps={{ htmlInput: { inputMode: 'numeric' } }}
-            />
-          )}
-          <Box>
-            <DetailRow label="Outing fee">{trips > 0 ? `${plural(trips, 'trip')} × ${formatBDT(OUTING_FEE)} = ${formatBDT(trips * OUTING_FEE)}` : 'Enter the number of trips'}</DetailRow>
-          </Box>
-        </Stack>
-      </Box>
-      <Stack className="record-actions" direction="row" justifyContent="flex-end" sx={{ p: 3, pt: 0 }}>
-        <Button variant="contained" size="large" disabled={!(trips > 0)} onClick={() => onRoute({ yardName, trips, carrier })}>Route to outside yard</Button>
-      </Stack>
-    </Card>
-  );
-}
-
-function ProposalDecision({ line, lines, onAccept, onReject }) {
-  const [rejecting, setRejecting] = useState(false);
-  return (
-    <Card>
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">Proposal for {line.product}</Typography>
-        <Typography variant="body2" color="text.secondary">Proposed by {line.proposedBy}. You decide whether this cargo fits.</Typography>
-      </Box>
-      <Box sx={{ px: 3 }}><VagueDescriptionWarning line={line} /><TruckConsignments line={line} lines={lines} /></Box>
-      <Divider sx={{ borderStyle: 'dashed' }} />
-      <Stack spacing={1} sx={{ p: 3 }}>
-        {line.parts.map((p) => <DetailRow key={p.bay} label={p.bay}>{p.m3} m³ of {line.volumeM3} m³</DetailRow>)}
-      </Stack>
-      <Stack className="record-actions" direction="row" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ p: 3, pt: 0 }}>
-        <Button variant="outlined" color="error" size="large" onClick={() => setRejecting(true)}>Reject</Button>
-        <Button variant="contained" size="large" onClick={onAccept}>Accept proposal</Button>
-      </Stack>
-      <ReasonDialog
-        open={rejecting}
-        title="Reject this proposal?"
-        description="The cargo goes back to the posting officer with your reason."
-        confirmLabel="Reject proposal"
-        confirmColor="error"
-        onClose={() => setRejecting(false)}
-        onConfirm={(reason) => { setRejecting(false); onReject(reason); }}
-      />
-    </Card>
-  );
+function useFreeSpace() {
+  const p = usePort();
+  return p.port.sheds.map((s) => {
+    const pending = p.state.visits.filter((v) => v.posting?.shed === s.id && v.posting.accepted !== false && !v.receipt?.locked).reduce((sum, v) => sum + billableTonnes(v.weigh?.kg ?? 0), 0);
+    return { ...s, freeT: Math.max(0, s.capacityT - s.usedT - pending) };
+  });
 }
 
 export default function Posting() {
-  const [lines, setLines] = useState(cargoLines);
-  const [tab, setTab] = useState('propose');
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState('L1');
-  const [bay, setBay] = useState(null);
-  const [toast, setToast] = useState('');
-  const { addAlert } = useCfAlerts();
-  const { addEvent } = useAudit();
-  const { addPosted } = useWarehouse();
-  const inTab = lines.filter((l) => l.stage === tab);
-  const current = inTab.find((l) => l.key === selected);
-  const filtered = inTab.filter((l) => `${l.plate} ${l.manifest} ${l.product}`.toLowerCase().includes(search.toLowerCase()));
-  const storage = facilities.filter((f) => f.zones.length);
-  const update = (key, change) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...change } : l)));
-  const finish = (key, stage) => { update(key, { stage }); setSelected(null); };
-  const stillToPost = (line) => lines.filter((l) => l.plate === line.plate && l.key !== line.key && !DONE_STAGES.includes(l.stage)).length;
-  const truckNote = (line) => {
-    const left = stillToPost(line);
-    if (left) return ` ${plural(left, 'more consignment')} on ${line.plate} still to post.`;
-    return lines.filter((l) => l.plate === line.plate).length > 1 ? ` ${line.plate} is fully posted.` : '';
-  };
-
-  // Accepting a proposal alerts the C&F agent with each drop point, so they can call the driver.
-  const accept = (line) => {
-    const dropPoints = line.parts.map((p) => ({ ...p, facility: facilityOf(p.bay) }));
-    finish(line.key, 'posted');
-    addPosted({ ...line, sharedTruck: lines.filter((l) => l.plate === line.plate).length > 1 }, dropPoints[0].facility);
-    addAlert({ agency: line.agency, manifest: line.manifest, text: `${line.plate}: ${line.product} is posted. Send the driver to ${dropPoints.length === 1 ? 'this drop point' : 'these drop points'}:`, dropPoints });
-    addEvent({ actor: currentUser.name, role: currentUser.role, module: 'Posting', type: 'Approval', text: `Accepted posting of ${line.product} on ${line.plate} to ${line.parts.map((p) => p.bay).join(', ')}; ${line.agency} alerted` });
-    setToast(`Proposal accepted. ${line.agency} is alerted with ${plural(dropPoints.length, 'drop point')}, and the truck is in ${dropPoints[0].facility}'s receipt queue.${truckNote(line)}`);
-  };
-
-  const routeOutside = (line, { yardName, trips, carrier }) => {
-    const fee = formatBDT(trips * OUTING_FEE);
-    const carried = carrier === 'foreign' ? `on ${line.plate}` : `on ${plural(trips, 'Bangladeshi truck trip')}`;
-    finish(line.key, 'outside');
-    addAlert({ agency: line.agency, manifest: line.manifest, text: `${line.plate}: ${line.product} goes to ${yardName} ${carried}. Outing fee ${fee}.` });
-    addEvent({ actor: currentUser.name, role: currentUser.role, module: 'Posting', type: 'Record', text: `Routed ${line.product} on ${line.plate} to ${yardName} ${carried}; outing fee ${fee}`, flags: ['Exception'] });
-    setToast(`${line.product} routed to ${yardName}. ${line.agency} is alerted.${truckNote(line)}`);
-  };
-  const count = (stage) => lines.filter((l) => l.stage === stage).length;
+  const p = usePort();
+  const t = useT();
+  const [msg, setMsg] = useState('');
+  const space = useFreeSpace();
+  const queue = p.state.visits.filter((v) => v.stage === 'Weighed' && !v.posting && !v.holding);
+  const holding = p.state.visits.filter((v) => (v.holding || v.stage === 'Manifest not yet available') && v.stage !== 'Exited');
+  const [sel, setSel] = useState(queue[0]?.id);
+  const v = p.visit(sel) && queue.some((x) => x.id === sel) ? p.visit(sel) : queue[0];
+  const lines = v ? p.linesOfVisit(v) : [];
+  const category = lines[0]?.category ?? 'general';
+  const suggested = ROUTE[category];
+  const [shed, setShed] = useState('');
+  const chosen = shed || suggested;
+  const needT = v ? billableTonnes(v.weigh.kg) : 0;
+  const target = space.find((s) => s.id === chosen);
+  const checks = v ? [
+    { label: 'Manifest matched to the visit', state: 'pass', text: v.manifests.join(', ') },
+    { label: 'Route', state: 'info', text: `${lines.map((l) => `Line ${l.no}: ${l.goods}`).join('; ')} → ${suggested}` },
+    category === 'perishable'
+      ? { label: 'Transshipment', state: 'info', text: 'Perishables go truck to truck. The tagged agency raises a transfer request.' }
+      : { label: `Free space in ${chosen}`, state: target && target.freeT >= needT ? 'pass' : 'fail', text: target ? `${target.freeT} t free, this truck needs ${needT} t.` : 'Choose a shed or yard.' },
+    ...(p.holdsOnVisit(v).length ? [{ label: 'Holds', state: 'info', text: 'A hold travels with the lines; posting still goes ahead.' }] : []),
+  ] : [];
+  const propose = useCallback(() => {
+    if (!v || checks.some((c) => c.state === 'fail')) return;
+    p.proposePosting(v.id, chosen);
+    setMsg(`Posting proposed: ${chosen}`);
+    setShed('');
+  }, [v, checks, chosen, p]);
+  useKeyAction('p', propose, Boolean(v));
+  const noSpace = target && target.freeT < needT;
 
   return (
     <>
-      <PageHeader
-        title="Posting"
-        links={[{ name: 'Operations' }, { name: 'Posting / bay allocation' }]}
-        action={
-          <>
-            <Button component={RouterLink} to="/warehouse-layout" variant="outlined" color="inherit">Warehouse layout</Button>
-            <Button component={RouterLink} to="/storage-rules" variant="outlined" color="inherit">Storage-rule overrides</Button>
-          </>
-        }
-      />
-      <Tabs value={tab} onChange={(e, v) => { setTab(v); setSelected(null); setBay(null); }} sx={{ mb: 3 }}>
-        <Tab value="propose" label={<Stack direction="row" spacing={1} alignItems="center"><span>To propose</span><Label color="primary">{count('propose')}</Label></Stack>} />
-        <Tab value="waiting" label={<Stack direction="row" spacing={1} alignItems="center"><span>Waiting for in-charge</span><Label>{count('waiting')}</Label></Stack>} />
-      </Tabs>
-      <Workbench
+      <PageHeader title={t('Posting and holding area')} />
+      <Bench
+        context={[
+          { label: 'Port', value: 'Benapole' },
+          { label: 'To post', value: queue.length },
+          { label: 'In the holding area', value: holding.length },
+          ...space.map((s) => ({ label: s.id, value: `${s.freeT} t free` })),
+        ]}
         queue={
-          <QueueCard
-            title={tab === 'propose' ? 'Warehouse cargo' : 'Proposals'}
-            count={filtered.length}
-            search={search}
-            onSearch={setSearch}
-            placeholder="Search plate, manifest or product"
-            items={filtered}
-            getKey={(l) => l.key}
-            selectedKey={selected}
-            onSelect={(k) => { setSelected(k); setBay(null); }}
-            emptyText={tab === 'propose' ? 'No cargo to propose' : 'No proposals waiting'}
-            renderItem={(l) => (
-              <>
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{l.plate}</Typography>
-                  <Typography variant="caption" color="text.secondary">waiting {l.wait}</Typography>
-                </Stack>
-                <Typography variant="body2" noWrap>{l.product}</Typography>
-                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
-                  <Label color="primary">{l.category}</Label>
-                  <Label>{l.volumeM3} m³</Label>
-                  {isOutsideYard(l) && <Label color="warning">Outside yard</Label>}
-                  {isVagueDescription(l) && <Label color="warning">Description incomplete</Label>}
-                  {lines.filter((x) => x.plate === l.plate).length > 1 && <Label color="info">{plural(lines.filter((x) => x.plate === l.plate).length, 'consignment')}</Label>}
-                  {l.rejection && <Label color="error">Rejected</Label>}
-                </Stack>
-              </>
-            )}
+          <QueueList
+            title="Weighed, to post"
+            items={queue}
+            selected={v?.id}
+            onSelect={(id) => { setSel(id); setShed(''); }}
+            empty="No weighed truck is waiting for a posting."
+            render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">Weighed {formatDuration(x.weigh.at)} ago</Typography></>}
           />
         }
-        center={
-          !current ? (
-            <Card><EmptyState title={tab === 'propose' ? 'Select cargo to place' : 'Select a proposal to decide'} sx={{ py: 12 }} /></Card>
-          ) : tab === 'waiting' ? (
-            <ProposalDecision
-              key={current.key}
-              line={current}
-              lines={lines}
-              onAccept={() => accept(current)}
-              onReject={(reason) => { update(current.key, { stage: 'propose', parts: [], rejection: reason }); setSelected(null); setToast('Proposal rejected and returned to the posting officer.'); }}
-            />
-          ) : isOutsideYard(current) ? (
-            <OutsideYardRoute key={current.key} line={current} lines={lines} onRoute={(route) => routeOutside(current, route)} />
-          ) : (
-            <Card>
-              <Box sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1.5 }}>Propose bays for {current.product}</Typography>
-                <VagueDescriptionWarning line={current} />
-                <TruckConsignments line={current} lines={lines} />
-                <Box sx={{ mb: 2 }}><BayLegend /></Box>
-                {current.rejection && <Alert severity="error" sx={{ mb: 2 }}>The warehouse in-charge rejected the last proposal: {current.rejection}</Alert>}
-                <Alert severity="info" sx={{ mb: 3 }}>
-                  IBMS shows free space and marks bays that break a rule for <b>{current.category}</b>. The warehouse in-charge accepts or rejects your proposal. Split the cargo across bays or sheds if it needs more than one.
-                </Alert>
-                <Stack spacing={4}>
-                  {storage.map((f) => (
-                    <Box key={f.id}>
-                      <Typography variant="subtitle1" sx={{ mb: 1.5 }}>{f.name} <Typography component="span" variant="body2" color="text.secondary">· {f.kind}</Typography></Typography>
-                      <Stack spacing={3}>
-                        {f.zones.map((z) => (
-                          <Box key={z.code}>
-                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                              <Typography variant="subtitle2">Zone {z.code}</Typography>
-                              <Typography variant="caption" color="text.secondary">accepts {z.categories.join(', ')}</Typography>
-                            </Stack>
-                            <Box sx={{ overflowX: 'auto', pb: 1 }}>
-                              <BayGrid zone={z} selected={bay} onSelect={setBay} isDisallowed={makeDisallowed(current.category)} />
-                            </Box>
-                          </Box>
-                        ))}
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
+        center={v ? (
+          <Stack spacing={2.5}>
+            <Plate size="hero">{v.plate}</Plate>
+            <Facts cols={2}>
+              <Fact label="Weight">{formatKg(v.weigh.kg)}</Fact>
+              <Fact label="Billable">{needT} t</Fact>
+              <Fact label="Category">{category}</Fact>
+            </Facts>
+            {v.weigh.overTolerance && <Alert severity="warning">Weight over tolerance is flagged to the officials. If one places a hold, the truck waits in the holding area while the goods are inspected.</Alert>}
+            {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
+            <SectionTitle>Lines</SectionTitle>
+            {lines.map((l) => (
+              <Stack key={l.id} direction="row" justifyContent="space-between" spacing={2}>
+                <Typography variant="body2">Line {l.no}: {l.goods} · {importerName(l.importer)}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{formatKg(l.declaredKg)}</Typography>
+              </Stack>
+            ))}
+            {category !== 'perishable' && (
+              <TextField select label="Propose a shed or zone" value={chosen} onChange={(e) => setShed(e.target.value)} helperText={chosen !== suggested ? 'Not the suggested place: the shed in-charge sees why when deciding.' : 'Suggested from the goods category and the product list.'} sx={{ maxWidth: 360 }}>
+                {space.map((s) => <MenuItem key={s.id} value={s.id}>{s.id} · {s.freeT} t free · takes {s.takes}</MenuItem>)}
+              </TextField>
+            )}
+            {noSpace && (
+              <Box>
+                <Button variant="outlined" onClick={() => { p.sendToHolding(v.id, `No free space in ${chosen}`); setMsg('Placed in the holding area'); }}>Place in the holding area</Button>
               </Box>
-            </Card>
-          )
-        }
-        rail={
-          !current
-            ? null
-            : tab === 'waiting'
-              ? [<Card key="ctx" sx={{ p: 2.5 }}><CargoDetails line={current} /></Card>, <FreeSpaceCard key="free" />]
-              : isOutsideYard(current)
-                ? [<Card key="ctx" sx={{ p: 2.5 }}><CargoDetails line={current} /></Card>]
-                : [
-                  <ProposalCard
-                    key={current.key}
-                    line={current}
-                    bay={bay}
-                    onClearBay={() => setBay(null)}
-                    onChange={(parts) => update(current.key, { parts })}
-                    onSend={() => {
-                      update(current.key, { stage: 'waiting', proposedBy: 'Farhana Rahman', rejection: undefined });
-                      setSelected(null);
-                      setBay(null);
-                      setToast(`Proposal for ${current.plate} sent to the warehouse in-charge.`);
-                    }}
-                  />,
-                  <FreeSpaceCard key="free" />,
-                ]
-        }
+            )}
+          </Stack>
+        ) : <Typography variant="body2" color="text.secondary">Select a truck.</Typography>}
+        right={v ? (<><Typography variant="subtitle2" sx={{ mb: 1 }}>Checks</Typography><Checklist checks={checks} /><ActionFoot checks={checks} label="Propose posting" keyHint="P" onClick={propose} /></>) : null}
       />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
-      </Snackbar>
+      <Card sx={{ p: 3, mt: 3 }}>
+        <SectionTitle>Holding area</SectionTitle>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Only for a truck with no free space, a manifest not yet available, a transshipment truck waiting for its receiving trucks, or goods being inspected.</Typography>
+        <ResponsiveTable
+          rowKey={(x) => x.id}
+          rows={holding}
+          empty="The holding area is empty."
+          columns={[
+            { label: 'Place', render: (x) => holding.indexOf(x) + 1 },
+            { label: 'Plate', render: (x) => <Plate>{x.plate}</Plate> },
+            { label: 'Why', render: (x) => (x.stage === 'Manifest not yet available' ? <StatusPill word="Manifest not yet available" /> : x.holding.reason) },
+            { label: 'Waiting', priority: 'low', render: (x) => formatDuration(x.holding?.since ?? x.weigh?.at ?? x.gateIn?.at) },
+            {
+              label: 'Action',
+              render: (x) => (x.stage === 'Manifest not yet available'
+                ? <Typography variant="caption" color="text.secondary">Waits until the manifest is matched</Typography>
+                : <Button size="small" variant="outlined" onClick={() => { p.callForward(x.id); setMsg(`${x.plate} called forward`); }}>Call forward</Button>),
+            },
+          ]}
+        />
+      </Card>
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }

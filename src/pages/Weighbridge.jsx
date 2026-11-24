@@ -1,308 +1,134 @@
-import { useState, useEffect } from 'react';
-import {
-  Box, Card, Stack, Typography, Button, Tabs, Tab, Divider, Grid2 as Grid, Alert, Snackbar, TextField,
-  Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { PageHeader, DetailRow, formatKg, formatBDT, EmptyState, AssumptionNote } from '../components/common';
-import { Workbench, QueueCard, CameraCard, BridgeCameraCard } from '../components/Workbench';
-import Label from '../components/Label';
-import { weighQueue, currentUser, truckClassRates } from '../data/mock';
-import { useAudit } from '../AuditContext';
-import { useCfTrucks } from '../CfTrucksContext';
-import { useTruckWeights, formatDate, TARE_DROP_FLAG_KG } from '../TruckWeightsContext';
+import { useCallback, useState } from 'react';
+import { Alert, Box, Button, Card, Stack, TextField, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { tareValid, usePort } from '../demo/PortStore';
+import { billableTonnes, formatDateTime, formatDuration, formatKg, formatTonnes } from '../demo/format';
+import { ActionFoot, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-function ManualWeight({ open, onClose, onConfirm }) {
-  const [kg, setKg] = useState('');
-  const [reason, setReason] = useState('');
-  const n = Number(kg);
-  const valid = Number.isFinite(n) && n > 0 && n < 80000 && reason.trim();
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Enter weight manually</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-          Use only when the scale cannot provide a reading. The manual method is kept in the audit log, tracking and the weighbridge register.
-        </Typography>
-        <Stack spacing={2}>
-          <TextField
-            label="Weight"
-            required
-            value={kg}
-            onChange={(e) => setKg(e.target.value.replace(/[^\d]/g, ''))}
-            error={kg !== '' && !(n > 0 && n < 80000)}
-            helperText={kg !== '' && !(n > 0 && n < 80000) ? 'Enter a weight between 1 and 79,999 kg' : ' '}
-            slotProps={{ input: { endAdornment: <InputAdornment position="end">kg</InputAdornment> } }}
-          />
-          <TextField label="Reason" required multiline minRows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Scale link failure" />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!valid} onClick={() => { onConfirm(n, reason); setKg(''); setReason(''); }}>Confirm</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
+// M-04: the reading comes from the scale against the visit opened at the gate. Over tolerance is a flag, never a hold.
 
-// Weighing is charged on the class Customs recorded, as the border gate fee is (cards #27 and #36).
-const weighingCharge = (truck) => (truck.customsCls ? truckClassRates[truck.customsCls].weighing : null);
-
-// Proposed tolerance against the declared weight (F18): 5% either way, still to be confirmed by BLPA and Customs.
-const TOLERANCE = 0.05;
-
-// How far net cargo is from the declaration. Information only: the scale reading is never changed (F18).
-function toleranceCheck(net, declaredKg) {
-  if (net == null || !declaredKg) return null;
-  const diff = net - declaredKg;
-  return { diff, share: diff / declaredKg, outside: Math.abs(diff / declaredKg) > TOLERANCE };
-}
-
-// Weighing needs a truck that has passed the entry gate, whose plate matches the camera read (F17),
-// and that sits fully inside the marked area on the bridge camera.
-function weighingBlock(truck, plateRead, inPosition) {
-  if (!truck.admitted) return 'This truck has not been admitted at the entry gate. It can be weighed only after entry.';
-  if (plateRead !== truck.plate) return `The camera read ${plateRead}, which doesn't match this truck. Weight capture stays stopped until the plate matches.`;
-  if (!inPosition) return 'The truck is not fully inside the marked area. Weight capture stays stopped until it is.';
-  return null;
-}
-
-// The truck's past empty weighings, newest first, with the change from the one before (#76).
-function TareHistory({ history }) {
-  if (history.length === 0) return null;
-  const rows = history.map((h, i) => ({ ...h, change: i === 0 ? null : h.kg - history[i - 1].kg })).reverse();
-  return (
-    <Box sx={{ px: 3, pb: 2 }}>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>Tare history</Typography>
-      {rows.map((h) => (
-        <DetailRow key={h.date.getTime()} label={formatDate(h.date)}>
-          {formatKg(h.kg)}
-          {h.change != null && (
-            <Typography component="span" variant="caption" color={-h.change > TARE_DROP_FLAG_KG ? 'warning.text' : 'text.secondary'}>
-              {' '}({h.change >= 0 ? '+' : '−'}{formatKg(Math.abs(h.change))})
-            </Typography>
-          )}
-        </DetailRow>
-      ))}
-    </Box>
-  );
-}
-
-function WeighRecord({ truck, plateRead, inPosition, onConfirmed }) {
-  const { tareFor, emptyWeighingReason } = useTruckWeights();
-  const tare = tareFor(truck.plate);
-  const [live, setLive] = useState(truck.live);
-  const [captured, setCaptured] = useState(null);
-  const [manual, setManual] = useState(false);
-
-  // Simulated scale jitter until a weight is captured.
-  useEffect(() => {
-    if (captured) return undefined;
-    const id = setInterval(() => setLive(truck.live + Math.round((Math.random() - 0.5) * 30)), 900);
-    return () => clearInterval(id);
-  }, [captured, truck.live]);
-
-  const block = weighingBlock(truck, plateRead, inPosition);
-  const loaded = truck.reason.startsWith('Loaded');
-  const tareValid = tare.valid;
-  const net = captured && loaded && tareValid ? captured.kg - tare.kg : null;
-  // A new tare well below the last one is information for the operator, never a block (F16, #76).
-  const drop = !loaded && captured && tare.kg ? tare.kg - captured.kg : 0;
-  const emptyReason = loaded ? null : emptyWeighingReason(truck.plate);
-  const tolerance = toleranceCheck(net, truck.declaredKg);
-
-  return (
-    <Card>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
-        <Box>
-          <Typography className="record-plate" variant="h5" sx={{ fontFamily: 'monospace' }}>{truck.plate}</Typography>
-          <Typography variant="body2" color="text.secondary">{truck.reason} · Scale 1, position A</Typography>
-        </Box>
-        {block ? <Label color="error">Weighing stopped</Label> : captured ? <Label color="info">Captured</Label> : <Label color="success">Ready to weigh</Label>}
-      </Stack>
-      <Divider sx={{ borderStyle: 'dashed' }} />
-      <Box sx={{ p: 3 }}>
-        <Box sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 2, textAlign: 'center', containerType: 'inline-size', bgcolor: (t) => alpha(t.palette.primary.main, 0.06), border: (t) => `1px dashed ${alpha(t.palette.primary.main, 0.3)}` }}>
-          <Typography variant="overline" color="text.secondary">{captured ? `Captured weight (${captured.method})` : 'Live scale reading'}</Typography>
-          <Typography sx={{ fontSize: 'clamp(32px, 13cqi, 56px)', fontWeight: 700, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums', color: 'text.primary', whiteSpace: 'nowrap' }}>
-            {(captured?.kg ?? live).toLocaleString('en-US')} <Typography component="span" variant="h4" color="text.secondary">kg</Typography>
-          </Typography>
-          {net != null && <Typography variant="subtitle1" color="primary.main">Net cargo {formatKg(net)} (gross − stored tare)</Typography>}
-        </Box>
-        {block && <Alert severity="error" sx={{ mt: 2 }}>{block}</Alert>}
-        {tolerance && (tolerance.outside ? (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            Net cargo is {formatKg(Math.abs(tolerance.diff))} ({Math.abs(tolerance.share * 100).toFixed(1)}%) {tolerance.diff > 0 ? 'above' : 'below'} the declared {formatKg(truck.declaredKg)}, outside the {TOLERANCE * 100}% tolerance.
-            Customs is notified for checking. The weight is saved exactly as read; nothing is deducted.
-          </Alert>
-        ) : (
-          <Alert severity="success" sx={{ mt: 2 }}>
-            Net cargo is within {TOLERANCE * 100}% of the declared {formatKg(truck.declaredKg)} ({tolerance.share >= 0 ? '+' : '−'}{Math.abs(tolerance.share * 100).toFixed(1)}%).
-          </Alert>
-        ))}
-        {tolerance && <AssumptionNote code="F18" sx={{ mt: 1.5 }}>The 5% tolerance is proposed, to be confirmed by BLPA and Customs, including whether it applies below the declaration too.</AssumptionNote>}
-        {!tareValid && loaded && (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            {tare.kg ? `Stored tare expired on ${formatDate(tare.expiresOn)}` : 'No stored tare'}. This truck must be weighed empty before it leaves, so net weight is not calculated yet.
-          </Alert>
-        )}
-        {!loaded && emptyReason && (
-          <Alert severity="info" sx={{ mt: 2 }}>{emptyReason}. This empty weighing becomes the stored tare and clears the truck to leave.</Alert>
-        )}
-        {drop > TARE_DROP_FLAG_KG && (
-          <>
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              This empty weight is {formatKg(drop)} below the last stored tare ({formatKg(tare.kg)} on {formatDate(tare.date)}).
-              It is flagged in the audit log for information. Nothing is blocked.
-            </Alert>
-            <AssumptionNote code="F16" sx={{ mt: 1.5 }}>The {TARE_DROP_FLAG_KG} kg figure is a demo value until BLPA names the scenarios it wants flagged.</AssumptionNote>
-          </>
-        )}
-      </Box>
-      <Grid container spacing={{ xs: 0, xl: 4 }} sx={{ px: 3, pb: 2 }}>
-        <Grid size={{ xs: 12, xl: 6 }}>
-          <DetailRow label="Manifest">{truck.manifest}</DetailRow>
-          <DetailRow label="Agency">{truck.agency}</DetailRow>
-          <DetailRow label="Declared cargo">{truck.declaredKg ? formatKg(truck.declaredKg) : '—'}</DetailRow>
-        </Grid>
-        <Grid size={{ xs: 12, xl: 6 }}>
-          <DetailRow label="Driver">{truck.driver}</DetailRow>
-          <DetailRow label="Class">
-            {truck.customsCls ?? truck.cls}{' '}
-            <Typography component="span" variant="caption" color="text.disabled">{truck.customsCls ? '(from Customs)' : '(from the C&F agent, not yet confirmed by Customs)'}</Typography>
-            {truck.customsCls && truck.customsCls !== truck.cls && <Box sx={{ mt: 0.5 }}><Label color="warning">C&amp;F entered {truck.cls}</Label></Box>}
-          </DetailRow>
-          <DetailRow label="Weighing charge">
-            {weighingCharge(truck) == null
-              ? <Typography component="span" variant="body2" color="text.secondary">Set when Customs confirms the class</Typography>
-              : formatBDT(weighingCharge(truck))}
-          </DetailRow>
-          <DetailRow label="Stored tare">{tare.kg ? <>{formatKg(tare.kg)} <Typography component="span" variant="caption" color={tare.valid ? 'text.secondary' : 'warning.text'}>· {tare.status}</Typography></> : tare.status}</DetailRow>
-        </Grid>
-      </Grid>
-      {!loaded && <TareHistory history={tare.history} />}
-      <Divider sx={{ borderStyle: 'dashed' }} />
-      <Stack className="record-actions" direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
-        <Button variant="outlined" color="inherit" size="large" disabled={Boolean(block)} onClick={() => setManual(true)}>Scale not working? Enter manually</Button>
-        <Stack direction="row" spacing={1.5}>
-          {captured ? (
-            <>
-              <Button variant="outlined" color="inherit" size="large" onClick={() => setCaptured(null)}>Re-weigh</Button>
-              <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => onConfirmed(truck, captured, tolerance, drop)}>Confirm weight</Button>
-            </>
-          ) : (
-            <Button variant="contained" size="large" disabled={Boolean(block)} onClick={() => setCaptured({ kg: live, method: 'scale' })}>Capture weight</Button>
-          )}
-        </Stack>
-      </Stack>
-      <ManualWeight open={manual} onClose={() => setManual(false)} onConfirm={(kg, reason) => { setManual(false); setCaptured({ kg, method: 'manual', reason }); }} />
-    </Card>
-  );
-}
+// What the demo scale sends: a seeded reading, or the declared weight plus a small variance.
+const scaleReading = (v, declared) => v.pendingReadingKg ?? Math.round((declared || 12000) * 1.012 + 380);
 
 export default function Weighbridge() {
-  const [tab, setTab] = useState('entry');
-  const [queue, setQueue] = useState(weighQueue);
-  const { leaving, tareFor, openOrder, emptyWeighingReason, recordEmptyWeighing } = useTruckWeights();
-  const { foreign } = useCfTrucks();
-  const registered = Object.values(foreign).flat();
-  // Empty foreign trucks that must be weighed before they leave: missing or expired tare, or a re-weigh order (#71, #74).
-  const emptyQueue = leaving.filter((t) => t.load === 'Empty' && emptyWeighingReason(t.plate)).map((t) => {
-    const reg = registered.find((r) => r.plate === t.plate);
-    return {
-      ...t, reason: 'Empty (return)', declaredKg: 0, driver: t.driver ?? reg?.driver ?? '—', cls: reg?.cls ?? '10-wheel truck', customsCls: reg?.cls ?? '10-wheel truck',
-      live: t.live ?? (tareFor(t.plate).kg ?? 11000) + 25,
-    };
-  });
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState(weighQueue[0].plate);
-  const [toast, setToast] = useState('');
-  const [rereadPlates, setRereadPlates] = useState([]);
-  const { addEvent } = useAudit();
-  const plateReadFor = (t) => (rereadPlates.includes(t.plate) ? t.plate : t.cameraPlate ?? t.plate);
-  // Demo stand-in for the bridge camera: a re-check finds the truck moved fully onto the bridge.
-  const [repositioned, setRepositioned] = useState([]);
-  const inPositionFor = (t) => t.inPosition !== false || repositioned.includes(t.plate);
-
-  const tabQueue = tab === 'entry' ? queue : emptyQueue;
-  const filtered = tabQueue.filter((t) => `${t.plate} ${t.manifest}`.toLowerCase().includes(search.toLowerCase()));
-  const current = tabQueue.find((t) => t.plate === selected);
+  const p = usePort();
+  const t = useT();
+  const [msg, setMsg] = useState('');
+  const loaded = p.state.visits.filter((v) => v.gateIn && !v.weigh && v.stage !== 'Exited');
+  const empty = p.state.visits.filter((v) => v.receipt?.locked && v.stage !== 'Exited' && !tareValid(v.plate) && !v.emptyWeighed);
+  const queue = [...loaded.map((v) => ({ ...v, job: 'loaded' })), ...empty.map((v) => ({ ...v, job: 'empty' }))];
+  const [sel, setSel] = useState(queue[0]?.id);
+  const [typing, setTyping] = useState(false);
+  const [typedKg, setTypedKg] = useState('');
+  const [reason, setReason] = useState('');
+  const item = queue.find((x) => x.id === sel) ?? queue[0];
+  const v = item && p.visit(item.id);
+  const declared = v ? p.declaredKgOfVisit(v) : 0;
+  const live = v ? (item.job === 'empty' ? 7420 : scaleReading(v, declared)) : null;
+  const kg = typing ? Number(typedKg) : live;
+  const checks = v ? [
+    { label: 'Truck fully on the scale', state: 'pass', text: 'In position, deck camera confirms.' },
+    { label: 'Plate read at the scale matches the visit', state: typing ? 'info' : 'pass', text: typing ? 'Plate typed by hand.' : v.plate },
+    item.job === 'empty'
+      ? { label: 'Empty weighing required', state: 'info', text: 'No valid tare on file under BLPA\'s tare rule.' }
+      : { label: 'Declared weight', state: 'info', text: v.late ? 'Manifest not yet available: the tolerance check runs once it is matched.' : `${formatKg(declared)} from BNSW${v.manifests.length > 1 ? `, ${v.manifests.length} manifests added together` : ''}.` },
+  ] : [];
+  const capture = useCallback(() => {
+    if (!v || !kg) return;
+    p.captureWeight(v.id, kg, { typedReason: typing ? reason : undefined, empty: item.job === 'empty' });
+    setMsg(`Weight captured for ${v.plate}`);
+    setTyping(false); setTypedKg(''); setReason('');
+    setSel(queue.find((x) => x.id !== v.id)?.id);
+  }, [v, kg, typing, reason, item, p, queue]);
+  useKeyAction('c', capture, Boolean(v) && !typing);
+  const over = !v?.late && item?.job !== 'empty' && declared > 0 && kg && Math.abs(kg - declared) / declared > p.port.tolerancePct / 100;
+  const history = p.state.visits.filter((x) => x.weigh).sort((a, b) => (a.weigh.at < b.weigh.at ? 1 : -1));
 
   return (
     <>
-      <PageHeader title="Weighbridge" links={[{ name: 'Operations' }, { name: 'Weighbridge' }]} />
-      <Tabs value={tab} onChange={(e, v) => { setTab(v); setSelected(null); }} sx={{ mb: 3 }}>
-        <Tab value="entry" label="Waiting for entry" />
-        <Tab value="empty" label={<Stack direction="row" spacing={1} alignItems="center"><span>Empty &amp; returned</span><Label color="warning">{emptyQueue.length}</Label></Stack>} />
-      </Tabs>
-      <Workbench
+      <PageHeader title={t('Weighbridge')} subtitle={`Tolerance ${p.port.tolerancePct}% (${p.port.toleranceVersion}). Tare rule for every port: ${p.port.tareRule}.`} />
+      <Bench
+        context={[
+          { label: 'Port', value: 'Benapole' },
+          { label: 'Scale', value: 'Scale 2' },
+          { label: 'To weigh', value: queue.length },
+          { label: 'Weighed today', value: history.filter((x) => formatDateTime(x.weigh.at).startsWith('Today')).length },
+        ]}
         queue={
-          <QueueCard
-            title="Weighing queue"
-            count={filtered.length}
-            search={search}
-            onSearch={setSearch}
-            placeholder="Search plate or manifest"
-            items={filtered}
-            getKey={(t) => t.plate}
-            selectedKey={selected}
-            onSelect={setSelected}
-            renderItem={(t) => (
+          <QueueList
+            title="Worklist"
+            items={queue}
+            selected={item?.id}
+            onSelect={(id) => { setSel(id); setTyping(false); }}
+            empty="No truck to weigh. Admitted trucks appear here in order."
+            render={(x) => (
               <>
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{t.plate}</Typography>
-                  <Typography variant="caption" color="text.secondary">{t.admitted ?? 'Not admitted'}</Typography>
-                </Stack>
-                <Typography variant="caption" color="text.secondary" component="div">{t.manifest}</Typography>
-                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} sx={{ mt: 0.75 }}>
-                  <Label color={t.reason.startsWith('Loaded') ? 'primary' : 'info'}>{t.reason}</Label>
-                  {openOrder(t.plate) ? <Label color="error">Re-weigh ordered</Label> : !tareFor(t.plate).valid && <Label color="warning">Tare needed</Label>}
-                  {weighingBlock(t, plateReadFor(t), inPositionFor(t)) && <Label color="error">Stopped</Label>}
-                </Stack>
+                <Plate>{x.plate}</Plate>
+                <Typography variant="caption" color="text.secondary" component="div">{x.job === 'empty' ? 'Empty weighing' : `${x.manifests.length || 'No'} manifest · waiting ${formatDuration(x.gateIn.at)}`}</Typography>
               </>
             )}
           />
         }
-        center={
-          current ? (
-            <WeighRecord
-              key={current.plate}
-              truck={current}
-              plateRead={plateReadFor(current)}
-              inPosition={inPositionFor(current)}
-              onConfirmed={(t, c, tolerance, drop) => {
-                const empty = !t.reason.startsWith('Loaded');
-                if (empty) recordEmptyWeighing(t.plate, c.kg);
-                else setQueue((q) => q.filter((x) => x.plate !== t.plate));
-                setSelected(null);
-                // Every confirmed weight goes to the audit log; a manual one is flagged for reconciliation (F16).
-                addEvent({
-                  actor: currentUser.name, role: currentUser.role, module: 'Weighing', type: 'Record',
-                  text: (c.method === 'manual'
-                    ? `Entered manual weight ${formatKg(c.kg)} for ${t.plate} (${c.reason})`
-                    : `Captured ${t.reason.startsWith('Loaded') ? 'loaded' : 'empty'} weight ${formatKg(c.kg)} for ${t.plate} on Scale 1`)
-                    + (tolerance?.outside ? `; net cargo ${(tolerance.share * 100).toFixed(1)}% from declared, flagged for Customs` : '')
-                    + (empty ? '; saved as the new stored tare' : '')
-                    + (drop > TARE_DROP_FLAG_KG ? `; ${formatKg(drop)} below the previous tare, flagged for information` : ''),
-                  flags: [...(c.method === 'manual' ? ['Override', 'Manual pending reconciliation'] : []), ...(drop > TARE_DROP_FLAG_KG ? ['Exception'] : [])],
-                });
-                setToast(empty
-                  ? `${formatKg(c.kg)} saved as the stored tare for ${t.plate}. The truck can leave through the border gate.`
-                  : `${formatKg(c.kg)} recorded for ${t.plate} (${c.method}). Weighment charge ${formatBDT(weighingCharge(t))} added.`);
-              }}
+        center={v ? (
+          <Stack spacing={2.5}>
+            <Plate size="hero">{v.plate}</Plate>
+            <Card variant="outlined" sx={{ p: 2.5, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">{typing ? 'Weight typed by hand' : 'Live weight from Scale 2'}</Typography>
+              <Typography variant="h2">{kg ? kg.toLocaleString('en-US') : '–'} <Typography component="span" variant="h5">kg</Typography></Typography>
+              {item.job !== 'empty' && <Typography variant="body2" color="text.secondary">Billable {formatTonnes(billableTonnes(kg))} (rounded up to the next whole tonne)</Typography>}
+            </Card>
+            {item.job !== 'empty' && !v.late && (
+              <Facts cols={3}>
+                <Fact label="Declared weight">{formatKg(declared)}</Fact>
+                <Fact label="Difference">{kg ? `${(kg - declared).toLocaleString('en-US')} kg (${(((kg - declared) / declared) * 100).toFixed(1)}%)` : '–'}</Fact>
+                <Fact label="Tolerance">{p.port.tolerancePct}%</Fact>
+              </Facts>
+            )}
+            {over && <Alert severity="warning">Weight over tolerance. Capturing it flags the reading to the BLPA and Customs officials; IBMS places no hold of its own. An authorized official may place one.</Alert>}
+            {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
+            {typing ? (
+              <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                <Typography variant="subtitle2">Scale down: type the weight</Typography>
+                <TextField label="Weight (kg)" type="number" value={typedKg} onChange={(e) => setTypedKg(e.target.value)} />
+                <ReasonField value={reason} onChange={setReason} helper="The weight is flagged for review; the failed reading and the typed entry are logged." />
+                <Box><Button onClick={() => setTyping(false)}>Use the scale reading</Button></Box>
+              </Stack>
+            ) : (
+              <Box><Button size="small" onClick={() => setTyping(true)}>Scale or plate reader down</Button></Box>
+            )}
+          </Stack>
+        ) : <Typography variant="body2" color="text.secondary">Select a truck from the worklist.</Typography>}
+        right={v ? (
+          <>
+            <CameraStill lane="Scale 2" read={typing ? null : v.plate} expected={v.plate} />
+            <Checklist checks={checks} />
+            <ActionFoot
+              checks={checks}
+              label={t('Capture weight')}
+              keyHint="C"
+              onClick={capture}
+              extraBlocker={typing && (!Number(typedKg) || !reason.trim()) ? { label: 'Typed weight', text: 'Type the weight and give a reason.' } : undefined}
             />
-          ) : (
-            <Card><EmptyState title="Select a truck to weigh" sx={{ py: 12 }} /></Card>
-          )
-        }
-        rail={[
-          <CameraCard key="cam" lane="Scale 1 · plate" plate={current ? plateReadFor(current) : null} expected={current?.plate} onReread={() => current && setRereadPlates((p) => [...p, current.plate])} />,
-          <BridgeCameraCard key="bridge" lane="Scale 1 · bridge" inPosition={current ? inPositionFor(current) : true} onRecheck={current ? () => setRepositioned((p) => [...p, current.plate]) : undefined} />,
-        ]}
+          </>
+        ) : null}
       />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
-      </Snackbar>
+      <Card sx={{ p: 3, mt: 3 }}>
+        <SectionTitle>Weighing history</SectionTitle>
+        <ResponsiveTable
+          rowKey={(x) => x.id}
+          rows={history}
+          columns={[
+            { label: 'Time', render: (x) => formatDateTime(x.weigh.at) },
+            { label: 'Plate', render: (x) => <Plate>{x.plate}</Plate> },
+            { label: 'Weight', align: 'right', render: (x) => formatKg(x.weigh.kg) },
+            { label: 'Declared weight', align: 'right', priority: 'low', render: (x) => (x.weigh.declaredKg ? formatKg(x.weigh.declaredKg) : '–') },
+            { label: 'Billable', align: 'right', priority: 'low', render: (x) => formatTonnes(billableTonnes(x.weigh.kg)) },
+            { label: 'Status', render: (x) => <Stack direction="row" spacing={1}>{x.weigh.overTolerance ? <StatusPill word="Weight over tolerance" /> : <StatusPill word="Weighed" />}<SourceMarker source={x.weigh.source} /></Stack> },
+          ]}
+        />
+      </Card>
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }

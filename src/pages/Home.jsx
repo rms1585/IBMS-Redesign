@@ -1,108 +1,71 @@
-import { useRef, useState } from 'react';
-import { Box, Card, Stack, Typography, ButtonBase, Tooltip, Grid2 as Grid } from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
-import { navConfig } from '../layouts/navConfig';
-import { currentUser, manifests, arrivingTrucks, inboxRequests } from '../data/mock';
-import Label from '../components/Label';
+import { Box, Card, CardActionArea, Stack, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { PageHeader } from '../components/common';
+import { flatNav } from '../layouts/navConfig';
 import { useRole } from '../RoleContext';
+import { usePort } from '../demo/PortStore';
+import { formatDuration } from '../demo/format';
+import { useT } from '../i18n/LanguageContext';
 
-const homeGroups = [
-  { title: 'Operations', paths: ['/cf-portal', '/trader-portal', '/manifests', '/border-gate', '/weighbridge', '/posting', '/warehousing', '/transshipment', '/billing', '/inland-gate'] },
-  { title: 'Administration and configuration', paths: ['/port-setup', '/warehouse-layout', '/storage-rules', '/routing', '/vehicle-classes', '/equipment', '/charges', '/technical'] },
-  { title: 'Access and control', paths: ['/roles', '/users', '/inbox', '/audit'] },
-  { title: 'Platform', paths: ['/platform', '/dashboard'] },
-];
-
-const allItems = navConfig.flatMap((g) => g.items);
-
-const twoLineTitle = { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', overflowWrap: 'anywhere', hyphens: 'auto' };
-
-function HomeTile({ item, onOpen }) {
-  const titleRef = useRef(null);
-  const [clipped, setClipped] = useState(false);
-  // Measured on hover because whether a title clips depends on the current tile width.
-  const checkClipped = () => setClipped(titleRef.current.scrollHeight > titleRef.current.clientHeight);
-  return (
-    <Tooltip title={clipped ? item.title : ''} arrow disableInteractive describeChild>
-      <Card
-        component={ButtonBase}
-        onClick={onOpen}
-        onMouseEnter={checkClipped}
-        onFocus={checkClipped}
-        sx={{
-          width: '100%', py: 2.5, px: { xs: 1.5, sm: 2.5 }, display: 'flex', justifyContent: 'flex-start', gap: { xs: 1.5, sm: 2 }, textAlign: 'left',
-          transition: (t) => t.transitions.create(['transform', 'box-shadow']),
-          '&:hover': { transform: 'translateY(-2px)', boxShadow: (t) => t.customShadows.dialog },
-        }}
-      >
-        <Box sx={{ width: 44, height: 44, borderRadius: 1.5, display: 'grid', placeItems: 'center', flexShrink: 0, color: 'primary.main', bgcolor: (t) => alpha(t.palette.primary.main, 0.08) }}>
-          {item.icon}
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography ref={titleRef} variant="subtitle2" sx={twoLineTitle}>{item.title}</Typography>
-        </Box>
-        {item.badge ? <Label color="error">{item.badge}</Label> : null}
-      </Card>
-    </Tooltip>
-  );
+// Home is a grid of module tiles; each tile says in one or two live lines what waits there (Annex 24.3).
+function useTileLines() {
+  const p = usePort();
+  const { state } = p;
+  const oldest = (list, key) => {
+    const times = list.map(key).filter(Boolean).sort();
+    return times[0] ? `${formatDuration(times[0])} oldest` : null;
+  };
+  const atGate = state.visits.filter((v) => v.stage === 'Expected');
+  const toWeigh = state.visits.filter((v) => (v.stage === 'Admitted' || (v.stage === 'Manifest not yet available' && !v.weigh)) && !v.weigh);
+  const toPost = state.visits.filter((v) => v.stage === 'Weighed' && !v.posting);
+  const holding = state.visits.filter((v) => v.holding || (v.weigh && v.late));
+  const atShed = state.visits.filter((v) => (v.posting && v.posting.accepted === null) || (v.stage === 'Posted' && !v.receipt?.locked));
+  const loads = state.deliveryRequests.flatMap((d) => d.slots.filter((s) => s.enteredAt && !s.load));
+  const unpaid = state.bills.filter((b) => b.status === 'Payment due');
+  const passesWaiting = state.passes.filter((x) => p.passStatus(x) === 'Waiting approval');
+  return {
+    '/border-gate': [`${atGate.length} truck${atGate.length === 1 ? '' : 's'} expected`, oldest(atGate, (v) => v.enteredAt)],
+    '/weighbridge': [`${toWeigh.length} to weigh`, oldest(toWeigh, (v) => v.gateIn?.at)],
+    '/posting': [`${toPost.length} to post · ${holding.length} in the holding area`],
+    '/warehousing': [`${atShed.length} at the shed · ${loads.length} load${loads.length === 1 ? '' : 's'} to lock`],
+    '/inland-gate': [`${passesWaiting.length} Exit Pass${passesWaiting.length === 1 ? '' : 'es'} waiting approval`],
+    '/billing': [`${unpaid.length} bill${unpaid.length === 1 ? '' : 's'} with payment due`],
+    '/customs': [`${p.activeHolds.length} hold${p.activeHolds.length === 1 ? '' : 's'} open`, `${state.visits.filter((v) => v.weigh?.overTolerance).length} weight flag`],
+    '/manifests': [`${state.manifests.length} consignments on record`],
+    '/inbox': [`${state.corrections.filter((c) => !c.decision).length + state.truckChanges.filter((t) => !t.done).length} waiting decision`],
+    '/external': [state.bnswDown ? 'BNSW down' : 'BNSW live', state.exitCheckDown ? 'Exit check down' : null],
+    '/cf-portal': [`${state.manifests.length} consignments`],
+  };
 }
 
 export default function Home() {
-  const navigate = useNavigate();
-  const { canOpen } = useRole();
-  // Shortcuts follow the current role, like the left navigation; empty groups are dropped.
-  const groups = homeGroups
-    .map((g) => ({ ...g, paths: g.paths.filter(canOpen) }))
-    .filter((g) => g.paths.length > 0);
-  const open = manifests.filter((m) => m.status === 'Open').length;
-  const waiting = inboxRequests.filter((r) => !r.mine).length;
-
+  const { canOpen, role } = useRole();
+  const lines = useTileLines();
+  const t = useT();
+  const tiles = flatNav.filter((i) => i.path !== '/' && canOpen(i.path));
   return (
     <>
-      <Card
-        sx={{
-          p: 5, mb: 5, color: 'common.white', boxShadow: 'none',
-          background: (t) => `linear-gradient(120deg, ${t.palette.primary.darker} 0%, ${t.palette.primary.main} 100%)`,
-          overflow: 'hidden',
-        }}
-      >
-        <Box sx={{ position: 'absolute', right: -60, top: -60, width: 280, height: 280, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.common.white, 0.06) }} />
-        <Box sx={{ position: 'absolute', right: 120, bottom: -100, width: 200, height: 200, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.common.white, 0.05) }} />
-        <Typography variant="overline" sx={{ opacity: 0.72 }}>Benapole (BEN) · Monday 27 October 2026</Typography>
-        <Typography variant="h3" sx={{ mt: 1, mb: 1 }}>Good morning, {currentUser.name.split(' ')[0]}</Typography>
-        <Typography sx={{ opacity: 0.8, maxWidth: 560 }}>
-          {arrivingTrucks.length} trucks are expected at the border gate, {open} manifests are open and {waiting} requests are waiting for your decision.
-        </Typography>
-        <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
-          {canOpen('/inbox') && (
-            <ButtonBase onClick={() => navigate('/inbox')} sx={{ px: 2, py: 1, borderRadius: 1, typography: 'button', fontWeight: 700, bgcolor: 'common.white', color: 'primary.dark' }}>
-              Review inbox ({waiting})
-            </ButtonBase>
-          )}
-          <ButtonBase onClick={() => navigate('/dashboard')} sx={{ px: 2, py: 1, borderRadius: 1, typography: 'button', fontWeight: 700, color: 'common.white', border: '1px solid', borderColor: (t) => alpha(t.palette.common.white, 0.4) }}>
-            Open dashboard
-          </ButtonBase>
-        </Stack>
-      </Card>
-
-      <Stack spacing={5}>
-        {groups.map((g) => (
-          <Box key={g.title}>
-            <Typography variant="h6" sx={{ mb: 2 }}>{g.title}</Typography>
-            <Grid container spacing={2.5}>
-              {g.paths.map((p) => {
-                const item = allItems.find((i) => i.path === p);
-                return (
-                  <Grid key={p} size={{ xs: 6, md: 4, lg: 3 }}>
-                    <HomeTile item={item} onOpen={() => navigate(p)} />
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </Box>
-        ))}
-      </Stack>
+      <PageHeader title={t('Home')} subtitle={`${role.person} · ${role.name} · Benapole`} />
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))', md: 'repeat(3, minmax(0,1fr))', xl: 'repeat(4, minmax(0,1fr))' } }}>
+        {tiles.map((item) => {
+          const live = (lines[item.path] ?? []).filter(Boolean);
+          return (
+            <Card key={item.path}>
+              <CardActionArea component={RouterLink} to={item.path} sx={{ p: 2.5, height: '100%', alignItems: 'flex-start', display: 'flex', flexDirection: 'column' }}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1, color: 'primary.main' }}>
+                  {item.icon}
+                  <Typography variant="subtitle1" color="text.primary">{t(item.title)}</Typography>
+                </Stack>
+                {live.length ? (
+                  live.map((l) => <Typography key={l} variant="body2" color="text.secondary">{l}</Typography>)
+                ) : (
+                  <Typography variant="body2" color="text.secondary">{t(item.group)}</Typography>
+                )}
+              </CardActionArea>
+            </Card>
+          );
+        })}
+      </Box>
     </>
   );
 }

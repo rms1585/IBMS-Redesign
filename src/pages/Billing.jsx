@@ -1,155 +1,127 @@
 import { useState } from 'react';
-import {
-  Box, Card, Stack, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Grid2 as Grid, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Tooltip,
-} from '@mui/material';
-import { PageHeader, SectionCard, KpiCard, formatBDT } from '../components/common';
-import Label from '../components/Label';
-import { billLines, payments as initialPayments, currentUser } from '../data/mock';
-import { AddRoundedIcon } from '../components/icons';
+import { Alert, Box, Button, Card, Divider, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { useRole } from '../RoleContext';
+import { agencyName, billTotals, importerName, usePort } from '../demo/PortStore';
+import { formatBDT, formatBoe, formatDateTime, searchKey } from '../demo/format';
+import { Confirmation, Id, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const statusColor = { Confirmed: 'success', Dishonored: 'error', 'Pending confirmation': 'warning' };
+// M-09: bills built from recorded events and the tariff in force. Paid comes only from the provider; paid never means released.
 
-function BankFallbackDialog({ open, onClose, onSave }) {
-  const [f, setF] = useState({ amount: '', ref: '', bank: '' });
-  const amount = Number(f.amount);
-  const valid = amount > 0 && f.ref.trim() && f.bank.trim();
+function BillDetail({ bill, onDone }) {
+  const p = usePort();
+  const tot = billTotals(bill);
+  const [correcting, setCorrecting] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [reason, setReason] = useState('');
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Record bank fallback payment</DialogTitle>
-      <DialogContent>
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          Use only when the bank counter cannot use IBMS. The payment stays <b>pending</b> and does not reduce the balance until a second officer confirms it against the same bank reference.
-        </Alert>
-        <Grid container spacing={2}>
-          <Grid size={6}><TextField fullWidth required label="Amount (BDT)" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value.replace(/[^\d.]/g, '') })} /></Grid>
-          <Grid size={6}><TextField fullWidth required label="Bank reference" value={f.ref} onChange={(e) => setF({ ...f, ref: e.target.value })} /></Grid>
-          <Grid size={12}><TextField fullWidth required label="Bank and branch" value={f.bank} onChange={(e) => setF({ ...f, bank: e.target.value })} /></Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!valid} onClick={() => { onSave({ ...f, amount }); setF({ amount: '', ref: '', bank: '' }); }}>Record as pending</Button>
-      </DialogActions>
-    </Dialog>
+    <Card variant="outlined" sx={{ p: 2.5 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+        <Box>
+          <Typography variant="subtitle1">Payment ID <Id sx={{ typography: 'subtitle1' }}>{bill.paymentId}</Id></Typography>
+          <Typography variant="body2" color="text.secondary">{agencyName(bill.party)} · {bill.for.id} · raised {formatDateTime(bill.raisedAt)} · {p.tariff.version}</Typography>
+        </Box>
+        <StatusPill word={bill.status} />
+      </Stack>
+      <ResponsiveTable
+        rowKey={(l) => l.what}
+        rows={bill.lines}
+        columns={[
+          { label: 'For', render: (l) => l.what },
+          { label: 'Quantity × rate', render: (l) => `${l.qty} ${l.unit} × ${formatBDT(l.rate)}` },
+          { label: 'VAT', align: 'right', priority: 'low', render: (l) => formatBDT(l.qty * l.rate * p.tariff.vat) },
+          { label: 'Amount', align: 'right', render: (l) => formatBDT(l.qty * l.rate) },
+        ]}
+      />
+      <Divider sx={{ my: 1.5 }} />
+      <Stack spacing={0.5} alignItems="flex-end">
+        <Typography variant="body2">Net {formatBDT(tot.net)} · VAT {formatBDT(tot.vat)}</Typography>
+        <Typography variant="subtitle1">Total {formatBDT(tot.total)} · paid {formatBDT(tot.paid)} · balance {formatBDT(tot.total - tot.paid)}</Typography>
+        {bill.paidAt && <Typography variant="caption" color="text.secondary">{bill.provider}, {formatDateTime(bill.paidAt)}</Typography>}
+      </Stack>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>A billed line never changes. A correcting line is approved by a different person.</Typography>
+      {correcting ? (
+        <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+          <TextField type="number" label="Correcting amount (BDT, negative for a credit)" value={amount} onChange={(e) => setAmount(e.target.value)} sx={{ maxWidth: 320 }} />
+          <ReasonField value={reason} onChange={setReason} />
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" disabled={!Number(amount) || !reason.trim()} onClick={() => { p.requestCorrection({ record: bill.paymentId, field: 'Correcting line', from: '–', to: formatBDT(Number(amount)), reason: reason.trim() }); setCorrecting(false); setAmount(''); setReason(''); onDone('Correcting line sent for approval'); }}>Send for approval</Button>
+            <Button onClick={() => setCorrecting(false)}>Cancel</Button>
+          </Stack>
+        </Stack>
+      ) : <Button size="small" sx={{ mt: 1 }} onClick={() => setCorrecting(true)}>Add a correcting line</Button>}
+    </Card>
+  );
+}
+
+function ReleaseFromReference({ onDone }) {
+  const p = usePort();
+  const waiting = p.state.boes.filter((b) => !b.release);
+  const [boeId, setBoeId] = useState('');
+  const [ref, setRef] = useState('');
+  const b = p.boe(boeId);
+  return (
+    <Stack spacing={2}>
+      <Typography variant="body2" color="text.secondary">Only in BNSW-down mode. Check Customs' release against the Bill of Entry number, importer and lines, then record its reference. It is marked "Keyed from Customs' reference" and reconciled when BNSW returns. A keyed release is not a per-truck exit note: a loaded truck without one is still held.</Typography>
+      {!p.state.bnswDown && <Refusal title="Not available now" items={['BNSW is live, so releases arrive from Customs through BNSW. This screen is used only in BNSW-down mode.']} />}
+      <TextField select label="Bill of Entry" value={boeId} onChange={(e) => setBoeId(e.target.value)} disabled={!p.state.bnswDown} sx={{ maxWidth: 420 }}>
+        {waiting.map((x) => <MenuItem key={x.id} value={x.id}>{formatBoe(x)} · {importerName(x.importer)}</MenuItem>)}
+      </TextField>
+      {b && <Typography variant="body2">Importer {importerName(b.importer)} · {b.lines.length} line · agency {agencyName(b.agency)}</Typography>}
+      <TextField label="Customs' release reference" value={ref} onChange={(e) => setRef(e.target.value)} disabled={!p.state.bnswDown} sx={{ maxWidth: 420 }} />
+      <Box><Button variant="contained" disabled={!p.state.bnswDown || !b || !ref.trim()} onClick={() => { p.keyReleaseFromReference(b.id, ref.trim()); setBoeId(''); setRef(''); onDone('Release recorded from Customs\' reference'); }}>Record the release</Button></Box>
+    </Stack>
+  );
+}
+
+function BankCounter({ onDone }) {
+  const p = usePort();
+  const [q, setQ] = useState('');
+  const k = searchKey(q);
+  const found = k.length >= 3 ? p.state.bills.filter((b) => searchKey(b.paymentId).includes(k) || searchKey(b.for.id).includes(k)) : [];
+  return (
+    <Card sx={{ p: 3 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Find a bill by payment ID or Delivery Request. Payment is recorded through the bank interface; the receipt prints once the bank confirms.</Typography>
+      <TextField label="Payment ID or request" value={q} onChange={(e) => setQ(e.target.value)} sx={{ maxWidth: 420, mb: 2 }} fullWidth />
+      {k.length >= 3 && !found.length && <Typography variant="body2" color="text.secondary">Nothing matches. Check the payment ID on the C&F agent's bill.</Typography>}
+      <Stack spacing={1.5}>
+        {found.map((b) => (
+          <Stack key={b.id} direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+            <Id>{b.paymentId}</Id>
+            <Typography variant="body2">{formatBDT(billTotals(b).total)}</Typography>
+            <StatusPill word={b.status} />
+            {b.status === 'Payment due' && <Button variant="contained" onClick={() => { p.payBill(b.id); onDone('Payment recorded. The bank confirmed it'); }}>Take payment</Button>}
+          </Stack>
+        ))}
+      </Stack>
+    </Card>
   );
 }
 
 export default function Billing() {
-  const [payments, setPayments] = useState(initialPayments);
-  const [open, setOpen] = useState(false);
-  const [toast, setToast] = useState('');
-
-  const billed = billLines.reduce((s, l) => s + l.amount, 0);
-  const counted = payments.filter((p) => p.status === 'Confirmed').reduce((s, p) => s + p.amount, 0);
-  const pending = payments.filter((p) => p.status === 'Pending confirmation').reduce((s, p) => s + p.amount, 0);
-  const balance = billed - counted;
-
-  const confirm = (p) => {
-    setPayments((ps) => ps.map((x) => (x.receipt === p.receipt ? { ...x, status: 'Confirmed' } : x)));
-    setToast(`${p.receipt} confirmed. Balance reduced by ${formatBDT(p.amount)}.`);
-  };
-
+  const p = usePort();
+  const t = useT();
+  const { role } = useRole();
+  const [tab, setTab] = useState(0);
+  const [msg, setMsg] = useState('');
+  if (role.id === 'bank') {
+    return (<><PageHeader title="Take payment" subtitle="Bank counter, Benapole" /><BankCounter onDone={setMsg} /><Confirmation text={msg} onClose={() => setMsg('')} /></>);
+  }
+  const tabs = ['Bills', 'Lines not priced', 'Release from Customs\' reference', 'Bank counter'];
   return (
     <>
-      <PageHeader
-        title="Billing & payment"
-        links={[{ name: 'Operations' }, { name: 'Billing' }, { name: 'BEN-IGM-2026-08841' }]}
-        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>Record bank fallback</Button>}
-      />
-      <Alert severity="info" sx={{ mb: 3 }}>Demonstration tariff (TO-2026-03, invented reference). These are not legal rates.</Alert>
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Billed" value={formatBDT(billed)} caption={`${billLines.length} bill lines`} /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Counted" value={formatBDT(counted)} caption="Cash, online and cleared cheques" color="success" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Pending confirmation" value={formatBDT(pending)} caption="Not yet counted" color="warning" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Balance due" value={formatBDT(balance)} caption="Blocks loaded local departure" color="error" /></Grid>
-      </Grid>
-
-      <SectionCard title="Bill breakdown" subheader="Every line comes from a recorded event and the tariff version in force at that time." sx={{ mb: 3 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ pl: 3 }}>Source event</TableCell>
-              <TableCell>Recorded</TableCell>
-              <TableCell>Tariff</TableCell>
-              <TableCell>Calculation</TableCell>
-              <TableCell sx={{ pr: 3 }}>Amount</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {billLines.map((l) => (
-              <TableRow key={l.event} hover>
-                <TableCell sx={{ pl: 3, fontWeight: 600 }}>{l.event}</TableCell>
-                <TableCell sx={{ color: 'text.secondary' }}>{l.at}</TableCell>
-                <TableCell><Label>{l.tariff}</Label></TableCell>
-                <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{l.calc}</TableCell>
-                <TableCell sx={{ pr: 3, fontVariantNumeric: 'tabular-nums' }}>{formatBDT(l.amount)}</TableCell>
-              </TableRow>
-            ))}
-            <TableRow>
-              <TableCell colSpan={4} sx={{ pl: 3, typography: 'subtitle1' }}>Total</TableCell>
-              <TableCell sx={{ pr: 3, typography: 'subtitle1', fontVariantNumeric: 'tabular-nums' }}>{formatBDT(billed)}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </SectionCard>
-
-      <SectionCard title="Payments">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ pl: 3 }}>Receipt</TableCell>
-              <TableCell>Reference</TableCell>
-              <TableCell>Payer · method</TableCell>
-              <TableCell>Recorded by</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell sx={{ pr: 3 }} />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {payments.map((p) => {
-              const ownRecord = p.by === currentUser.name;
-              return (
-                <TableRow key={p.receipt} hover>
-                  <TableCell sx={{ pl: 3, fontWeight: 600, whiteSpace: 'nowrap' }}>{p.receipt}<Typography variant="caption" color="text.disabled" component="div">{p.at}</Typography></TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{p.ref}</TableCell>
-                  <TableCell>{p.payer}<Typography variant="caption" color="text.secondary" component="div">{p.method}</Typography></TableCell>
-                  <TableCell>{p.by}</TableCell>
-                  <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatBDT(p.amount)}</TableCell>
-                  <TableCell><Label color={statusColor[p.status]}>{p.status}</Label></TableCell>
-                  <TableCell sx={{ pr: 3 }}>
-                    {p.status === 'Pending confirmation' && (
-                      <Tooltip title={ownRecord ? 'A different officer must confirm a payment you recorded.' : ''}>
-                        <span><Button size="small" variant="outlined" disabled={ownRecord} onClick={() => confirm(p)}>Confirm</Button></span>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        <Box sx={{ px: 3, py: 2 }}>
-          <Typography variant="caption" color="text.disabled">Dishonored cheques are never counted. Pay online by card, bKash or Nagad from the C&amp;F portal.</Typography>
-        </Box>
-      </SectionCard>
-
-      <BankFallbackDialog
-        open={open}
-        onClose={() => setOpen(false)}
-        onSave={(f) => {
-          setOpen(false);
-          setPayments((ps) => [
-            { receipt: `RCPT-BEN-${22025 + ps.length}`, ref: f.ref, amount: f.amount, by: currentUser.name, payer: 'Rupsha Clearing & Forwarding', method: `Bank fallback · ${f.bank}`, status: 'Pending confirmation', at: 'Just now' },
-            ...ps,
-          ]);
-          setToast('Recorded as pending. Another officer must confirm it before it counts.');
-        }}
-      />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
-      </Snackbar>
+      <PageHeader title={t('Billing and payment')} subtitle={`${p.tariff.version} · VAT 15% per line. No bill is computed from papers and no one marks a bill paid by hand.`} />
+      <Card sx={{ px: 2 }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>{tabs.map((x) => <Tab key={x} label={x} />)}</Tabs>
+      </Card>
+      <Box sx={{ mt: 2 }}>
+        {tab === 0 && <Stack spacing={2}>{p.state.bills.map((b) => <BillDetail key={b.id} bill={b} onDone={setMsg} />)}</Stack>}
+        {tab === 1 && <Card sx={{ p: 3 }}><SectionTitle>Lines the system could not price</SectionTitle><Typography variant="body2" color="text.secondary">None. A line appears here with its plain reason when no tariff rate applies, and no pass is issued while it sits on a bill.</Typography></Card>}
+        {tab === 2 && <Card sx={{ p: 3 }}><ReleaseFromReference onDone={setMsg} />{p.state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").map((b) => <Alert key={b.id} severity="warning" sx={{ mt: 2 }}>{formatBoe(b)}: release {b.release.ref} <SourceMarker source={b.release.source} /></Alert>)}</Card>}
+        {tab === 3 && <BankCounter onDone={setMsg} />}
+      </Box>
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }
