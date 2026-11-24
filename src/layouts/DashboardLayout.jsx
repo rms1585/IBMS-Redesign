@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert, Box, Button, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
-  Menu, MenuItem, ListItemText, Collapse, Drawer, Paper, TextField, useMediaQuery,
+  Menu, MenuItem, ListItemIcon, ListItemText, Collapse, Drawer, Paper, TextField, useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { navConfig } from './navConfig';
@@ -14,7 +14,7 @@ import { usePort } from '../demo/PortStore';
 import { formatDateTime } from '../demo/format';
 import { useLanguage, useT } from '../i18n/LanguageContext';
 import blpaLogo from '../assets/blpa-logo.png';
-import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, CloudOffRoundedIcon, FullscreenRoundedIcon, InfoOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, SearchRoundedIcon, TranslateRoundedIcon, WarningAmberRoundedIcon } from '../components/icons';
+import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, CloudOffRoundedIcon, DarkModeOutlinedIcon, FullscreenRoundedIcon, InfoOutlinedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, SearchRoundedIcon, TranslateRoundedIcon, WarningAmberRoundedIcon } from '../components/icons';
 
 const NAV_WIDTH = 280;
 const NAV_MINI = 88;
@@ -266,8 +266,15 @@ function Header({ navWidth, onOpenNav }) {
         <Divider sx={{ borderStyle: 'dashed' }} />
         <MenuItem onClick={() => { setUserAnchor(null); navigate('/external'); }}>BNSW simulator (demo tool)</MenuItem>
         <MenuItem onClick={() => { reset(); setUserAnchor(null); navigate(role.landing); }}>{t('Reset demo')}</MenuItem>
-        <MenuItem onClick={() => { setLang(lang === 'en' ? 'bn' : 'en'); setUserAnchor(null); }}>{t('Language')}: {lang === 'en' ? 'English' : 'বাংলা'}</MenuItem>
-        <MenuItem onClick={() => { toggle(); setUserAnchor(null); }}>{mode === 'light' ? 'Dark mode' : 'Light mode'}</MenuItem>
+        <Divider sx={{ borderStyle: 'dashed' }} />
+        <MenuItem onClick={() => { setLang(lang === 'en' ? 'bn' : 'en'); setUserAnchor(null); }}>
+          <ListItemIcon><TranslateRoundedIcon fontSize="small" /></ListItemIcon>
+          {t('Language')}: {lang === 'en' ? 'English' : 'বাংলা'}
+        </MenuItem>
+        <MenuItem onClick={() => { toggle(); setUserAnchor(null); }}>
+          <ListItemIcon>{mode === 'light' ? <DarkModeOutlinedIcon fontSize="small" /> : <LightModeOutlinedIcon fontSize="small" />}</ListItemIcon>
+          {mode === 'light' ? 'Dark mode' : 'Light mode'}
+        </MenuItem>
         <Divider sx={{ borderStyle: 'dashed' }} />
         {/* Demo role switcher with the Annex 8 template roles. */}
         <Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 1.5, pt: 1, pb: 0.5 }}>{t('Switch role')} (demo)</Typography>
