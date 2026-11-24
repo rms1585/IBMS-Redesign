@@ -9,6 +9,30 @@ import { useT } from '../i18n/LanguageContext';
 
 // M-09: bills built from recorded events and the tariff in force. Paid comes only from the provider; paid never means released.
 
+// Right edge lines up with the Amount column: table cells pad 16px, phone row cards pad 12px.
+function BillTotals({ bill, tot }) {
+  const rows = [
+    ['Net', formatBDT(tot.net)],
+    ['VAT', formatBDT(tot.vat)],
+    ['Total', formatBDT(tot.total), true],
+    ['Paid', formatBDT(tot.paid)],
+    ['Balance', formatBDT(tot.total - tot.paid), true],
+  ];
+  return (
+    <Stack alignItems="flex-end" sx={{ mt: 2, pr: { xs: 1.5, sm: 2 } }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'auto auto', columnGap: 4, rowGap: 0.75, textAlign: 'right' }}>
+        {rows.map(([label, value, strong]) => (
+          <Box key={label} sx={{ display: 'contents', typography: strong ? 'subtitle2' : 'body2', color: strong ? 'text.primary' : 'text.secondary' }}>
+            <Box>{label}</Box>
+            <Box sx={{ color: 'text.primary' }}>{value}</Box>
+          </Box>
+        ))}
+      </Box>
+      {bill.paidAt && <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5 }}>{bill.provider}, {formatDateTime(bill.paidAt)}</Typography>}
+    </Stack>
+  );
+}
+
 function BillDetail({ bill, onDone }) {
   const p = usePort();
   const tot = billTotals(bill);
@@ -16,8 +40,8 @@ function BillDetail({ bill, onDone }) {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   return (
-    <Card variant="outlined" sx={{ p: 2.5 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+    <Card variant="outlined" sx={{ p: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
         <Box>
           <Typography variant="subtitle1">Payment ID <Id sx={{ typography: 'subtitle1' }}>{bill.paymentId}</Id></Typography>
           <Typography variant="body2" color="text.secondary">{agencyName(bill.party)} · {bill.for.id} · raised {formatDateTime(bill.raisedAt)} · {p.tariff.version}</Typography>
@@ -34,15 +58,11 @@ function BillDetail({ bill, onDone }) {
           { label: 'Amount', align: 'right', render: (l) => formatBDT(l.qty * l.rate) },
         ]}
       />
-      <Divider sx={{ my: 1.5 }} />
-      <Stack spacing={0.5} alignItems="flex-end">
-        <Typography variant="body2">Net {formatBDT(tot.net)} · VAT {formatBDT(tot.vat)}</Typography>
-        <Typography variant="subtitle1">Total {formatBDT(tot.total)} · paid {formatBDT(tot.paid)} · balance {formatBDT(tot.total - tot.paid)}</Typography>
-        {bill.paidAt && <Typography variant="caption" color="text.secondary">{bill.provider}, {formatDateTime(bill.paidAt)}</Typography>}
-      </Stack>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>A billed line never changes. A correcting line is approved by a different person.</Typography>
+      <BillTotals bill={bill} tot={tot} />
+      <Divider sx={{ mt: 2.5, mb: 2 }} />
+      <Typography variant="body2" color="text.secondary">A billed line never changes. A correcting line is approved by a different person.</Typography>
       {correcting ? (
-        <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+        <Stack spacing={1.5} sx={{ mt: 2 }}>
           <TextField type="number" label="Correcting amount (BDT, negative for a credit)" value={amount} onChange={(e) => setAmount(e.target.value)} sx={{ maxWidth: 320 }} />
           <ReasonField value={reason} onChange={setReason} />
           <Stack direction="row" spacing={1}>
@@ -50,7 +70,7 @@ function BillDetail({ bill, onDone }) {
             <Button onClick={() => setCorrecting(false)}>Cancel</Button>
           </Stack>
         </Stack>
-      ) : <Button size="small" sx={{ mt: 1 }} onClick={() => setCorrecting(true)}>Add a correcting line</Button>}
+      ) : <Button size="small" variant="outlined" sx={{ mt: 1.5 }} onClick={() => setCorrecting(true)}>Add a correcting line</Button>}
     </Card>
   );
 }
