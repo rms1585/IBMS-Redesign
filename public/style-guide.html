@@ -147,7 +147,7 @@
             <div class="shade is-main" style="background:#1A9C65;color:#161B1F"><b>Main</b><code>#1A9C65</code></div>
             <div class="shade" style="background:#1B8056;color:#FFFFFF"><b>Dark</b><code>#1B8056</code></div>
             <div class="shade" style="background:#0A5536;color:#FFFFFF"><b>Darker</b><code>#0A5536</code></div>
-            <div class="shade" style="background:#1B8056;color:#FFFFFF"><b>Text</b><code>#1B8056</code></div>
+            <div class="shade" style="background:#0A5536;color:#FFFFFF"><b>Text</b><code>#0A5536</code></div>
           </div>
         </div>
 
@@ -214,7 +214,7 @@
         <div class="tints">
           <span><span class="tag" style="background:#D6FFE9;color:#00753A">Admitted</span></span>
           <span><span class="tag" style="background:#EFF3FF;color:#0C1BC7">In transit</span></span>
-          <span><span class="tag" style="background:#D8FBEC;color:#1B8056">Paid</span></span>
+          <span><span class="tag" style="background:#D8FBEC;color:#0A5536">Paid</span></span>
           <span><span class="tag" style="background:#FFF6E7;color:#945700">Pending</span></span>
           <span><span class="tag" style="background:#FFF1F1;color:#C80D0D">Hold</span></span>
         </div>
@@ -288,22 +288,23 @@
         <table>
           <thead><tr><th>Tone</th><th>Means</th><th>Examples</th></tr></thead>
           <tbody>
-            <tr><td><span class="tag" style="background:rgba(26,156,101,.16);color:#1B8056">Green</span></td><td>Done, cleared, admitted, valid, paid</td><td>Released · Paid · Admitted · Pass valid</td></tr>
+            <tr><td><span class="tag" style="background:rgba(26,156,101,.16);color:#0A5536">Green</span></td><td>Done, cleared, admitted, valid, paid</td><td>Released · Paid · Admitted · Pass valid</td></tr>
             <tr><td><span class="tag" style="background:rgba(65,102,251,.16);color:#0C1BC7">Blue</span></td><td>Waiting on someone else: Customs, BNSW, the agency, the bank</td><td>Awaiting Customs · Waiting for BNSW · Paid, awaiting settlement</td></tr>
             <tr><td><span class="tag" style="background:rgba(255,167,15,.16);color:#945700">Amber</span></td><td>Needs attention soon; stops nothing</td><td>Weight over tolerance · Waiting approval · Payment due · Typed by hand</td></tr>
             <tr><td><span class="tag" style="background:rgba(255,48,48,.16);color:#C80D0D">Red</span></td><td>Stopped, and only stopped</td><td>Customs hold · BGB stop · Held at the barrier · Pass invalidated</td></tr>
-            <tr><td><span class="tag" style="background:rgba(145,158,171,.16);color:#677481">Grey</span></td><td>Closed, used, replaced or not applicable</td><td>Closed · Pass used · Superseded · For information</td></tr>
+            <tr><td><span class="tag" style="background:rgba(145,158,171,.16);color:#49525B">Grey</span></td><td>Closed, used, replaced or not applicable</td><td>Closed · Pass used · Superseded · For information</td></tr>
           </tbody>
         </table>
       </div>
       <ul class="rules" style="margin-top:16px">
+        <li><strong>Pill text meets 4.5:1 on its tint:</strong> green pills use Success Darker <code>#0A5536</code> and grey pills Grey 700 <code>#49525B</code>.</li>
         <li><strong>Only words from the status list</strong> in <code>src/demo/status.js</code>, each with its one tone. A new word is added there first.</li>
         <li><strong>Every state is a word in a pill</strong>, never a coloured dot alone. Red is never used for a flag or a typed value.</li>
         <li><strong>A hold always names its body</strong> (Customs, BLPA, BGB or Immigration), the person, the time and any reference. Only that body lifts it.</li>
       </ul>
 
       <h3>Where a value came from</h3>
-      <p>A value that did not come from a device or BNSW carries an amber outlined marker: <span class="tag" style="border:1px solid #945700;color:#945700">Keyed at the gate</span> <span class="tag" style="border:1px solid #945700;color:#945700">Keyed by the agency</span> <span class="tag" style="border:1px solid #945700;color:#945700">Keyed from Customs' reference</span> <span class="tag" style="border:1px solid #945700;color:#945700">Typed by hand</span> <span class="tag" style="border:1px solid #945700;color:#945700">Declared</span>. When BNSW agrees it becomes <span class="tag" style="border:1px solid #1B8056;color:#1B8056">Keyed, confirmed by BNSW</span>.</p>
+      <p>A value that did not come from a device or BNSW carries an amber outlined marker: <span class="tag" style="border:1px solid #945700;color:#945700">Keyed at the gate</span> <span class="tag" style="border:1px solid #945700;color:#945700">Keyed by the agency</span> <span class="tag" style="border:1px solid #945700;color:#945700">Keyed from Customs' reference</span> <span class="tag" style="border:1px solid #945700;color:#945700">Typed by hand</span> <span class="tag" style="border:1px solid #945700;color:#945700">Declared</span>. When BNSW agrees it becomes <span class="tag" style="border:1px solid #0A5536;color:#0A5536">Keyed, confirmed by BNSW</span>.</p>
 
       <h3>Dates, money, weights and identifiers</h3>
       <ul class="rules">

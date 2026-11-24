@@ -48,7 +48,8 @@ export const success = {
   main: '#1A9C65',
   dark: '#1B8056',
   darker: '#0A5536',
-  text: '#1B8056',
+  // Darker than Success Dark: #1B8056 on its 16% tint is 4.1:1, under the 4.5:1 Annex 24.8 requires.
+  text: '#0A5536',
   contrastText: '#FFFFFF',
 };
 
