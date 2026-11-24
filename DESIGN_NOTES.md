@@ -363,6 +363,9 @@ The prototype now follows the M2 report and its annexes. Where these notes disag
   dates, plates in plain bold, in-place editing, no sideways scrolling, the fixed bench layout, Bangla and English.
 - **Replaced:** Part delivery by the Delivery Request (M2 3.4.10), Truck queue by the holding area (3.4.5), the
   Exit pass screen by the inland gate's Exit Passes (3.4.11). Their old routes redirect.
+- **Removed (2026-11-24, with the user's OK):** the replaced pages (Trader manifest, Part delivery, Truck queue, Exit
+  pass), their components and the old per-area stores (`src/*Context.jsx` other than Role and ColorMode), plus the
+  mock data only they used. Earlier sections that name those stores describe the redesign-v02 prototype.
 - **Settled by M2 against earlier decisions:** the Customs ARO signs the Exit Pass again (C1); paper release is
   BNSW-down mode at the revenue desk (C2); examination is not tracked (C3); release runs per Bill of Entry (C4);
   holds belong to the body that placed them (C5); the tare rule is national (C11).

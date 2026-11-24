@@ -1,7 +1,3 @@
-// Demonstration fixtures only. Names, plates, references and amounts are invented
-// and must not be treated as real records or approved tariff values.
-
-export const currentUser = { name: 'Farhana Rahman', role: 'Port in-charge', port: 'BEN', email: 'farhana.rahman@blpa.gov.bd' };
 
 export const ports = [
   { code: 'BEN', name: 'Benapole', station: 'Benapole Customs House', tariff: 'TO-2026-03 (invented reference)', state: 'Live', admin: 'Farhana Rahman', readiness: 100 },
@@ -111,57 +107,6 @@ export const manifests = [
   },
 ];
 
-// Phase 1 (pre-arrival). At land ports Customs usually keys the IGM only after the truck
-// reaches zero point, so a consignment can be expected before it has an IGM. Until then it
-// carries an IBMS pre-arrival reference. C&F-entered truck details count only after Customs
-// validates them (decision at Bhomra, 28 Oct 2026).
-export const truckDataStatus = { entered: 'Entered by C&F', validated: 'Validated by Customs', inPort: 'Entered port' };
-
-export const preArrivals = [
-  {
-    id: 'PA-BEN-2026-0112', agency: 'Rupsha Clearing & Forwarding', trader: 'Delta Agro Foods Ltd.',
-    product: 'Ginger', perishable: true, expected: 'Today, 12:30',
-  },
-];
-
-// Foreign trucks each C&F agency has registered, keyed by IGM number or pre-arrival reference.
-export const registeredTrucks = {
-  'BEN-IGM-2026-08841': [
-    { plate: 'WB-19-C-0803', driver: 'Prakash Roy', driverCard: 'DC-IN-10477', cls: '10-wheel truck', status: truckDataStatus.validated },
-    { plate: 'WB-19-C-0791', driver: 'Mithun Saha', driverCard: 'DC-IN-10392', cls: '10-wheel truck', status: truckDataStatus.inPort },
-  ],
-  'BEN-IGM-2026-08799': [
-    { plate: 'WB-19-C-0755', driver: 'Gopal Biswas', driverCard: 'DC-IN-10218', cls: '10-wheel truck', status: truckDataStatus.inPort },
-    { plate: 'WB-19-C-0760', driver: 'Sanjay Mondal', driverCard: 'DC-IN-10233', cls: '10-wheel truck', status: truckDataStatus.inPort },
-  ],
-  'PA-BEN-2026-0112': [
-    { plate: 'WB-19-C-0835', driver: 'Bikash Pal', driverCard: 'DC-IN-20931', cls: '6-wheel truck', status: truckDataStatus.entered },
-  ],
-};
-
-// igm: 'Received' | 'Awaiting'. igmOnKey is the number Customs gives the IGM when it keys it at zero point.
-// cls is the class the C&F agent entered; customsCls is the one Customs records when it validates the truck.
-export const arrivingTrucks = [
-  { plate: 'WB-19-C-0835', kind: 'Foreign', cls: '6-wheel truck', manifest: null, preArrival: 'PA-BEN-2026-0112', igmOnKey: 'BEN-IGM-2026-08893', agency: 'Rupsha Clearing & Forwarding', driver: 'Bikash Pal', driverCard: 'DC-IN-20931', declaredKg: 9000, eta: '10:20', firstVisit: false, cargo: 'Ginger', perishable: true, igm: 'Awaiting', truckData: truckDataStatus.entered, fee: 184.7, cameraPlate: 'WB-19-C-0835' },
-  { plate: 'WB-23-K-4471', kind: 'Foreign', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08852', agency: 'Meghna Trade Logistics', driver: 'Ramesh Kumar Das', driverCard: 'DC-IN-88213', declaredKg: 18500, eta: '10:30', firstVisit: true, cargo: 'Cotton fabric', perishable: false, igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-23-K-4471' },
-  { plate: 'WB-41-B-1192', kind: 'Foreign', cls: '14-wheel trailer', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', driver: 'Subrata Ghosh', driverCard: 'DC-IN-55120', declaredKg: 13000, eta: '10:55', firstVisit: false, cargo: 'Detergent', perishable: false, igm: 'Received', truckData: truckDataStatus.entered, fee: 184.7, cameraPlate: 'WB-41-B-1192' },
-  { plate: 'WB-41-B-1207', kind: 'Foreign', cls: '14-wheel trailer', manifest: 'BEN-IGM-2026-08871', agency: 'Padma Border Agents', driver: 'Anil Mondal', driverCard: 'DC-IN-55982', declaredKg: 13000, eta: '11:20', firstVisit: false, cargo: 'Detergent', perishable: false, igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-41-B-1201' },
-  { plate: 'WB-19-C-0803', kind: 'Foreign', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Prakash Roy', driverCard: 'DC-IN-10477', declaredKg: 32000, eta: '11:45', firstVisit: false, cargo: 'Rice (non-basmati)', perishable: false, igm: 'Received', truckData: truckDataStatus.validated, customsCls: '10-wheel truck', fee: 184.7, cameraPlate: 'WB-19-C-0803' },
-];
-
-// Local trucks leaving loaded through the inland gate. Foreign trucks leaving empty come from TruckWeightsContext.
-export const leavingTrucks = [
-  { plate: 'JESSORE-TA-11-2034', kind: 'Local', location: 'Inland gate lane 2', load: 'Loaded · 16,000 kg', admitted: '08:40', manifest: 'BEN-IGM-2026-08841', pass: 'BEN-PASS-004412' },
-];
-
-// cls is the class the C&F agent entered; customsCls is the one Customs recorded at zero point (charges follow it).
-export const weighQueue = [
-  { plate: 'WB-19-C-0803', manifest: 'BEN-IGM-2026-08841', reason: 'Loaded (arrival)', agency: 'Rupsha Clearing & Forwarding', driver: 'Prakash Roy', cls: '10-wheel truck', customsCls: '10-wheel truck', admitted: '10:48', declaredKg: 32000, live: 43310 },
-  { plate: 'WB-41-B-1192', manifest: 'BEN-IGM-2026-08871', reason: 'Loaded (arrival)', agency: 'Padma Border Agents', driver: 'Subrata Ghosh', cls: '14-wheel trailer', customsCls: '14-wheel trailer', admitted: '10:58', declaredKg: 13000, live: 27920, cameraPlate: 'WB-41-B-1129' },
-  { plate: 'WB-19-C-0812', manifest: 'BEN-IGM-2026-08860', reason: 'Loaded (arrival)', agency: 'Padma Border Agents', driver: 'Dilip Sarkar', cls: '10-wheel truck', customsCls: '6-wheel truck', admitted: '11:02', declaredKg: 16000, live: 28250 },
-  { plate: 'WB-23-K-4471', manifest: 'BEN-IGM-2026-08852', reason: 'Loaded (arrival)', agency: 'Meghna Trade Logistics', driver: 'Ramesh Kumar Das', cls: '10-wheel truck', customsCls: '10-wheel truck', admitted: null, declaredKg: 18500, live: 29640 },
-];
-
 export const facilities = [
   {
     id: 'S5', name: 'Shed 5', kind: 'Shed', live: true,
@@ -199,32 +144,10 @@ export const storageRules = [
   { a: 'Food', b: 'Stone', scope: 'facility', gap: null, source: 'Local · BEN', reason: 'Dust', state: 'Draft' },
 ];
 
-export const billLines = [
-  { event: 'Entrance · border gate · WB-19-C-0803', at: '27 Oct, 10:48', tariff: 'TO-2026-03 v2', calc: '1 vehicle × 184.70', amount: 184.7 },
-  { event: 'Weighment · loaded · WB-19-C-0803', at: '27 Oct, 10:55', tariff: 'TO-2026-03 v2', calc: '1 weighing × 76.83', amount: 76.83 },
-  { event: 'Unloading · equipment · Shed 5 / S5A-R2', at: '27 Oct, 11:30', tariff: 'TO-2026-03 v2', calc: '16.00 t × 140.45', amount: 2247.2 },
-  { event: 'Storage · shed · days 1–10 slab', at: '27 Oct, 11:30', tariff: 'TO-2026-03 v2', calc: '16.00 t × 21.50', amount: 344.0 },
-  { event: 'Entrance · inland gate · JESSORE-TA-11-2034', at: '27 Oct, 08:40', tariff: 'TO-2026-03 v2', calc: '1 vehicle × 153.58', amount: 153.58 },
-  { event: 'Documentation', at: '27 Oct, 08:41', tariff: 'TO-2026-03 v2', calc: '4 documents × 321.78', amount: 1287.12 },
-];
-
 export const payments = [
   { receipt: 'RCPT-BEN-22018', ref: 'GW-7C21A9', amount: 1500.0, by: 'Online gateway', payer: 'Rupsha Clearing & Forwarding', method: 'bKash', status: 'Confirmed', at: '27 Oct, 09:02' },
   { receipt: 'RCPT-BEN-22020', ref: 'CHQ-004415', amount: 1287.12, by: 'Shahidul Islam', payer: 'Delta Agro Foods Ltd.', method: 'Cheque', status: 'Dishonored', at: '26 Oct, 15:40' },
   { receipt: 'RCPT-BEN-22024', ref: 'SBL-BEN-9931', amount: 500.0, by: 'Rakib Hasan', payer: 'Rupsha Clearing & Forwarding', method: 'Bank fallback', status: 'Pending confirmation', at: '27 Oct, 10:10' },
-];
-
-export const inboxRequests = [
-  { id: 'REQ-1047', kind: 'Truck change after loading', summary: 'Replace JESSORE-TA-11-2034 on BEN-IGM-2026-08841: axle failure after loading', requester: 'Ayesha Siddiqua', port: 'BEN', at: '27 Oct, 10:41', mine: false },
-  { id: 'REQ-1042', kind: 'Port go-live', summary: 'Akhaura (AKH) ready for go-live — all blocking checks pass', requester: 'Tanvir Alam', port: 'AKH', at: '27 Oct, 09:14', mine: false },
-  { id: 'REQ-1043', kind: 'Sensitive role assignment', summary: 'Assign "Bill approver" to Rakib Hasan at BEN', requester: 'Imran Hossain', port: 'BEN', at: '27 Oct, 09:40', mine: false },
-  { id: 'REQ-1044', kind: 'Bill adjustment', summary: 'Reduce documentation charge on BEN-IGM-2026-08841 (duplicate document)', requester: 'Farhana Rahman', port: 'BEN', at: '27 Oct, 10:02', mine: true },
-  { id: 'REQ-1045', kind: 'Storage-rule override', summary: 'Allow Textile next to Chemical at S5B-R1-C02 for 48 h', requester: 'Mahmud Karim', port: 'BEN', at: '27 Oct, 10:21', mine: false },
-];
-
-export const decidedRequests = [
-  { id: 'REQ-1031', kind: 'Correction', summary: 'Correct unloaded quantity on S5A-R2 from 16,400 to 16,000 kg', requester: 'Mahmud Karim', decision: 'Approved', decider: 'Farhana Rahman', at: '26 Oct, 16:12', reason: 'Scale ticket attached matches 16,000 kg.' },
-  { id: 'REQ-1029', kind: 'Module change', summary: 'Turn off Transshipment at HIL', requester: 'Sabbir Ahmed', decision: 'Rejected', decider: 'Head office', at: '26 Oct, 11:05', reason: 'Port has transshipment work in flight.' },
 ];
 
 export const roles = [
@@ -257,64 +180,4 @@ export const users = [
   { name: 'Mahmud Karim', email: 'mahmud.karim@blpa.gov.bd', org: 'BLPA', assignments: ['Shed in-charge @ BEN'], status: 'Active' },
   { name: 'Ayesha Siddiqua', email: 'ayesha@rupsha-cf.com.bd', org: 'Rupsha Clearing & Forwarding', assignments: ['C&F agent user @ BEN'], status: 'Invited' },
   { name: 'Kamal Uddin', email: 'kamal.uddin@blpa.gov.bd', org: 'BLPA', assignments: ['Border gate operator @ BEN'], status: 'Deactivated' },
-];
-
-export const auditEvents = [
-  { id: 'EV-918204', time: '27 Oct 2026, 10:55:12', actor: 'Kamal Hasan', role: 'Weighbridge operator', module: 'Weighing', type: 'Record', text: 'Captured loaded weight 43,310 kg for WB-19-C-0803 on Scale 1', flags: [] },
-  { id: 'EV-918199', time: '27 Oct 2026, 10:48:40', actor: 'Nasima Akter', role: 'Border gate operator', module: 'Gates', type: 'Record', text: 'Admitted WB-19-C-0803 at Border gate 1, lane B2', flags: [] },
-  { id: 'EV-918190', time: '27 Oct 2026, 10:33:02', actor: 'Shahidul Islam', role: 'Billing officer', module: 'Single Window', type: 'Request', text: 'Requested paper release for BEN-IGM-2026-08852 (consent CNS-118)', flags: ['Manual pending reconciliation'] },
-  { id: 'EV-918177', time: '27 Oct 2026, 10:10:44', actor: 'Rakib Hasan', role: 'Finance officer', module: 'Billing', type: 'Record', text: 'Recorded bank fallback payment BDT 500.00, ref SBL-BEN-9931', flags: [] },
-  { id: 'EV-918160', time: '27 Oct 2026, 09:31:09', actor: 'Kamal Hasan', role: 'Weighbridge operator', module: 'Weighing', type: 'Record', text: 'Entered manual weight 27,880 kg for WB-41-B-1150 (scale link failure)', flags: ['Override'] },
-  { id: 'EV-918101', time: '27 Oct 2026, 07:12:30', actor: 'Nasima Akter', role: 'Border gate operator', module: 'Gates', type: 'Record', text: 'Admitted WB-19-C-0791 at Border gate 1, lane B1', flags: ['Recorded offline'] },
-  { id: 'EV-917980', time: '26 Oct 2026, 16:12:51', actor: 'Farhana Rahman', role: 'Port in-charge', module: 'Approvals', type: 'Decision', text: 'Approved correction REQ-1031 on S5A-R2', flags: [] },
-];
-
-export const alerts = [
-  { at: '10:48', manifest: 'BEN-IGM-2026-08841', text: 'WB-19-C-0803 admitted at Border gate 1 and routed to Shed 5.' },
-  { at: '09:02', manifest: 'BEN-IGM-2026-08841', text: 'Gateway confirmed payment BDT 1,500.00 (ref GW-7C21A9).' },
-  { at: '08:40', manifest: 'BEN-IGM-2026-08841', text: 'JESSORE-TA-11-2034 admitted at inland gate.' },
-  { at: 'Yesterday', manifest: 'BEN-IGM-2026-08860', text: 'Customs hold placed. Departure is blocked until released.' },
-];
-
-// Local (Bangladeshi) trucks a C&F agency books against a manifest.
-export const localBookingStatus = { booked: 'Booked', entered: 'Entered', loaded: 'Loaded', changeRequested: 'Change requested' };
-export const localBookings = {
-  'BEN-IGM-2026-08841': [
-    { plate: 'JESSORE-TA-11-2034', driver: 'Harun Mia', cls: '10-wheel truck', trips: 2, status: localBookingStatus.loaded },
-    { plate: 'JESSORE-TA-11-2101', driver: 'Abdul Malek', cls: '10-wheel truck', trips: 1, status: localBookingStatus.booked },
-    { plate: 'JESSORE-TA-11-1987', driver: 'Sohel Rana', cls: '6-wheel truck', trips: 1, status: localBookingStatus.entered },
-  ],
-  'BEN-IGM-2026-08866': [
-    { plate: 'KHULNA-DA-14-0433', driver: 'Faruk Ahmed', cls: '6-wheel truck', trips: 3, status: localBookingStatus.loaded },
-    { plate: 'KHULNA-DA-14-0451', driver: 'Shamim Ahmed', cls: '6-wheel truck', trips: 1, status: localBookingStatus.booked },
-  ],
-  'BEN-IGM-2026-08799': [
-    { plate: 'KHULNA-DA-14-0412', driver: 'Rubel Hossain', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },
-    { plate: 'KHULNA-DA-14-0433', driver: 'Faruk Ahmed', cls: '10-wheel truck', trips: 1, status: localBookingStatus.loaded },
-    { plate: 'JESSORE-TA-11-1760', driver: 'Mizanur Rahman', cls: '6-wheel truck', trips: 1, status: localBookingStatus.entered },
-    { plate: 'JESSORE-TA-11-1802', driver: 'Alamgir Kabir', cls: '6-wheel truck', trips: 1, status: localBookingStatus.booked },
-  ],
-  // Bangladeshi trucks for consignments that go across in the transshipment yard (Phase 7).
-  'BEN-IGM-2026-08881': [
-    { plate: 'JESSORE-TA-11-2210', driver: 'Kamal Hossain', cls: '6-wheel truck', trips: 1, status: localBookingStatus.entered },
-    { plate: 'JESSORE-TA-11-2215', driver: 'Ripon Mia', cls: '6-wheel truck', trips: 1, status: localBookingStatus.booked },
-  ],
-  'BEN-IGM-2026-08883': [
-    { plate: 'KHULNA-DA-14-0520', driver: 'Selim Uddin', cls: '10-wheel truck', trips: 1, status: localBookingStatus.entered },
-  ],
-  'BEN-IGM-2026-08885': [
-    { plate: 'JESSORE-TA-11-2302', driver: 'Babul Akter', cls: '10-wheel truck', trips: 1, status: localBookingStatus.entered },
-    { plate: 'JESSORE-TA-11-2311', driver: 'Nasir Ahmed', cls: '10-wheel truck', trips: 1, status: localBookingStatus.entered },
-  ],
-};
-
-// Demo BRTA fitness records for Bangladeshi-registered trucks (F19). Dates are invented.
-export const brtaFitness = {
-  'JESSORE-TA-11-2101': { status: 'Fit', validTo: '31 Mar 2027' },
-  'KHULNA-DA-14-0587': { status: 'Expired', validTo: '30 Sep 2026' },
-};
-
-export const inlandArriving = [
-  { plate: 'JESSORE-TA-11-2101', kind: 'Local', cls: '10-wheel truck', manifest: 'BEN-IGM-2026-08841', agency: 'Rupsha Clearing & Forwarding', driver: 'Abdul Malek', driverCard: 'DC-BD-30211', declaredKg: 16000, eta: '11:10', firstVisit: false, cargo: 'Rice (non-basmati)', fee: 153.58, cameraPlate: 'JESSORE-TA-11-2101' },
-  { plate: 'KHULNA-DA-14-0587', kind: 'Local', cls: '6-wheel truck', manifest: 'BEN-IGM-2026-08860', agency: 'Padma Border Agents', driver: 'Jahangir Alam', driverCard: 'DC-BD-11873', declaredKg: 11000, eta: '12:30', firstVisit: true, cargo: 'Industrial solvent', fee: 153.58, cameraPlate: null },
 ];

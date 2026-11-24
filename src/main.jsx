@@ -8,13 +8,6 @@ import '@fontsource/public-sans/700.css';
 import '@fontsource/public-sans/800.css';
 import { ColorModeProvider } from './ColorModeContext';
 import { RoleProvider } from './RoleContext';
-import { CfTrucksProvider } from './CfTrucksContext';
-import { AuditProvider } from './AuditContext';
-import { CfAlertsProvider } from './CfAlertsContext';
-import { ManifestsProvider } from './ManifestsContext';
-import { CustomsProvider } from './CustomsContext';
-import { WarehouseProvider } from './WarehouseContext';
-import { TruckWeightsProvider } from './TruckWeightsContext';
 import { PortProvider } from './demo/PortStore';
 import { LanguageProvider } from './i18n/LanguageContext';
 import App from './App';
@@ -26,21 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <RoleProvider>
       <PortProvider>
         <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AuditProvider>
-            <CfTrucksProvider>
-              <CfAlertsProvider>
-                <ManifestsProvider>
-                  <CustomsProvider>
-                    <WarehouseProvider>
-                      <TruckWeightsProvider>
-                        <App />
-                      </TruckWeightsProvider>
-                    </WarehouseProvider>
-                  </CustomsProvider>
-                </ManifestsProvider>
-              </CfAlertsProvider>
-            </CfTrucksProvider>
-          </AuditProvider>
+          <App />
         </HashRouter>
       </PortProvider>
       </RoleProvider>
