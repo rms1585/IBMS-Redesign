@@ -386,6 +386,13 @@ export function PortProvider({ children }) {
     const actions = {
       reset: resetRecord,
 
+      // A list a screen keeps for itself (rail wagons, users, …), saved in the record under its own name.
+      setStored: (name, initial, update) =>
+        change((n) => {
+          const current = n[name] === undefined ? structuredClone(initial) : n[name];
+          n[name] = typeof update === 'function' ? update(current) : update;
+        }),
+
       // Importer portal (M-15)
       tagAgency: (mid, bin, ain) =>
         change((n, { log }) => {
@@ -804,3 +811,12 @@ export function PortProvider({ children }) {
 }
 
 export const usePort = () => useContext(PortContext);
+
+// useState for data a screen owns, kept in the shared record so it survives a reload and reaches every
+// viewer. `initial` is what the screen shows until someone changes it, and again after Reset demo.
+export function useStoredState(name, initial) {
+  const { state, setStored } = usePort();
+  const value = state[name] === undefined ? initial : state[name];
+  const set = useCallback((update) => setStored(name, initial, update), [setStored, name, initial]);
+  return [value, set];
+}

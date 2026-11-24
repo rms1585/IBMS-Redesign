@@ -8,6 +8,11 @@ import { alpha } from '@mui/material/styles';
 import { PageHeader, SectionCard, UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { ports, agencies, users } from '../data/mock';
+import { useStoredState } from '../demo/PortStore';
+
+// Module switches and tolerance are kept per port in the shared record.
+const NO_SETTINGS = {};
+const DEFAULT_MODULES = { warehousing: true, outsideYard: false, rail: true, busTerminal: true, truckScanner: false, exportStorage: false };
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, LockOutlinedIcon } from '../components/icons';
 
 const steps = [
@@ -61,8 +66,10 @@ function StepModules({ modules, setModules }) {
   );
 }
 
-function StepResources({ modules }) {
-  const [tolerance, setTolerance] = useState('5');
+function StepResources({ port, modules }) {
+  const [tolerances, setTolerances] = useStoredState('portTolerance', NO_SETTINGS);
+  const tolerance = tolerances[port.code] ?? '5';
+  const setTolerance = (value) => setTolerances((all) => ({ ...all, [port.code]: value }));
   const toleranceValid = /^\d+(\.\d+)?$/.test(tolerance) && Number(tolerance) >= 1 && Number(tolerance) <= 20;
   const resources = [
     ['Border gate 1', 'Border gate', 'Lanes B1, B2', 'Live'],
@@ -204,7 +211,9 @@ const stateColor = (state) => (state === 'Live' ? 'success' : state.startsWith('
 export default function PortSetup() {
   const [portCode, setPortCode] = useState('SON');
   const [step, setStep] = useState(0);
-  const [modules, setModules] = useState({ warehousing: true, outsideYard: false, rail: true, busTerminal: true, truckScanner: false, exportStorage: false });
+  const [portModules, setPortModules] = useStoredState('portModules', NO_SETTINGS);
+  const modules = portModules[portCode] ?? DEFAULT_MODULES;
+  const setModules = (value) => setPortModules((all) => ({ ...all, [portCode]: value }));
   const [toast, setToast] = useState('');
   const port = ports.find((p) => p.code === portCode);
 
@@ -279,7 +288,7 @@ export default function PortSetup() {
             <Box sx={{ px: 3, pb: 3 }}>
               {step === 0 && <StepPort key={port.code} port={port} />}
               {step === 1 && <StepModules modules={modules} setModules={setModules} />}
-              {step === 2 && <StepResources modules={modules} />}
+              {step === 2 && <StepResources port={port} modules={modules} />}
               {step === 3 && <StepPeople />}
               {step === 4 && <StepGoLive port={port} modules={modules} onRequest={() => setToast(`Go-live request for ${port.name} sent to head office.`)} />}
             </Box>

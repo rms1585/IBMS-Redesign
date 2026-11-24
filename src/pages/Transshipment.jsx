@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
-import { usePort } from '../demo/PortStore';
+import { usePort, useStoredState } from '../demo/PortStore';
 import { formatDateTime, formatKg } from '../demo/format';
 import { Confirmation, Fact, Facts, HoldRow, LockedValue, Plate, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
 
 // M-07: truck-to-truck transfer of perishable lines against the agency's transfer request.
-// The transfer request is demo data local to this screen; holds come from the shared record.
+// The transfer request is demo data local to this screen; its locked moves and the holds live in the shared record.
 
 const REQUEST = {
   id: 'TR-2026-0088', manifest: '2026/601/08841', importer: 'Delta Foods Ltd', agency: 'Jamuna C&F Services',
@@ -16,13 +16,17 @@ const REQUEST = {
   slots: ['Jessore-TA 11-4418', 'Jessore-TA 11-5021', null],
 };
 
+// The first receiving truck is already loaded when the screen opens.
+const FIRST_MOVES = [
+  { truck: 'Jessore-TA 11-4418', kg: 4000, by: 'Shahidul Islam', at: new Date(Date.now() - 40 * 60000).toISOString(), assoc: 'Benapole Port Labour Association No. 1' },
+];
 const ASSOCIATIONS = ['Benapole Port Labour Association No. 1', 'Benapole Port Labour Association No. 2'];
 
 export default function Transshipment() {
   const p = usePort();
   const t = useT();
   const { role } = useRole();
-  const [moves, setMoves] = useState([]);
+  const [moves, setMoves] = useStoredState('transshipmentMoves', FIRST_MOVES);
   const [truck, setTruck] = useState('');
   const [kg, setKg] = useState('');
   const [assoc, setAssoc] = useState('');

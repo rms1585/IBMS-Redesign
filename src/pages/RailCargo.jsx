@@ -4,6 +4,7 @@ import { PageHeader } from '../components/common';
 import { formatKg } from '../demo/format';
 import { Confirmation, Fact, Facts, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
+import { useStoredState } from '../demo/PortStore';
 
 // M-16: a train is known by its train and wagon numbers and its railway receipt, not by a plate.
 // The rake record opens when the train is on record and closes when the wagons leave. Demo data local to this screen.
@@ -17,9 +18,9 @@ const INITIAL = [
 
 export default function RailCargo() {
   const t = useT();
-  const [wagons, setWagons] = useState(INITIAL);
+  const [wagons, setWagons] = useStoredState('railWagons', INITIAL);
   const [rep, setRep] = useState('');
-  const [signed, setSigned] = useState(null);
+  const [signed, setSigned] = useStoredState('railWagonListSignedBy', null);
   const [msg, setMsg] = useState('');
   const check = (wagon, ok) => {
     setWagons((ws) => ws.map((w) => (w.wagon === wagon ? { ...w, checked: ok ? 'Seal intact' : 'Difference recorded, photo attached' } : w)));

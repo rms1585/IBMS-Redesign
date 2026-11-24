@@ -4,6 +4,7 @@ import { PageHeader } from '../components/common';
 import { formatBDT, formatDateTime } from '../demo/format';
 import { Confirmation, Plate, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
+import { useStoredState } from '../demo/PortStore';
 
 // M2 3.5 and 3.6: export trucks stay loaded (export storage is off at every port by default), the consignment's trucks
 // wait for each other billed as halting, each leaves on a single-use pass, and the empty truck is recognised by plate.
@@ -11,6 +12,7 @@ import { useT } from '../i18n/LanguageContext';
 
 const ago = (h) => new Date(Date.now() - h * 3600000).toISOString();
 const HALTING = 300;
+const NO_RETURNS = {};
 
 const CONSIGNMENTS = [
   {
@@ -35,7 +37,7 @@ const RETURNS = [
 export default function ExportCargo() {
   const t = useT();
   const [tab, setTab] = useState(0);
-  const [returned, setReturned] = useState({});
+  const [returned, setReturned] = useStoredState('exportEmptyReturns', NO_RETURNS);
   const [msg, setMsg] = useState('');
   return (
     <>

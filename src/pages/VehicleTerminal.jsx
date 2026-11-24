@@ -4,6 +4,7 @@ import { alpha } from '@mui/material/styles';
 import { PageHeader, EmptyState, AssumptionNote, DetailRow } from '../components/common';
 import { Workbench, QueueCard } from '../components/Workbench';
 import Label from '../components/Label';
+import { useStoredState } from '../demo/PortStore';
 
 const blocks = [
   { code: 'A', use: 'Foreign trucks', rows: 3, cols: 8 },
@@ -73,7 +74,7 @@ function BlockView({ block, vehicle, assigned, selected, onSelect }) {
 }
 
 export default function VehicleTerminal() {
-  const [vehicles, setVehicles] = useState(initialVehicles);
+  const [vehicles, setVehicles] = useStoredState('terminalVehicles', initialVehicles);
   const [assigned, setAssigned] = useState({});
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(initialVehicles[0].plate);

@@ -6,6 +6,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPla
 import { PageHeader, AssumptionNote } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
+import { useStoredState } from '../demo/PortStore';
 
 const NOT_SET = 'To be defined';
 const initialExceptions = [
@@ -39,7 +40,7 @@ function EditDialog({ exception, onClose, onSave }) {
 }
 
 export default function Exceptions() {
-  const [exceptions, setExceptions] = useState(initialExceptions);
+  const [exceptions, setExceptions] = useStoredState('exceptionRules', initialExceptions);
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState('');
   return (

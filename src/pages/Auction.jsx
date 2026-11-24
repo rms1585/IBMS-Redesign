@@ -3,6 +3,7 @@ import { Box, Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Gr
 import { PageHeader, KpiCard, AssumptionNote, ReasonDialog, formatKg } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
+import { useStoredState } from '../demo/PortStore';
 
 const ONE_MONTH = 30;
 const TWO_MONTHS = 60;
@@ -24,7 +25,7 @@ function AgeLabel({ days }) {
 }
 
 export default function Auction() {
-  const [lots, setLots] = useState(initialLots);
+  const [lots, setLots] = useStoredState('auctionLots', initialLots);
   const [tab, setTab] = useState('ageing');
   const [listing, setListing] = useState(null);
   const [destroying, setDestroying] = useState(null);

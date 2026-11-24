@@ -8,6 +8,7 @@ import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { users as initial, roles, ports } from '../data/mock';
 import { AddRoundedIcon, MoreVertRoundedIcon } from '../components/icons';
+import { useStoredState } from '../demo/PortStore';
 
 const statusColor = { Active: 'success', Invited: 'info', Deactivated: 'default' };
 
@@ -58,7 +59,7 @@ function RowMenu({ user, onDeactivate }) {
 }
 
 export default function Users() {
-  const [list, setList] = useState(initial);
+  const [list, setList] = useStoredState('users', initial);
   const [open, setOpen] = useState(false);
   const [deact, setDeact] = useState(null);
   const [toast, setToast] = useState('');

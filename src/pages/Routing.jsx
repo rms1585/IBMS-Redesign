@@ -4,6 +4,9 @@ import { PageHeader, KpiCard } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { products } from '../data/mock';
+import { useStoredState } from '../demo/PortStore';
+
+const DEFAULT_ROUTES = Object.fromEntries(products.map((p) => [p.code, p.route]));
 
 const routeColor = { Warehouse: 'primary', Transshipment: 'info', 'Stone route': 'warning' };
 const enabled = { Warehouse: true, Transshipment: true, 'Stone route': false };
@@ -11,7 +14,7 @@ const enabled = { Warehouse: true, Transshipment: true, 'Stone route': false };
 const needsCustoms = (product, route) => route === 'Transshipment' && product.type !== 'Perishable';
 
 export default function Routing() {
-  const [routes, setRoutes] = useState(() => Object.fromEntries(products.map((p) => [p.code, p.route])));
+  const [routes, setRoutes] = useStoredState('productRoutes', DEFAULT_ROUTES);
   const [pending, setPending] = useState({});
   const [toast, setToast] = useState('');
   const rows = products.map((p) => ({ ...p, current: routes[p.code], pending: pending[p.code] }));

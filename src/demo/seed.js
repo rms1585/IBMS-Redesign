@@ -95,6 +95,22 @@ export function createSeed() {
       lines: [line('2026/601/08874', 1, '000123456-0101', 'Polyester staple fibre', 360, 18000)],
       tags: { '000123456-0101': '301045' },
     },
+    // Trucks further along, so every queue opens with work in it.
+    {
+      id: '2026/601/08886', alias: 'LC 0417-26-0133', source: 'BNSW', receivedAt: ago(9), exporter: 'Arvind Mills, Ahmedabad',
+      lines: [line('2026/601/08886', 1, '000456789-0404', 'Viscose woven fabric', 140, 11200)],
+      tags: { '000456789-0404': '301112' },
+    },
+    {
+      id: '2026/601/08888', alias: 'LC 0417-26-0135', source: 'BNSW', receivedAt: ago(11), exporter: 'Ganga Exports, Kolkata',
+      lines: [line('2026/601/08888', 1, '000123456-0101', 'Cotton yarn, 20s carded', 420, 12600)],
+      tags: { '000123456-0101': '301045' },
+    },
+    {
+      id: '2026/601/08890', alias: 'LC 0417-26-0137', source: 'BNSW', receivedAt: ago(8), exporter: 'Bharat Agro',
+      lines: [line('2026/601/08890', 1, '000234567-0202', 'Lentils, red, split', 380, 9500)],
+      tags: { '000234567-0202': '301112' },
+    },
   ];
 
   // The manifest Customs has not yet sent: the simulator sends it to match the late truck.
@@ -159,6 +175,35 @@ export function createSeed() {
       manifests: ['2026/601/08866'], enteredBy: null, enteredAt: null,
       stage: 'Expected', events: {},
     },
+    {
+      id: 'V-26-5512', plate: 'WB 27 C 5512', kind: 'foreign', vehicleClass: '10-wheel truck', axles: 3,
+      driver: { name: 'Prakash Mondal', nid: 'Car Pass driver ID 8103' }, carPass: 'CP-BEN-26-77530',
+      manifests: ['2026/601/08886'], enteredBy: '301112', enteredAt: ago(6),
+      stage: 'Weighed',
+      gateIn: { at: ago(1.4), gate: 'Border gate 2', lane: 'Lane 1', by: 'Abdul Karim' },
+      weigh: { kg: 11480, at: ago(1.1), scale: 'Scale 1', source: 'Device', declaredKg: 11200, overTolerance: false, toleranceVersion: PORT.toleranceVersion },
+      events: {},
+    },
+    {
+      id: 'V-26-6630', plate: 'WB 33 A 6630', kind: 'foreign', vehicleClass: '12-wheel truck', axles: 4,
+      driver: { name: 'Gopal Saha', nid: 'Car Pass driver ID 8240' }, carPass: 'CP-BEN-26-77512',
+      manifests: ['2026/601/08888'], enteredBy: '301045', enteredAt: ago(8),
+      stage: 'Weighed',
+      gateIn: { at: ago(3.2), gate: 'Border gate 1', lane: 'Lane 1', by: 'Abdul Karim' },
+      weigh: { kg: 12930, at: ago(2.9), scale: 'Scale 2', source: 'Device', declaredKg: 12600, overTolerance: false, toleranceVersion: PORT.toleranceVersion },
+      holding: { since: ago(2.6), reason: 'No free space in Shed 7' },
+      events: {},
+    },
+    {
+      id: 'V-26-7741', plate: 'WB 15 D 7741', kind: 'foreign', vehicleClass: '10-wheel truck', axles: 3,
+      driver: { name: 'Anil Biswas', nid: 'Car Pass driver ID 8017' }, carPass: 'CP-BEN-26-77498',
+      manifests: ['2026/601/08890'], enteredBy: '301112', enteredAt: ago(7),
+      stage: 'Weighed',
+      gateIn: { at: ago(2.2), gate: 'Border gate 2', lane: 'Lane 2', by: 'Abdul Karim' },
+      weigh: { kg: 9710, at: ago(1.9), scale: 'Scale 1', source: 'Device', declaredKg: 9500, overTolerance: false, toleranceVersion: PORT.toleranceVersion },
+      posting: { shed: 'Shed 12', accepted: null, proposedBy: 'Farhana Yasmin', at: ago(0.7) },
+      events: {},
+    },
   ];
 
   const boes = [
@@ -181,6 +226,12 @@ export function createSeed() {
       release: { at: ago(26), source: 'BNSW', ref: 'RO 601/2026/18790', kg: 15000, exitNotes: { 'Dhaka Metro-TA 14-2231': ago(5) } },
       deliveredKg: 6000, closed: false,
     },
+    // Keyed by the agency while BNSW was down; waits to be checked once BNSW confirms it.
+    {
+      id: 'BOE-4', type: 'C', office: '601', reg: 'C-48602', date: '2026-11-23',
+      manifest: '2026/601/08886', importer: '000456789-0404', agency: '301112', lines: ['2026/601/08886-1'],
+      recordedAt: ago(5), source: 'Keyed by the agency', release: null, deliveredKg: 0, closed: false,
+    },
   ];
 
   const holds = [
@@ -196,6 +247,15 @@ export function createSeed() {
       slots: [
         { plate: 'Dhaka Metro-TA 14-2231', entryPass: 'EP-26-55021', enteredAt: ago(6), load: { kg: 6000, lockedAt: ago(5.5), lockedBy: 'Habibur Rahman', aro: { name: 'Md. Jahid Hasan', at: ago(5.2) } }, pass: 'BEN-PASS-004419' },
         { plate: null, entryPass: null, enteredAt: null, load: null, pass: null },
+      ],
+      closed: false,
+    },
+    {
+      id: 'DR-2026-0312', boe: 'BOE-1', day: today(), kg: 18000, ceiling: 3, agency: '301045', raisedAt: ago(4), bill: 'BILL-0312',
+      slots: [
+        { plate: 'Khulna-TA 12-4410', entryPass: null, enteredAt: null, load: null, pass: null },
+        { plate: 'Jessore-TA 14-0951', entryPass: 'EP-26-55064', enteredAt: ago(1), load: null, pass: null },
+        { plate: 'Jessore-TA 11-0388', entryPass: 'EP-26-55059', enteredAt: ago(2.5), load: { kg: 6000, lockedAt: ago(1.6), lockedBy: 'Habibur Rahman', aro: { name: 'Md. Jahid Hasan', at: ago(1.4) } }, pass: null },
       ],
       closed: false,
     },
@@ -224,12 +284,39 @@ export function createSeed() {
       ],
       status: 'Paid', paidAt: ago(7), provider: 'Sonali Bank e-payment, ref SB-99231',
     },
+    {
+      id: 'BILL-0312', paymentId: 'PAY-601-26-0312', party: '301045', for: { kind: 'dr', id: 'DR-2026-0312' }, raisedAt: ago(4),
+      lines: [
+        { what: 'Storage', qty: 22, unit: 'tonne-day', rate: 25, note: '22 t, 1 day' },
+        { what: 'Handling', qty: 18, unit: 'tonne', rate: 120 },
+        { what: 'Entrance fee, local truck', qty: 3, unit: 'truck', rate: 115 },
+      ],
+      status: 'Paid', paidAt: ago(3.5), provider: 'Sonali Bank e-payment, ref SB-99307',
+    },
+  ];
+
+  const corrections = [
+    {
+      id: 'COR-97', record: '2026/601/08852', field: 'Receipt weight, line 1', from: '21,640 kg', to: '21,460 kg',
+      reason: 'Digits swapped when the count sheet was typed in', by: 'Habibur Rahman', role: 'Shed in-charge', at: ago(2), decision: null,
+    },
+    {
+      id: 'COR-93', record: '2026/601/08860', field: 'Packages counted, line 1', from: '178', to: '180',
+      reason: 'Two cartons were on the second pallet', by: 'Selina Parvin', role: 'Warehouse manager', at: ago(30),
+      decision: { approve: true, remarks: 'Matches the tally photo', by: 'Farhana Rahman', at: ago(29) },
+    },
   ];
 
   const events = [
     { id: 'E-1', at: ago(30), text: 'Manifest 2026/601/08841 received', record: '2026/601/08841', by: 'BNSW', role: 'Customs system', source: 'BNSW' },
     { id: 'E-2', at: ago(20), text: 'Customs hold placed on line 1 of 2026/601/08860: Classification query on reactive dyes', record: '2026/601/08860', by: 'Md. Jahid Hasan', role: 'Customs user', source: 'IBMS' },
     { id: 'E-3', at: ago(3), text: 'Truck WB 23 D 1187 entered for 2026/601/08841 with Car Pass CP-BEN-26-77410', record: '2026/601/08841', by: 'Kamal Hossain', role: 'C&F agent user', source: 'Keyed by the agency' },
+    { id: 'E-4', at: ago(5), text: 'Bill of Entry C 601 C-48602 2026-11-23 keyed for 2026/601/08886 while BNSW was down', record: '2026/601/08886', by: 'Rafiq Ahmed', role: 'C&F agent user', source: 'Keyed by the agency' },
+    { id: 'E-5', at: ago(4), text: 'Delivery Request DR-2026-0312 raised for 18,000 kg on 3 trucks', record: '2026/601/08852', by: 'Kamal Hossain', role: 'C&F agent user', source: 'IBMS' },
+    { id: 'E-6', at: ago(2.6), text: 'WB 33 A 6630 placed in the holding area: No free space in Shed 7', record: '2026/601/08888', by: 'Farhana Yasmin', role: 'Posting officer', source: 'IBMS' },
+    { id: 'E-7', at: ago(2), text: 'Correction requested on 2026/601/08852 receipt weight, line 1: 21,640 kg to 21,460 kg', record: '2026/601/08852', by: 'Habibur Rahman', role: 'Shed in-charge', source: 'IBMS' },
+    { id: 'E-8', at: ago(1.6), text: 'Load of Jessore-TA 11-0388 locked at 6,000 kg', record: '2026/601/08852', by: 'Habibur Rahman', role: 'Shed in-charge', source: 'Device' },
+    { id: 'E-9', at: ago(0.7), text: 'Posting proposed for WB 15 D 7741: Shed 12', record: '2026/601/08890', by: 'Farhana Yasmin', role: 'Posting officer', source: 'IBMS' },
   ];
 
   return {
@@ -245,7 +332,7 @@ export function createSeed() {
     passes,
     bills,
     events,
-    corrections: [],
+    corrections,
     truckChanges: [],
     seq: 100,
   };

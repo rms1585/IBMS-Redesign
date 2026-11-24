@@ -8,6 +8,7 @@ import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { storageRules } from '../data/mock';
 import { AddRoundedIcon, UploadFileRoundedIcon } from '../components/icons';
+import { useStoredState } from '../demo/PortStore';
 
 const categories = ['Food', 'Chemical', 'Baby products', 'Textile', 'Rubber', 'Stone'];
 const stateColor = { Active: 'success', 'Waiting for approval': 'warning', Draft: 'default' };
@@ -70,7 +71,7 @@ function FormatDialog({ open, onClose }) {
 }
 
 export default function StorageRules() {
-  const [rules, setRules] = useState(storageRules);
+  const [rules, setRules] = useStoredState('storageRules', storageRules);
   const [tab, setTab] = useState('Active');
   const [open, setOpen] = useState(false);
   const [fmt, setFmt] = useState(false);

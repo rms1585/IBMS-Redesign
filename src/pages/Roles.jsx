@@ -8,6 +8,7 @@ import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { roles, modulesCatalog, ports } from '../data/mock';
 import { AddRoundedIcon } from '../components/icons';
+import { useStoredState } from '../demo/PortStore';
 
 function CreateRole({ open, onClose, onSave }) {
   const [step, setStep] = useState(0);
@@ -116,7 +117,7 @@ function CreateRole({ open, onClose, onSave }) {
 }
 
 export default function Roles() {
-  const [list, setList] = useState(roles);
+  const [list, setList] = useStoredState('roles', roles);
   const [tab, setTab] = useState('all');
   const [open, setOpen] = useState(false);
   const [copy, setCopy] = useState(null);

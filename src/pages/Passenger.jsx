@@ -19,6 +19,7 @@ import nexusDbblLogo from '../assets/payment/nexus-dbbl.png';
 import amexLogo from '../assets/payment/amex.png';
 import mastercardLogo from '../assets/payment/mastercard.jpg';
 import visaLogo from '../assets/payment/visa.jpg';
+import { useStoredState } from '../demo/PortStore';
 
 // Benapole charges as shown on BLPA's passenger site (passenger.blpa.gov.bd), read 10 Nov 2026.
 const FACILITY_CHARGE = 52.27;
@@ -28,6 +29,7 @@ const VAT = Math.round(FACILITY_CHARGE * VAT_RATE * 100) / 100;
 const PASSENGER_TOTAL = FACILITY_CHARGE + VAT + CONVENIENCE_FEE;
 // Demo charge only.
 const BUS_TERMINAL_CHARGE = 200;
+const NONE_USED = [];
 const ports = ['Benapole Land Port', 'Banglabandha Land Port', 'Burimari Land Port', 'Nakugaon Land Port'];
 // Neighbouring countries first, as on the BLPA site; the rest is a short demo list.
 const countries = [
@@ -54,6 +56,8 @@ const paymentMethods = [
 ];
 const categories = ['Standard', 'Illiterate (assisted)', 'Disabled', 'Sick', 'Exempt under the Customs Act'];
 const today = () => new Date().toISOString().slice(0, 10);
+// Stored with the record, so it has to stay true later: the clock time, not "Just now".
+const nowLabel = () => `Today, ${new Date().toTimeString().slice(0, 5)}`;
 const initialReceipts = [
   { id: 'PF-BEN-55104', name: 'Anirban Ghosh', phone: '', passport: 'Z4827713', country: 'IND-India', port: ports[0], date: today(), category: 'Standard', method: 'Cash at counter', at: 'Today, 10:48', by: 'Counter 2' },
   { id: 'PF-BEN-55103', name: 'Rafiqul Islam', phone: '01711234567', passport: 'A09451820', country: 'BGD-Bangladesh', port: ports[0], date: today(), category: 'Standard', method: 'bKash', at: 'Today, 10:42', by: 'Counter 2' },
@@ -263,10 +267,10 @@ function Reconciliation({ receipts, used }) {
 
 export default function Passenger() {
   const [tab, setTab] = useState('fees');
-  const [receipts, setReceipts] = useState(initialReceipts);
-  const [buses, setBuses] = useState(initialBuses);
+  const [receipts, setReceipts] = useStoredState('passengerReceipts', initialReceipts);
+  const [buses, setBuses] = useStoredState('busTrips', initialBuses);
   const [dialog, setDialog] = useState(false);
-  const [used, setUsed] = useState([]);
+  const [used, setUsed] = useStoredState('passengerTicketsUsed', NONE_USED);
   const [toast, setToast] = useState('');
   const passengers = receipts.length;
 
@@ -296,7 +300,7 @@ export default function Passenger() {
           onClose={() => setDialog(false)}
           onSave={(p) => {
             const id = `PF-BEN-${55101 + receipts.length}`;
-            setReceipts((rs) => [{ ...p, id, at: 'Just now', by: 'Counter 1' }, ...rs]);
+            setReceipts((rs) => [{ ...p, id, at: nowLabel(), by: 'Counter 1' }, ...rs]);
             setDialog(false);
             setToast(`${formatBDT(PASSENGER_TOTAL)} recorded for ${p.name}. Receipt ${id}.`);
           }}
@@ -306,7 +310,7 @@ export default function Passenger() {
         <BusForm
           onClose={() => setDialog(false)}
           onSave={(plate, operator) => {
-            setBuses((bs) => [{ id: `BT-BEN-${2211 + bs.length}`, plate, operator, at: 'Just now' }, ...bs]);
+            setBuses((bs) => [{ id: `BT-BEN-${2211 + bs.length}`, plate, operator, at: nowLabel() }, ...bs]);
             setDialog(false);
             setToast(`Bus terminal payment recorded for ${plate}.`);
           }}
