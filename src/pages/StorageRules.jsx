@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  Box, Card, Stack, Typography, Button, Tabs, Tab, Grid2 as Grid, TextField, MenuItem, Dialog, DialogTitle,
-  DialogContent, DialogActions, Alert, Snackbar, Table, TableHead, TableRow, TableCell, TableBody,
+  Box, Card, Stack, Typography, Button, Tabs, Tab, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Table, TableHead, TableRow, TableCell, TableBody,
 } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -54,12 +54,12 @@ function FormatDialog({ open, onClose }) {
             <TableHead><TableRow><TableCell sx={{ pl: 2 }}>Column</TableCell><TableCell sx={{ pr: 2 }}>Meaning / constraint</TableCell></TableRow></TableHead>
             <TableBody>
               {[['category_a', 'Active category name or ID'], ['category_b', 'Active category, different from A'], ['scope', 'bay, zone, adjacent or facility'], ['min_gap', 'Adjacent only; integer of at least 1'], ['reason', 'Evidence or business reason read by the approver']].map(([c, m]) => (
-                <TableRow key={c}><TableCell sx={{ pl: 2, fontFamily: 'monospace' }}>{c}</TableCell><TableCell sx={{ pr: 2 }}>{m}</TableCell></TableRow>
+                <TableRow key={c}><TableCell sx={{ pl: 2, fontWeight: 700 }}>{c}</TableCell><TableCell sx={{ pr: 2 }}>{m}</TableCell></TableRow>
               ))}
             </TableBody>
           </Table>
         </Card>
-        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'background.neutral', typography: 'caption', fontFamily: 'monospace' }}>Food,Chemical,adjacent,1,Contamination risk</Box>
+        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'background.neutral', typography: 'caption', fontWeight: 700 }}>Food,Chemical,adjacent,1,Contamination risk</Box>
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>

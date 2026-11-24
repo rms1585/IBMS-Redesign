@@ -1,106 +1,104 @@
 import { useState } from 'react';
-import {
-  Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Divider,
-} from '@mui/material';
-import { PageHeader, AssumptionNote, DetailRow, formatKg, formatBDT } from '../components/common';
-import DataTable from '../components/DataTable';
-import Label from '../components/Label';
-import { tariffLines } from '../data/mock';
+import { Alert, Box, Button, Card, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { formatBDT, formatDateTime } from '../demo/format';
+import { Confirmation, Plate, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const rate = (charge) => tariffLines.find((t) => t.charge === charge).rate;
-const ENTRANCE_FEE = rate('Entrance fee (inland gate)');
-const HALTAGE_PER_DAY = rate('Haltage');
-const SHED_RATE_PER_TONNE = rate('Shed storage, days 1–10');
-const initialCargo = [
-  { id: 'EXP-BEN-0931', type: 'Export', goods: 'Garment cartons', manifest: 'BEN-EGM-2026-01204', location: 'Shed 9 · S9A-R3', kg: 12000, days: 4, billed: false },
-  { id: 'EXP-BEN-0928', type: 'Re-export', goods: 'Machinery parts', manifest: 'BEN-EGM-2026-01198', location: 'Open yard 1 · OY1A-R2', kg: 7400, days: 9, billed: true },
-  { id: 'EXP-BEN-0925', type: 'Export', goods: 'Jute bags', manifest: 'BEN-EGM-2026-01187', location: 'Shed 5 · S5A-R4', kg: 5600, days: 2, billed: false },
-];
-const initialTrucks = [
-  { plate: 'JESSORE-TA-11-2240', manifest: 'BEN-EGM-2026-01204', driver: 'Nazmul Haque', location: 'Border gate lane B1', status: 'At the border' },
-  { plate: 'KHULNA-DA-14-0520', manifest: 'BEN-EGM-2026-01198', driver: 'Shafiq Uddin', location: 'Export yard', status: 'At the border' },
-  { plate: 'JESSORE-TA-11-2199', manifest: 'BEN-EGM-2026-01176', driver: 'Liton Das', location: 'Returned inland', status: 'Returned', returnCharge: 533.92, remark: 'Goods refused at the Indian side' },
-];
-const storageCharge = (c) => (c.kg / 1000) * SHED_RATE_PER_TONNE;
+// M2 3.5 and 3.6: export trucks stay loaded (export storage is off at every port by default), the consignment's trucks
+// wait for each other billed as halting, each leaves on a single-use pass, and the empty truck is recognised by plate.
+// Demo data local to this screen.
 
-function ReturnDialog({ truck, onClose, onSave }) {
-  const [days, setDays] = useState('');
-  const [remark, setRemark] = useState('');
-  const charge = ENTRANCE_FEE + Number(days) * HALTAGE_PER_DAY;
-  return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Record return of {truck.plate}</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>This export truck is going back inland without exporting.</Typography>
-        <Stack spacing={2}>
-          <TextField fullWidth required label="Days waited" value={days} onChange={(e) => setDays(e.target.value.replace(/\D/g, ''))} />
-          <TextField fullWidth required multiline minRows={2} label="Remark" value={remark} onChange={(e) => setRemark(e.target.value)} />
-        </Stack>
-        <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
-        <DetailRow label="Entrance fee">{formatBDT(ENTRANCE_FEE)}</DetailRow>
-        <DetailRow label="Haltage">{formatBDT(Number(days) * HALTAGE_PER_DAY)}</DetailRow>
-        <DetailRow label="Total"><b>{formatBDT(charge)}</b></DetailRow>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={days === '' || !remark.trim()} onClick={() => onSave(charge, remark.trim())}>Record return</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
+const ago = (h) => new Date(Date.now() - h * 3600000).toISOString();
+const HALTING = 300;
+
+const CONSIGNMENTS = [
+  {
+    id: 'BOX-601-2026-0412', exporter: 'Akij Jute Mills', goods: 'Jute yarn', released: true, billPaid: true,
+    trucks: [
+      { plate: 'Jessore-TA 14-1180', arrived: ago(30), state: 'Exited', pass: 'BEN-XP-00812', returned: ago(4) },
+      { plate: 'Jessore-TA 14-1203', arrived: ago(28), state: 'Pass valid', pass: 'BEN-XP-00813', returned: null },
+      { plate: 'Khulna-TA 11-0907', arrived: ago(9), state: 'Waiting for release', pass: null, returned: null },
+    ],
+  },
+  {
+    id: 'BOX-601-2026-0419', exporter: 'Pran Foods', goods: 'Packaged snacks', released: false, billPaid: false,
+    trucks: [{ plate: 'Dhaka Metro-TA 15-3321', arrived: ago(14), state: 'Waiting for release', pass: null, returned: null }],
+  },
+];
+
+const RETURNS = [
+  { id: 'RX-601-2026-0031', kind: 'Re-export of a temporary import', goods: 'Exhibition equipment', ref: 'Customs TI-601-2026-118', state: 'Waiting for release' },
+  { id: 'RT-601-2026-0007', kind: 'Refused export returning loaded', goods: 'Ceramic tiles', ref: 'Revenue desk approval, refusal noted by the foreign side', state: 'Approved' },
+];
 
 export default function ExportCargo() {
-  const [tab, setTab] = useState('cargo');
-  const [cargo, setCargo] = useState(initialCargo);
-  const [trucks, setTrucks] = useState(initialTrucks);
-  const [returning, setReturning] = useState(null);
-  const [toast, setToast] = useState('');
-
+  const t = useT();
+  const [tab, setTab] = useState(0);
+  const [returned, setReturned] = useState({});
+  const [msg, setMsg] = useState('');
   return (
     <>
-      <PageHeader title="Export" links={[{ name: 'Operations' }, { name: 'Export' }]} subtitle="Storage and billing for export and re-export cargo, and a record of export trucks that return inland." />
-      <Alert severity="info" sx={{ mb: 3 }}>Demonstration tariff, not legal rates.</Alert>
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
-        <Tab value="cargo" label="Cargo in storage" />
-        <Tab value="trucks" label="Export trucks" />
-      </Tabs>
-      {tab === 'cargo' ? (
-        <DataTable rows={cargo} searchKeys={['id', 'goods', 'manifest']} searchPlaceholder="Search cargo or manifest" rowKey={(r) => r.id} columns={[
-          { key: 'id', label: 'Cargo', render: (r) => <><Typography variant="subtitle2">{r.id}</Typography><Typography variant="caption" color="text.secondary">{r.manifest}</Typography></> },
-          { key: 'type', label: 'Type', render: (r) => <Label color={r.type === 'Export' ? 'info' : 'primary'}>{r.type}</Label> },
-          { key: 'goods', label: 'Goods', render: (r) => <>{r.goods}<Typography variant="caption" color="text.secondary" component="div">{formatKg(r.kg)}</Typography></> },
-          { key: 'location', label: 'Location' },
-          { key: 'days', label: 'Days stored' },
-          { key: 'charge', label: 'Storage charge', render: (r) => formatBDT(storageCharge(r)) },
-          { key: 'a', label: '', render: (r) => (r.billed ? <Label color="success">Billed</Label> : <Button size="small" variant="outlined" onClick={() => { setCargo((cs) => cs.map((c) => (c.id === r.id ? { ...c, billed: true } : c))); setToast(`${formatBDT(storageCharge(r))} billed for ${r.id}.`); }}>Bill storage</Button>) },
-        ]} />
-      ) : (
-        <>
-          <AssumptionNote code="F50" sx={{ mb: 3 }}>Whether an empty Bangladeshi export truck pays on return was asked and not answered. Here every returned truck pays.</AssumptionNote>
-          <DataTable rows={trucks} searchKeys={['plate', 'manifest']} searchPlaceholder="Search plate or manifest" rowKey={(r) => r.plate} columns={[
-            { key: 'plate', label: 'Truck', render: (r) => <><Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{r.plate}</Typography><Typography variant="caption" color="text.secondary">{r.driver}</Typography></> },
-            { key: 'manifest', label: 'Manifest' },
-            { key: 'location', label: 'Location' },
-            { key: 'status', label: 'Status', render: (r) => <Label color={r.status === 'Returned' ? 'warning' : 'info'}>{r.status}</Label> },
-            { key: 'returnCharge', label: 'Return charge', render: (r) => (r.returnCharge != null ? <>{formatBDT(r.returnCharge)}<Typography variant="caption" color="text.secondary" component="div">{r.remark}</Typography></> : '—') },
-            { key: 'a', label: '', render: (r) => r.status !== 'Returned' && <Button size="small" variant="outlined" onClick={() => setReturning(r)}>Record return</Button> },
-          ]} />
-        </>
-      )}
-      {returning && (
-        <ReturnDialog
-          truck={returning}
-          onClose={() => setReturning(null)}
-          onSave={(returnCharge, remark) => {
-            setTrucks((ts) => ts.map((t) => (t.plate === returning.plate ? { ...t, status: 'Returned', location: 'Returned inland', returnCharge, remark } : t)));
-            setToast(`${returning.plate} recorded as returned. ${formatBDT(returnCharge)} billed.`);
-            setReturning(null);
-          }}
-        />
-      )}
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
-      </Snackbar>
+      <PageHeader title={t('Export')} subtitle="Export storage is off at Benapole, so export trucks stay loaded until the consignment leaves." />
+      <Card sx={{ px: 2 }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
+          {['Export consignments', 'Re-export and returns'].map((x) => <Tab key={x} label={x} />)}
+        </Tabs>
+      </Card>
+      <Stack spacing={2} sx={{ mt: 2 }}>
+        {tab === 0 && CONSIGNMENTS.map((c) => {
+          const waiting = c.trucks.filter((x) => !x.pass);
+          const haltDays = c.trucks.reduce((s, x) => s + (x.state === 'Exited' ? 0 : Math.ceil((Date.now() - new Date(x.arrived)) / 86400000)), 0);
+          return (
+            <Card key={c.id} sx={{ p: 3 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 1 }}>
+                <Typography variant="h6">Bill of Export {c.id}</Typography>
+                <StatusPill word={c.released ? 'Released' : 'Waiting for release'} />
+                <StatusPill word={c.billPaid ? 'Paid' : 'Payment due'} />
+              </Stack>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{c.exporter} · {c.goods} · halting so far {haltDays} truck-days, {formatBDT(haltDays * HALTING)} on the export bill</Typography>
+              {waiting.length > 0 && <Alert severity="info" sx={{ mb: 2 }}>{waiting.length} truck{waiting.length === 1 ? '' : 's'} still waiting for Customs' release. The others wait loaded in the holding area and pay halting.</Alert>}
+              <ResponsiveTable
+                rowKey={(x) => x.plate}
+                rows={c.trucks}
+                columns={[
+                  { label: 'Plate', render: (x) => <Plate>{x.plate}</Plate> },
+                  { label: 'Arrived', priority: 'low', render: (x) => formatDateTime(x.arrived) },
+                  { label: 'Exit Pass', render: (x) => x.pass ?? '–' },
+                  { label: 'Status', render: (x) => <StatusPill word={returned[x.plate] || x.returned ? 'Closed' : x.state} /> },
+                  {
+                    label: 'Empty return',
+                    render: (x) => (x.returned || returned[x.plate]
+                      ? `Back empty ${formatDateTime(x.returned ?? returned[x.plate])}`
+                      : x.state === 'Exited'
+                        ? <Button size="small" variant="outlined" onClick={() => { setReturned({ ...returned, [x.plate]: new Date().toISOString() }); setMsg(`${x.plate} recognised by plate as returning empty`); }}>Read plate at the border gate</Button>
+                        : '–'),
+                  },
+                ]}
+              />
+            </Card>
+          );
+        })}
+        {tab === 1 && (
+          <Card sx={{ p: 3 }}>
+            <SectionTitle>Re-export of temporary imports, and returns of refused exports</SectionTitle>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Re-export goods are already in custody and are billed for storage to the date of the bill. A refused export truck returns against its export visit, which closes as refused and returned.</Typography>
+            <ResponsiveTable
+              rowKey={(r) => r.id}
+              rows={RETURNS}
+              columns={[
+                { label: 'Record', render: (r) => r.id },
+                { label: 'Kind', render: (r) => r.kind },
+                { label: 'Goods', priority: 'low', render: (r) => r.goods },
+                { label: 'Reference', priority: 'low', render: (r) => r.ref },
+                { label: 'Status', render: (r) => <StatusPill word={r.state} /> },
+              ]}
+            />
+          </Card>
+        )}
+      </Stack>
+      <Box />
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }

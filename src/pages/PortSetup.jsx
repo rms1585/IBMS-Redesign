@@ -8,7 +8,6 @@ import { alpha } from '@mui/material/styles';
 import { PageHeader, SectionCard, UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { ports, agencies, users } from '../data/mock';
-import { useTruckWeights } from '../TruckWeightsContext';
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, LockOutlinedIcon } from '../components/icons';
 
 const steps = [
@@ -36,12 +35,13 @@ function StepPort({ port }) {
 
 function StepModules({ modules, setModules }) {
   const rows = [
-    ['gates', 'Border and inland gates', 'Always on', true],
-    ['weigh', 'Weighing', 'Always on', true],
-    ['billing', 'Billing, payments and exit passes', 'Always on', true],
-    ['warehousing', 'Warehousing and posting', 'One capability: turning Warehousing off also turns off Posting.', false],
-    ['transshipment', 'Transshipment', 'Direct truck-to-truck transfer in a yard.', false],
-    ['stone', 'Stone route', 'Stone trucks leave loaded for a bonded yard and return empty for weighing.', false],
+    ['gates', 'Border and inland gates, weighing, billing and Exit Passes', 'Always on', true],
+    ['warehousing', 'Warehouse', 'Sheds and posting. Product routing follows the modules switched on.', false],
+    ['outsideYard', 'Outside yard (stone route)', 'Stays disabled until NBR and BLPA decide the stone route control.', false],
+    ['rail', 'Rail', 'Rake records at the port siding.', false],
+    ['busTerminal', 'Bus terminal', 'Bus desk and bus terminal charges.', false],
+    ['truckScanner', 'Truck scanner', 'Scanner lane at the gate.', false],
+    ['exportStorage', 'Export storage', 'Off at every port by default: export trucks stay loaded.', false],
   ];
   return (
     <>
@@ -61,20 +61,16 @@ function StepModules({ modules, setModules }) {
   );
 }
 
-const validTareMonths = (v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 12;
-
 function StepResources({ modules }) {
-  // The tare interval is read by the Weighbridge and the Border gate, so changing it here changes which trucks must be weighed (#73).
-  const { tareMonths, setTareMonths } = useTruckWeights();
-  const [months, setMonths] = useState(String(tareMonths));
-  const monthsValid = validTareMonths(months);
+  const [tolerance, setTolerance] = useState('5');
+  const toleranceValid = /^\d+(\.\d+)?$/.test(tolerance) && Number(tolerance) >= 1 && Number(tolerance) <= 20;
   const resources = [
     ['Border gate 1', 'Border gate', 'Lanes B1, B2', 'Live'],
     ['Inland gate', 'Inland gate', 'Lanes I1, I2', 'Live'],
     ['Scale 1', 'Weighbridge', 'Calibrated to 12 Jan 2027', 'Live'],
     ['Scale 2', 'Weighbridge', 'Calibration due in 6 days', 'Live'],
     ...(modules.warehousing ? [['Shed 5', 'Shed', '2 zones · 56 bays', 'Live'], ['Shed 9', 'Shed', '1 zone · 24 bays', 'Live']] : []),
-    ...(modules.transshipment ? [['Transshipment yard T1', 'Transshipment yard', '8 positions', 'Live']] : []),
+    ...(modules.rail ? [['Benapole siding', 'Rail siding', '2 lines', 'Live']] : []),
   ];
   return (
     <>
@@ -99,18 +95,22 @@ function StepResources({ modules }) {
         </Table>
       </Card>
       <Box sx={{ mt: 3, p: 2.5, borderRadius: 2, bgcolor: 'background.neutral' }}>
-        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Empty weighing rule</Typography>
+        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Weighing rules</Typography>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}><TextField
             fullWidth
             size="small"
-            label="Stored tare valid for (months)"
-            value={months}
-            onChange={(e) => { setMonths(e.target.value); if (validTareMonths(e.target.value)) setTareMonths(Number(e.target.value)); }}
-            error={!monthsValid}
-            helperText={monthsValid ? 'Applies to the Weighbridge and the Border gate at once.' : 'Enter 1 to 12 months.'}
+            label="Weight tolerance at this port (%)"
+            value={tolerance}
+            onChange={(e) => setTolerance(e.target.value)}
+            error={!toleranceValid}
+            helperText={toleranceValid ? 'Set by BLPA and Customs together. A versioned rule: a change goes to a second approver, and each weight check records the version it used.' : 'Enter a percentage from 1 to 20.'}
           /></Grid>
-          <Grid size={{ xs: 12, sm: 6 }}><TextField fullWidth size="small" select label="Weigh empty" defaultValue="missing" SelectProps={{ native: true }}><option value="missing">Only trucks with missing or expired tare</option><option value="all">Every truck</option></TextField></Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Typography variant="caption" color="text.secondary" component="div">Tare rule (every port)</Typography>
+            <Typography variant="body2" fontWeight={600}>Stored tare valid for 3 months</Typography>
+            <Typography variant="caption" color="text.secondary">Set by BLPA headquarters, the same at every port. A port cannot change it.</Typography>
+          </Grid>
         </Grid>
       </Box>
     </>
@@ -160,7 +160,7 @@ function StepGoLive({ port, modules, onRequest }) {
     ['Posting depends on Warehousing', modules.warehousing, true],
     ['At least one border gate, one inland gate and one calibrated scale', true, true],
     ...(modules.warehousing ? [['Warehouse facilities, zones and bays recorded', true, true]] : []),
-    ...(modules.transshipment ? [['Transshipment yard recorded', port.code !== 'HIL', true]] : []),
+    ...(modules.rail ? [['Rail siding recorded', port.code !== 'HIL', true]] : []),
     ['Equipment and labour recorded', port.readiness > 50, true],
     ['At least one port configuration administrator', true, true],
     ['At least two access administrators', port.readiness === 100, true],
@@ -204,7 +204,7 @@ const stateColor = (state) => (state === 'Live' ? 'success' : state.startsWith('
 export default function PortSetup() {
   const [portCode, setPortCode] = useState('SON');
   const [step, setStep] = useState(0);
-  const [modules, setModules] = useState({ warehousing: true, transshipment: true, stone: false });
+  const [modules, setModules] = useState({ warehousing: true, outsideYard: false, rail: true, busTerminal: true, truckScanner: false, exportStorage: false });
   const [toast, setToast] = useState('');
   const port = ports.find((p) => p.code === portCode);
 
@@ -227,7 +227,7 @@ export default function PortSetup() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: `${stateColor(p.state)}.main` }} />
                 <span>{p.name}</span>
-                <Typography component="span" variant="caption" color="text.disabled" sx={{ fontFamily: 'monospace' }}>{p.code}</Typography>
+                <Typography component="span" variant="caption" color="text.disabled" sx={{ fontWeight: 700 }}>{p.code}</Typography>
               </Stack>
             }
           />

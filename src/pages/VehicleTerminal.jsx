@@ -110,7 +110,7 @@ export default function VehicleTerminal() {
             renderItem={(v) => (
               <>
                 <Stack direction="row" justifyContent="space-between" gap={1}>
-                  <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }} noWrap>{v.plate}</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap>{v.plate}</Typography>
                   <Typography variant="caption" color="text.secondary">{v.waiting}</Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary" component="div" noWrap>{v.manifest}</Typography>

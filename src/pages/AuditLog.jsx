@@ -1,94 +1,45 @@
 import { useState } from 'react';
-import { Box, Card, Stack, Typography, Button, TextField, MenuItem, Drawer, IconButton, Divider, Checkbox, FormControlLabel } from '@mui/material';
-import { PageHeader, DetailRow } from '../components/common';
-import DataTable from '../components/DataTable';
-import Label from '../components/Label';
-import { useAudit } from '../AuditContext';
-import { CloseRoundedIcon, FileDownloadOutlinedIcon } from '../components/icons';
+import { Box, Card, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { usePort } from '../demo/PortStore';
+import { formatDateTime, searchKey } from '../demo/format';
+import { SourceMarker } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const flagColor = { Override: 'warning', 'Recorded offline': 'info', 'Manual pending reconciliation': 'error', Exception: 'default' };
+// M-13: every action as a plain sentence. No screen offers to edit or delete an entry, for any role.
+
+const SOURCES = ['Every source', 'BNSW', 'Device', 'IBMS', 'Keyed by the agency', 'Keyed at the gate', "Keyed from Customs' reference", 'Typed by hand', 'Back-entered from form', 'Payment provider'];
 
 export default function AuditLog() {
-  const { events } = useAudit();
-  const modules = ['All', ...new Set(events.map((e) => e.module))];
-  const [module, setModule] = useState('All');
-  const [flags, setFlags] = useState([]);
-  const [open, setOpen] = useState(null);
-  const rows = events.filter((e) => (module === 'All' || e.module === module) && (flags.length === 0 || flags.some((f) => e.flags.includes(f))));
-
+  const p = usePort();
+  const t = useT();
+  const [q, setQ] = useState('');
+  const [source, setSource] = useState('Every source');
+  const k = searchKey(q);
+  const rows = p.state.events.filter((e) => (source === 'Every source' || e.source === source) && (!k || searchKey(`${e.text} ${e.record} ${e.by}`).includes(k)));
   return (
     <>
-      <PageHeader
-        title="Audit log"
-        links={[{ name: 'Administration' }, { name: 'Audit log' }]}
-        subtitle="Append-only record of writes, approvals, imports, confirmations and downloads."
-        action={<Button variant="outlined" color="inherit" startIcon={<FileDownloadOutlinedIcon />}>Export</Button>}
-      />
-      <Card>
-        <Stack direction="row" spacing={2} sx={{ px: 2.5, pt: 2.5 }} alignItems="center" flexWrap="wrap" useFlexGap>
-          <TextField select size="small" label="Module" value={module} onChange={(e) => setModule(e.target.value)} sx={{ width: 180 }}>
-            {modules.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+      <PageHeader title={t('Audit log')} subtitle="Who, in which role, did what, to which record, and how each value was recorded. Entries cannot be changed or deleted." />
+      <Card sx={{ p: { xs: 2, sm: 3 } }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
+          <TextField size="small" label="Search records, people or words" value={q} onChange={(e) => setQ(e.target.value)} sx={{ flex: 1 }} />
+          <TextField select size="small" label="How the value was recorded" value={source} onChange={(e) => setSource(e.target.value)} sx={{ minWidth: 260 }}>
+            {SOURCES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </TextField>
-          <TextField size="small" label="From" type="date" defaultValue="2026-10-26" slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField size="small" label="To" type="date" defaultValue="2026-10-27" slotProps={{ inputLabel: { shrink: true } }} />
-          {/* Flag filters combine: an event shows if it carries any ticked flag; none ticked shows all. */}
-          <Stack direction="row" flexWrap="wrap" columnGap={1}>
-            {Object.keys(flagColor).map((f) => (
-              <FormControlLabel
-                key={f}
-                label={f}
-                sx={{ mr: 1, '& .MuiFormControlLabel-label': { typography: 'body2' } }}
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={flags.includes(f)}
-                    onChange={(e) => setFlags((cur) => (e.target.checked ? [...cur, f] : cur.filter((x) => x !== f)))}
-                  />
-                }
-              />
-            ))}
-          </Stack>
         </Stack>
-        <DataTable
-          card={false}
-          rows={rows}
-          searchKeys={['actor', 'text', 'role']}
-          searchPlaceholder="Search user, role or event"
-          onRowClick={setOpen}
-          rowKey={(r) => r.id}
-          columns={[
-            { key: 'time', label: 'Time', render: (r) => <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>{r.time}</Typography> },
-            { key: 'actor', label: 'Actor', render: (r) => <><Typography variant="subtitle2">{r.actor}</Typography><Typography variant="caption" color="text.secondary">{r.role}</Typography></> },
-            { key: 'text', label: 'Event' },
-            { key: 'flags', label: 'Flags', render: (r) => <Stack spacing={0.5} alignItems="flex-start">{r.flags.map((f) => <Label key={f} color={flagColor[f]}>{f}</Label>)}</Stack> },
-          ]}
-        />
-      </Card>
-      <Drawer anchor="right" open={Boolean(open)} onClose={() => setOpen(null)}>
-        {open && (
-          <Box sx={{ width: 480, maxWidth: '100vw' }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 3 }}>
-              <Typography variant="h6">{open.id}</Typography>
-              <IconButton onClick={() => setOpen(null)}><CloseRoundedIcon /></IconButton>
-            </Stack>
-            <Divider sx={{ borderStyle: 'dashed' }} />
-            <Box sx={{ p: 3 }}>
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>{open.text}</Typography>
-              <DetailRow label="Time">{open.time}</DetailRow>
-              <DetailRow label="Actor">{open.actor}</DetailRow>
-              <DetailRow label="Role">{open.role}</DetailRow>
-              <DetailRow label="Module">{open.module}</DetailRow>
-              <DetailRow label="Device">BEN-GATE-WS-02</DetailRow>
-              <DetailRow label="Origin">{open.flags.includes('Recorded offline') ? 'Offline contingency sheet, synced 07:40' : 'Online'}</DetailRow>
-              <DetailRow label="Flags">{open.flags.length ? open.flags.join(', ') : 'None'}</DetailRow>
-              <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>Before / after</Typography>
-              <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.neutral', typography: 'caption', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                {'{\n  "status": "assigned" → "admitted",\n  "gate": null → "Border gate 1 / B2"\n}'}
-              </Box>
+        {rows.length === 0 && <Typography variant="body2" color="text.secondary">Nothing matches. Clear the filter or search for a plate or manifest number.</Typography>}
+        <Stack spacing={1.5}>
+          {rows.map((e) => (
+            <Box key={e.id} sx={{ pb: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+              <Typography variant="body2">{e.by}, {e.role}: {e.text}</Typography>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                <Typography variant="caption" color="text.secondary">{formatDateTime(e.at)} · Benapole · {e.record}</Typography>
+                <SourceMarker source={e.source} always />
+              </Stack>
             </Box>
-          </Box>
-        )}
-      </Drawer>
+          ))}
+        </Stack>
+      </Card>
     </>
   );
 }

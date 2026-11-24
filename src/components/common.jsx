@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  Box, Stack, Typography, Breadcrumbs, Link, Card, InputAdornment, TextField, Avatar,
-  Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  Box, Stack, Typography, Breadcrumbs, Link, Card, InputAdornment, TextField, Avatar, Button,
 } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { InboxOutlinedIcon, SearchRoundedIcon, TrendingDownRoundedIcon, TrendingUpRoundedIcon } from './icons';

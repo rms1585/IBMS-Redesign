@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Button, Typography, Alert, Snackbar, Stack, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import {
+  Button, Typography, Alert, Snackbar, Stack, TextField,
+} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader, AssumptionNote } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';

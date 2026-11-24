@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  Box, Stack, Typography, Button, Grid2 as Grid, TextField, MenuItem, Dialog, DialogTitle, DialogContent,
-  DialogActions, Alert, Snackbar, IconButton, Menu,
+  Box, Stack, Typography, Button, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, IconButton, Menu,
 } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader, UserAvatar, ReasonDialog } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';

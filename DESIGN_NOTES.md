@@ -346,3 +346,23 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
   built files: run `npm run build` and push `dist/` to its `main` branch after each change.
 - Pushing a `v*` tag builds desktop installers into a GitHub Release (from `main` only).
 - After a deploy, hard-refresh (Ctrl/Cmd + Shift + R) to see changes.
+
+## 14. M2 realignment (branch `dev`, cards #88–#110)
+
+The prototype now follows the M2 report and its annexes. Where these notes disagree with M2, M2 applies
+(Annex 24: "where it differs from the report or the standard, the prototype is wrong").
+
+- **One operating record** (`src/demo/PortStore.jsx`): manifests and lines, truck visits (one visit carries
+  every manifest on the truck), Bills of Entry with releases and per-truck exit notes, named holds, Delivery
+  Requests, Exit Passes, bills and an event log with the source of every value. Kept between pages and reloads;
+  "Reset demo" in the user menu restores the seed (`src/demo/seed.js`).
+- **BNSW simulator** (External status, M-14): the only demo tool. Sends manifests, releases, exit notes and
+  holds, and takes BNSW or the exit check down.
+- **Roles** are the Annex 8 template roles, each with a named person who signs what the role does.
+- **Interface standard** (Annex 24) is in the style guide: five status tones, source markers, YYYY-MM-DD 24-hour
+  dates, plates in plain bold, in-place editing, no sideways scrolling, the fixed bench layout, Bangla and English.
+- **Replaced:** Part delivery by the Delivery Request (M2 3.4.10), Truck queue by the holding area (3.4.5), the
+  Exit pass screen by the inland gate's Exit Passes (3.4.11). Their old routes redirect.
+- **Settled by M2 against earlier decisions:** the Customs ARO signs the Exit Pass again (C1); paper release is
+  BNSW-down mode at the revenue desk (C2); examination is not tracked (C3); release runs per Bill of Entry (C4);
+  holds belong to the body that placed them (C5); the tare rule is national (C11).

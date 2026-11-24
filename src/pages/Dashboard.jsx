@@ -1,283 +1,137 @@
 import { useState } from 'react';
-import {
-  Box, Card, Stack, Tabs, Tab, Typography, Grid2 as Grid, Button, ToggleButtonGroup, ToggleButton,
-  Table, TableHead, TableRow, TableCell, TableBody, LinearProgress,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
-import { PieChart } from '@mui/x-charts/PieChart';
-import { PageHeader, KpiCard, SectionCard, formatBDT } from '../components/common';
-import Label from '../components/Label';
-import { BlockRoundedIcon, FileDownloadOutlinedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, TimerOutlinedIcon } from '../components/icons';
+import { Alert, Box, Card, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { billTotals, usePort } from '../demo/PortStore';
+import { formatBDT, formatDuration } from '../demo/format';
+import { ResponsiveTable, SectionTitle } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// M-11: one set of figures from the same records the ports operate on. Nothing is decided here.
+// Benapole's figures are live from the demo record; the comparison figures are demonstration figures.
 
-const reports = [
-  { name: 'Vehicle entry register', desc: 'Time, gate/lane, plate, kind, manifest, agency, operator, no-manifest/override.' },
-  { name: 'Vehicle exit register', desc: 'Departure, gate/lane, plate, pass, manifest, hold/manual flags.' },
-  { name: 'Weighbridge register', desc: 'Loaded/empty/return weights, billable tonnes, tare age, method, declared/difference.' },
-  { name: 'Posting / allocation', desc: 'Cargo-line shed/bay, wait time and overrides.' },
-];
-
-function Operations() {
-  const theme = useTheme();
+function Figure({ label, value, before, note }) {
   return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Admissions today" value="142" change={8.2} icon={<LocalShippingRoundedIcon />} /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Trucks inside" value="67" change={-3.1} icon={<LocalShippingRoundedIcon />} color="info" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Oldest wait" value="4h 12m" caption="WB-23-K-4402 · Shed 5" icon={<TimerOutlinedIcon />} color="warning" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Open holds" value="5" caption="2 Customs · 3 BLPA" icon={<BlockRoundedIcon />} color="error" /></Grid>
-
-      <Grid size={{ xs: 12, lg: 8 }}>
-        <SectionCard title="Admissions and departures" subheader="This week compared with the same week last year">
-          <Box sx={{ px: 1, pb: 1 }}>
-            <BarChart
-              height={320}
-              borderRadius={6}
-              xAxis={[{ scaleType: 'band', data: days, categoryGapRatio: 0.45, barGapRatio: 0.2 }]}
-              series={[
-                { data: [128, 141, 137, 152, 149, 96, 142], label: 'Admissions', color: theme.palette.primary.main },
-                { data: [121, 133, 140, 147, 151, 102, 118], label: 'Departures', color: theme.palette.warning.main },
-              ]}
-              slotProps={{ legend: { position: { vertical: 'top', horizontal: 'right' }, itemMarkWidth: 10, itemMarkHeight: 10, markGap: 6, itemGap: 16 } }}
-              margin={{ top: 40, right: 16, left: 40, bottom: 30 }}
-            />
-          </Box>
-        </SectionCard>
-      </Grid>
-      <Grid size={{ xs: 12, lg: 4 }}>
-        <SectionCard title="Trucks inside by kind" sx={{ height: '100%' }}>
-          <Box sx={{ display: 'grid', placeItems: 'center', pb: 2 }}>
-            <PieChart
-              height={240}
-              width={300}
-              series={[{
-                innerRadius: 64, outerRadius: 100, paddingAngle: 2, cornerRadius: 4,
-                data: [
-                  { id: 0, value: 38, label: 'Foreign loaded', color: theme.palette.primary.main },
-                  { id: 1, value: 11, label: 'Foreign empty', color: theme.palette.primary.dark },
-                  { id: 2, value: 14, label: 'Local receiving', color: theme.palette.warning.main },
-                  { id: 3, value: 4, label: 'Stone route', color: theme.palette.info.main },
-                ],
-              }]}
-              slotProps={{ legend: { hidden: true } }}
-              margin={{ right: 0, left: 0 }}
-            />
-          </Box>
-          <Stack spacing={1.25} sx={{ px: 3, pb: 3 }}>
-            {[['Foreign loaded', 38, 'primary.main'], ['Foreign empty', 11, 'primary.dark'], ['Local receiving', 14, 'warning.main'], ['Stone route', 4, 'info.main']].map(([l, v, c]) => (
-              <Stack key={l} direction="row" alignItems="center" spacing={1}>
-                <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: c }} />
-                <Typography variant="body2" sx={{ flex: 1 }}>{l}</Typography>
-                <Typography variant="subtitle2">{v}</Typography>
-              </Stack>
-            ))}
-          </Stack>
-        </SectionCard>
-      </Grid>
-
-      <Grid size={{ xs: 12, lg: 6 }}>
-        <SectionCard title="Needs attention" subheader="Live overview">
-          <Table size="small">
-            <TableBody>
-              {[
-                ['Loaded, awaiting exit pass', 9, 'warning'],
-                ['Unlinked admissions (no manifest)', 2, 'error'],
-                ['Expected arrivals in next 2 h', 14, 'info', 'Only trucks known in advance. Most IGMs are keyed when the truck arrives.'],
-                ['Scales due for calibration', 1, 'warning'],
-                ['Manual statuses awaiting reconciliation', 3, 'error'],
-              ].map(([l, v, c, note]) => (
-                <TableRow key={l}>
-                  <TableCell sx={{ pl: 3 }}>
-                    {l}
-                    {note && <Typography variant="caption" color="text.secondary" component="div" sx={{ whiteSpace: 'normal' }}>{note}</Typography>}
-                  </TableCell>
-                  <TableCell sx={{ pr: 3 }}><Label color={c}>{v}</Label></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </SectionCard>
-      </Grid>
-      <Grid size={{ xs: 12, lg: 6 }}>
-        <SectionCard title="Billed, counted and owed" subheader="Today, Benapole">
-          <Stack spacing={2.5} sx={{ px: 3, pb: 3 }}>
-            {[['Billed', 1248520, 100, 'primary'], ['Counted (cash, online, cleared cheques)', 1021340, 81.8, 'success'], ['Owed', 227180, 18.2, 'warning']].map(([l, v, pct, c]) => (
-              <Box key={l}>
-                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                  <Typography variant="body2" color="text.secondary">{l}</Typography>
-                  <Typography variant="subtitle2">{formatBDT(v)}</Typography>
-                </Stack>
-                <LinearProgress variant="determinate" value={pct} color={c} />
-              </Box>
-            ))}
-            <Typography variant="caption" color="text.disabled">Bank fallback payments count only after a second officer confirms them.</Typography>
-          </Stack>
-        </SectionCard>
-      </Grid>
-    </Grid>
-  );
-}
-
-function Revenue() {
-  const theme = useTheme();
-  return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Billed this month" value="BDT 3.42 cr" change={5.4} icon={<PaymentsRoundedIcon />} /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Collection rate" value="88.6%" change={1.2} icon={<PaymentsRoundedIcon />} color="success" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Outstanding balance" value="BDT 38.9 L" change={-6.0} icon={<PaymentsRoundedIcon />} color="warning" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Uncleared cheques" value="7" caption="BDT 4.1 L awaiting clearance" icon={<PaymentsRoundedIcon />} color="error" /></Grid>
-      <Grid size={12}>
-        <SectionCard title="Billed vs counted" subheader="Last 12 months (BDT  lakh)">
-          <Box sx={{ px: 1 }}>
-            <LineChart
-              height={340}
-              xAxis={[{ scaleType: 'point', data: ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'] }]}
-              series={[
-                { data: [281, 295, 302, 288, 310, 322, 318, 301, 327, 335, 330, 342], label: 'Billed', color: theme.palette.primary.main, area: true, showMark: false, curve: 'natural' },
-                { data: [250, 262, 270, 259, 276, 290, 281, 268, 291, 299, 296, 303], label: 'Counted', color: theme.palette.warning.main, showMark: false, curve: 'natural' },
-              ]}
-              sx={{ '& .MuiAreaElement-root': { fillOpacity: 0.12 } }}
-              slotProps={{ legend: { position: { vertical: 'top', horizontal: 'right' }, itemMarkWidth: 10, itemMarkHeight: 10 } }}
-              margin={{ top: 40, right: 20, left: 40, bottom: 30 }}
-            />
-          </Box>
-        </SectionCard>
-      </Grid>
-    </Grid>
-  );
-}
-
-function Performance() {
-  const rows = [
-    ['Gate-to-gate dwell (median)', '18h 40m', '21h 05m', 11.5],
-    ['Admission to weighing', '22m', '27m', 18.5],
-    ['Weighing to allocation', '41m', '38m', -7.9],
-    ['Release to departure', '2h 15m', '2h 50m', 20.6],
-    ['Manifest cycle (open to closure)', '3.2 days', '3.6 days', 11.1],
-  ];
-  return (
-    <Card>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ pl: 3 }}>Measure</TableCell>
-            <TableCell>This period</TableCell>
-            <TableCell>Preceding period</TableCell>
-            <TableCell sx={{ pr: 3 }}>Change</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.map(([m, a, b, c]) => (
-            <TableRow key={m} hover>
-              <TableCell sx={{ pl: 3, fontWeight: 600 }}>{m}</TableCell>
-              <TableCell>{a}</TableCell>
-              <TableCell sx={{ color: 'text.secondary' }}>{b}</TableCell>
-              <TableCell sx={{ pr: 3 }}><Label color={c >= 0 ? 'success' : 'error'}>{c >= 0 ? 'Faster' : 'Slower'} {Math.abs(c)}%</Label></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <Card sx={{ p: 2.5 }}>
+      <Typography variant="body2" color="text.secondary">{label}</Typography>
+      <Typography variant="h4" sx={{ my: 0.5 }}>{value}</Typography>
+      {before != null && <Typography variant="caption" color="text.secondary" component="div">Period before: {before}</Typography>}
+      {note && <Typography variant="caption" color="text.secondary" component="div">{note}</Typography>}
     </Card>
   );
 }
 
-function Simple({ items }) {
-  return (
-    <Grid container spacing={3}>
-      {items.map(([t, v, c, col]) => (
-        <Grid key={t} size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title={t} value={v} caption={c} color={col} /></Grid>
-      ))}
-    </Grid>
-  );
-}
-
-function Reports() {
-  return (
-    <Card>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ pl: 3 }}>Report</TableCell>
-            <TableCell>Contents</TableCell>
-            <TableCell sx={{ pr: 3 }}>Export</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {reports.map((r) => (
-            <TableRow key={r.name} hover>
-              <TableCell sx={{ pl: 3, fontWeight: 600, whiteSpace: 'nowrap' }}>{r.name}</TableCell>
-              <TableCell sx={{ color: 'text.secondary' }}>{r.desc}</TableCell>
-              <TableCell sx={{ pr: 3, whiteSpace: 'nowrap' }}>
-                <Button size="small" color="inherit">Preview</Button>
-                <Button size="small" color="inherit">CSV</Button>
-                <Button size="small" color="inherit">Excel</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', px: 3, py: 2 }}>
-        Only reports you are entitled to are listed. Downloads are named by port and date range and recorded in the audit log.
-      </Typography>
-    </Card>
-  );
+function useLiveFigures() {
+  const p = usePort();
+  const s = p.state;
+  const inPort = s.visits.filter((v) => v.gateIn && v.stage !== 'Exited');
+  const holding = s.visits.filter((v) => v.holding || v.stage === 'Manifest not yet available');
+  const exited = s.visits.filter((v) => v.exitAt && v.gateIn);
+  const avgMins = exited.length ? exited.reduce((sum, v) => sum + (new Date(v.exitAt) - new Date(v.gateIn.at)) / 60000, 0) / exited.length : 0;
+  const revenue = s.bills.filter((b) => b.status === 'Paid').reduce((sum, b) => sum + billTotals(b).total, 0);
+  const other = s.manifests.filter((m) => m.source === 'Other').length;
+  return {
+    inPort: inPort.length,
+    holding: holding.length,
+    holds: p.activeHolds.length,
+    flags: s.visits.filter((v) => v.weigh?.overTolerance).length,
+    open: s.manifests.filter((m) => p.openReasons(m.id).length).length,
+    avgTime: avgMins ? `${Math.floor(avgMins / 60)} h ${Math.round(avgMins % 60)} min` : '–',
+    revenue,
+    otherShare: s.manifests.length ? `${Math.round((other / s.manifests.length) * 100)}%` : '0%',
+    oldestHolding: holding.map((v) => v.holding?.since ?? v.gateIn?.at).filter(Boolean).sort()[0],
+  };
 }
 
 export default function Dashboard() {
-  const [tab, setTab] = useState('operations');
-  const [period, setPeriod] = useState('week');
-
+  const p = usePort();
+  const t = useT();
+  const f = useLiveFigures();
+  const [view, setView] = useState('supervisor');
+  const [period, setPeriod] = useState('Today');
+  const problems = [
+    p.state.bnswDown && 'BNSW is down: the port works in BNSW-down mode.',
+    p.state.exitCheckDown && 'The exit check is down: trucks are held at the exit lanes.',
+    f.holding > 0 && `${f.holding} truck${f.holding === 1 ? '' : 's'} in the holding area, oldest waiting ${formatDuration(f.oldestHolding)}.`,
+    f.holds > 0 && `${f.holds} hold${f.holds === 1 ? '' : 's'} open on cargo or trucks.`,
+  ].filter(Boolean);
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        links={[{ name: 'Overview', href: '/' }, { name: 'Dashboard' }]}
+        title={t('Dashboard')}
+        subtitle={view === 'hq' ? 'All ports' : 'Benapole'}
         action={
-          <>
-            <ToggleButtonGroup size="small" exclusive value={period} onChange={(e, v) => v && setPeriod(v)}>
-              <ToggleButton value="day">Today</ToggleButton>
-              <ToggleButton value="week">Week</ToggleButton>
-              <ToggleButton value="month">Month</ToggleButton>
-              <ToggleButton value="year">Year</ToggleButton>
+          <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+            <ToggleButtonGroup exclusive size="small" value={view} onChange={(_, v) => v && setView(v)} aria-label="Dashboard view">
+              <ToggleButton value="supervisor">Checkpoint supervisor</ToggleButton>
+              <ToggleButton value="manager">Port manager</ToggleButton>
+              <ToggleButton value="hq">Headquarters</ToggleButton>
             </ToggleButtonGroup>
-            <Button variant="contained" startIcon={<FileDownloadOutlinedIcon />}>Export</Button>
-          </>
+            <TextField select size="small" label="Period" value={period} onChange={(e) => setPeriod(e.target.value)} sx={{ minWidth: 150 }}>
+              {['Today', 'This week', 'This month'].map((x) => <MenuItem key={x} value={x}>{x}</MenuItem>)}
+            </TextField>
+          </Stack>
         }
       />
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
-        <Tab value="operations" label="Operations" />
-        <Tab value="performance" label="Performance" />
-        <Tab value="revenue" label="Revenue" />
-        <Tab value="resources" label="Resources" />
-        <Tab value="control" label="Control" />
-        <Tab value="reports" label="Reports" />
-      </Tabs>
-      {tab === 'operations' && <Operations />}
-      {tab === 'performance' && <Performance />}
-      {tab === 'revenue' && <Revenue />}
-      {tab === 'resources' && (
-        <Simple items={[
-          ['Tonnes weighed', '8,412 t', 'This week', 'primary'],
-          ['Storage occupancy', '71%', 'Of usable bay capacity (blocked bays excluded)', 'info'],
-          ['Blocked bays', '6', 'Across 3 facilities', 'warning'],
-          ['Separation violations', '0', 'No active violations', 'success'],
-          ['Transfer-yard utilisation', '54%', 'Yard T1', 'info'],
-          ['Calibration due', '1 scale', 'Scale 2 due in 6 days', 'warning'],
-        ]} />
+      {problems.length > 0 && view !== 'hq' && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="subtitle2">Live problems at Benapole</Typography>
+          <Box component="ul" sx={{ m: 0, pl: 2.5 }}>{problems.map((x) => <li key={x}><Typography variant="body2">{x}</Typography></li>)}</Box>
+        </Alert>
       )}
-      {tab === 'control' && (
-        <Simple items={[
-          ['Holds', '5', '2 Customs · 3 BLPA', 'error'],
-          ['Management review', '2', 'Unregistered admissions to confirm', 'warning'],
-          ['Approved overrides', '3', 'This week', 'info'],
-          ['Corrections', '4', 'All with approved requests', 'info'],
-          ['Unauthorised exits', '0', 'This week', 'success'],
-          ['Audit integrity', 'No history', 'Comparison not available for this period', 'primary'],
-        ]} />
+      {view === 'supervisor' && (
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' } }}>
+          <Figure label="Trucks in the port" value={f.inPort} />
+          <Figure label="In the holding area" value={f.holding} note="Only trucks with nowhere to go" />
+          <Figure label="Holds open" value={f.holds} />
+          <Figure label="Weight over tolerance" value={f.flags} note="Flags, not holds" />
+        </Box>
       )}
-      {tab === 'reports' && <Reports />}
+      {view === 'manager' && (
+        <Stack spacing={3}>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' } }}>
+            <Figure label="Time in port, foreign trucks" value={f.avgTime} before="31 h 10 min" note="Gate in to exit, measured for the first time" />
+            <Figure label="Revenue collected" value={formatBDT(f.revenue)} before={formatBDT(18420)} />
+            <Figure label="Records open past their limit" value={f.open} note="Each with an owner on the daily list" />
+            <Figure label="Manifests keyed as Other" value={f.otherShare} note="Retire the Other entry once BNSW is reliable" />
+          </Box>
+          <Card sx={{ p: 3 }}>
+            <SectionTitle>Free space</SectionTitle>
+            <ResponsiveTable
+              rowKey={(s) => s.id}
+              rows={p.port.sheds}
+              columns={[
+                { label: 'Shed or yard', render: (s) => s.id },
+                { label: 'Capacity', align: 'right', render: (s) => `${s.capacityT} t` },
+                { label: 'Used', align: 'right', render: (s) => `${s.usedT} t` },
+                { label: 'Free', align: 'right', render: (s) => `${s.capacityT - s.usedT} t (${Math.round(((s.capacityT - s.usedT) / s.capacityT) * 100)}%)` },
+              ]}
+            />
+          </Card>
+        </Stack>
+      )}
+      {view === 'hq' && (
+        <Card sx={{ p: 3 }}>
+          <SectionTitle>Pilot ports side by side · {period}</SectionTitle>
+          <ResponsiveTable
+            rowKey={(r) => r.port}
+            rows={[
+              { port: 'Benapole', trucks: f.inPort, holding: f.holding, holds: f.holds, time: f.avgTime, revenue: formatBDT(f.revenue), feed: p.state.bnswDown ? 'Down' : 'Live' },
+              { port: 'Bhomra', trucks: 41, holding: 3, holds: 1, time: '22 h 40 min', revenue: formatBDT(126400), feed: 'Live' },
+              { port: 'Burimari', trucks: 28, holding: 0, holds: 0, time: '18 h 05 min', revenue: formatBDT(88150), feed: 'Live' },
+            ]}
+            columns={[
+              { label: 'Port', render: (r) => r.port },
+              { label: 'Trucks in port', align: 'right', render: (r) => r.trucks },
+              { label: 'Holding area', align: 'right', render: (r) => r.holding },
+              { label: 'Holds open', align: 'right', priority: 'low', render: (r) => r.holds },
+              { label: 'Time in port', align: 'right', priority: 'low', render: (r) => r.time },
+              { label: 'Revenue', align: 'right', render: (r) => r.revenue },
+              { label: 'BNSW', render: (r) => r.feed },
+            ]}
+          />
+          <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5 }}>Benapole is live from the demo record; Bhomra and Burimari are demonstration figures.</Typography>
+        </Card>
+      )}
     </>
   );
 }

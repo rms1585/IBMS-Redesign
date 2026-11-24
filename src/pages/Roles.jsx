@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  Box, Card, Stack, Typography, Button, Tabs, Tab, Stepper, Step, StepLabel, TextField, MenuItem, Grid2 as Grid,
-  Checkbox, FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, Divider,
+  Box, Card, Stack, Typography, Button, Tabs, Tab, Stepper, Step, StepLabel, TextField, MenuItem, Grid2 as Grid, Checkbox, FormControlLabel, Alert, Snackbar, Divider,
 } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';

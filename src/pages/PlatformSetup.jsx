@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  Box, Card, Stack, Typography, Tabs, Tab, Button, Grid2 as Grid, TextField, MenuItem, Dialog, DialogTitle,
-  DialogContent, DialogActions, Alert, Snackbar, Step, StepLabel, Stepper,
+  Box, Card, Stack, Typography, Tabs, Tab, Button, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Step, StepLabel, Stepper,
 } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader, formatBDT } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -213,7 +213,7 @@ export default function PlatformSetup() {
           searchKeys={['code', 'name']}
           searchPlaceholder="Search code or name"
           columns={[
-            { key: 'code', label: 'Code', render: (r) => <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{r.code}</Typography> },
+            { key: 'code', label: 'Code', render: (r) => <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{r.code}</Typography> },
             { key: 'name', label: 'Port', render: (r) => <><Typography variant="subtitle2">{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.station}</Typography></> },
             { key: 'tariff', label: 'Tariff' },
             { key: 'state', label: 'State', render: (r) => <Label color={r.state === 'Live' ? 'success' : r.state.startsWith('Awaiting') ? 'info' : 'warning'}>{r.state}</Label> },

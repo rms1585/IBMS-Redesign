@@ -100,11 +100,12 @@
 <div class="wrap">
   <header>
     <div class="eyebrow">IBMS Redesign · BLPA land ports</div>
-    <h1>Style guide: colour and typography</h1>
+    <h1>Style guide: colour, typography and the interface standard</h1>
     <p>The colours and type styles the prototype uses. Every screen follows this guide; a new colour, size or weight is added here and in the theme first, never in a single screen. Every value comes from the IBMS Figma design system, through the app theme. In screens, use the token names (for example <code>primary.main</code>), never raw hex codes.</p>
     <nav aria-label="Sections">
       <a href="#colour">Colour</a>
       <a href="#typography">Typography</a>
+      <a href="#standard">Interface standard (Annex 24)</a>
     </nav>
   </header>
 
@@ -269,12 +270,59 @@
       <h3>Typography rules</h3>
       <ul class="rules">
         <li><strong>Page titles are h4; card titles are h6.</strong> Body text in tables and forms is body2.</li>
-        <li><strong>Plates, manifest IDs and references use the monospace token</strong> (<code>typography.monospace</code>: SF Mono, Menlo or Consolas, by platform) at a size from the scale, for example <span class="mono">WB-19-C-0812</span>.</li>
+        <li><strong>Plates are plain bold text</strong> (body2 or larger, weight 700) with no plate-style box and no monospace. <strong>Identifiers</strong> (manifest numbers, the Bill of Entry in its four parts, pass numbers) are shown in the form their issuer prints them, never wrapped, shortened or cut (Annex 24.6).</li>
         <li><strong>Weights are 400 to 700 only.</strong> Nothing uses 800.</li>
         <li><strong>Two recorded exceptions:</strong> collapsed side-nav labels and badges are 10px, because caption (12px) clips under the icons in the 88px rail; the live scale reading on the Weighbridge grows from 32px to 56px with its column, and KPI card values are h3 that shrinks with the card down to 16px.</li>
         <li><strong>Buttons are never uppercase.</strong> Large buttons use a 16px label; Medium and Small use 14px.</li>
         <li><strong>Money is written as BDT 1,234.56.</strong> Don't use the ৳ sign: Public Sans doesn't include it, so it renders in a fallback font.</li>
         <li><strong>Table header cells</strong> are 14px SemiBold in secondary text on the neutral background.</li>
+      </ul>
+    </section>
+
+    <section id="standard" aria-labelledby="standard-title">
+      <h2 id="standard-title">Interface standard (M2 Annex 24)</h2>
+      <p>Adopted 24 Nov 2026 with the M2 realignment. Where this guide and the M2 report or Annex 24 disagree, the report and the annex apply. Shared components in <code>src/demo/ui.jsx</code>, <code>src/demo/status.js</code> and <code>src/demo/format.js</code> carry these rules, so a screen uses them instead of setting values itself.</p>
+
+      <h3>Five status tones, fixed meanings</h3>
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>Tone</th><th>Means</th><th>Examples</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag" style="background:rgba(26,156,101,.16);color:#1B8056">Green</span></td><td>Done, cleared, admitted, valid, paid</td><td>Released · Paid · Admitted · Pass valid</td></tr>
+            <tr><td><span class="tag" style="background:rgba(65,102,251,.16);color:#0C1BC7">Blue</span></td><td>Waiting on someone else: Customs, BNSW, the agency, the bank</td><td>Awaiting Customs · Waiting for BNSW · Paid, awaiting settlement</td></tr>
+            <tr><td><span class="tag" style="background:rgba(255,167,15,.16);color:#945700">Amber</span></td><td>Needs attention soon; stops nothing</td><td>Weight over tolerance · Waiting approval · Payment due · Typed by hand</td></tr>
+            <tr><td><span class="tag" style="background:rgba(255,48,48,.16);color:#C80D0D">Red</span></td><td>Stopped, and only stopped</td><td>Customs hold · BGB stop · Held at the barrier · Pass invalidated</td></tr>
+            <tr><td><span class="tag" style="background:rgba(145,158,171,.16);color:#677481">Grey</span></td><td>Closed, used, replaced or not applicable</td><td>Closed · Pass used · Superseded · For information</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="rules" style="margin-top:16px">
+        <li><strong>Only words from the status list</strong> in <code>src/demo/status.js</code>, each with its one tone. A new word is added there first.</li>
+        <li><strong>Every state is a word in a pill</strong>, never a coloured dot alone. Red is never used for a flag or a typed value.</li>
+        <li><strong>A hold always names its body</strong> (Customs, BLPA, BGB or Immigration), the person, the time and any reference. Only that body lifts it.</li>
+      </ul>
+
+      <h3>Where a value came from</h3>
+      <p>A value that did not come from a device or BNSW carries an amber outlined marker: <span class="tag" style="border:1px solid #945700;color:#945700">Keyed at the gate</span> <span class="tag" style="border:1px solid #945700;color:#945700">Keyed by the agency</span> <span class="tag" style="border:1px solid #945700;color:#945700">Keyed from Customs' reference</span> <span class="tag" style="border:1px solid #945700;color:#945700">Typed by hand</span> <span class="tag" style="border:1px solid #945700;color:#945700">Declared</span>. When BNSW agrees it becomes <span class="tag" style="border:1px solid #1B8056;color:#1B8056">Keyed, confirmed by BNSW</span>.</p>
+
+      <h3>Dates, money, weights and identifiers</h3>
+      <ul class="rules">
+        <li><strong>Dates are year-month-day and 24-hour time</strong> in Bangladesh time: <code>2026-11-24 14:05</code>, or <code>Today 14:05</code> for today. Durations in hours and minutes; storage and halting in days.</li>
+        <li><strong>Money</strong> is <code>BDT 1,234.56</code>: thousands separators and two decimals.</li>
+        <li><strong>Weights</strong> in kilograms exactly as recorded; billable weight separately in whole tonnes, rounded up.</li>
+        <li><strong>A missing value is a single dash</strong>; a value that does not apply says why, never zero.</li>
+        <li><strong>Search ignores spaces, dashes and capitals</strong>, so <code>wb23d1187</code> finds WB 23 D 1187.</li>
+      </ul>
+
+      <h3>Layout and behaviour</h3>
+      <ul class="rules">
+        <li><strong>Bench</strong> for checkpoint work: context strip, then the queue (oldest first, never paginated), the subject with the plate as the largest text, and on the right the camera still, the checklist, the one blocking reason and the one action with its key letter. All of it fits at 1366 × 768. No journey stage on an operator's bench.</li>
+        <li><strong>Checklists use three marks only:</strong> a tick the system made, a cross with its reason, a grey information mark.</li>
+        <li><strong>Create and edit happen in place</strong>, beside the list. A pop-up only confirms something that cannot be undone, stops work being lost, or signs an approval.</li>
+        <li><strong>Nothing scrolls sideways</strong> at desktop widths or on a 390 px phone. Tables drop less important columns when narrow; on a phone each row becomes a card.</li>
+        <li><strong>Buttons say verb and thing</strong> ("Admit truck", "Record the release"), never OK or Submit. A refusal is a banner beside the action listing each blocker.</li>
+        <li><strong>Every label exists in Bangla and English</strong>, chosen in the top bar and kept between sessions. Plates, identifiers and names are never translated.</li>
+        <li><strong>Top bar order:</strong> menu, environment name · lookup, port, language, bell, full screen, user.</li>
       </ul>
     </section>
   </main>

@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Card, Stack, Typography, Grid2 as Grid, Switch, Alert, Box, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar } from '@mui/material';
+import {
+  Card, Stack, Typography, Grid2 as Grid, Switch, Alert, Box, TextField, Button, Snackbar,
+} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader, KpiCard, SectionCard } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -25,7 +28,7 @@ export default function Technical() {
       </Grid>
       <SectionCard title="Ports and stations">
         <DataTable card={false} rows={nodes} columns={[
-          { key: 'port', label: 'Port', render: (r) => <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{r.port}</Typography> },
+          { key: 'port', label: 'Port', render: (r) => <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{r.port}</Typography> },
           { key: 'station', label: 'Station' },
           { key: 'state', label: 'Node', render: (r) => <Label color={color[r.state]}>{r.state}</Label> },
           { key: 'held', label: 'Held' },

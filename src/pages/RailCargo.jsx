@@ -1,51 +1,84 @@
 import { useState } from 'react';
-import { Button, Typography, Alert, Snackbar, Grid2 as Grid } from '@mui/material';
-import { PageHeader, KpiCard, AssumptionNote, formatKg } from '../components/common';
-import DataTable from '../components/DataTable';
-import Label from '../components/Label';
+import { Alert, Box, Button, Card, Stack, TextField, Typography } from '@mui/material';
+import { PageHeader } from '../components/common';
+import { formatKg } from '../demo/format';
+import { Confirmation, Fact, Facts, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const stages = ['Awaiting entry', 'Entered', 'Weighed', 'Unloaded'];
-const stageColor = { 'Awaiting entry': 'default', Entered: 'info', Weighed: 'primary', Unloaded: 'success' };
-const nextAction = { 'Awaiting entry': 'Record entry', Entered: 'Record weight', Weighed: 'Record unloading' };
-const initialWagons = [
-  { wagon: 'WGN-40217', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 58240, measuredKg: 58240, stage: 'Weighed' },
-  { wagon: 'WGN-40218', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 57910, stage: 'Entered' },
-  { wagon: 'WGN-40219', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 58120, stage: 'Awaiting entry' },
-  { wagon: 'WGN-40220', manifest: 'BEN-IGM-2026-08902', goods: 'Fly ash', declaredKg: 58000, liveKg: 57990, stage: 'Awaiting entry' },
+// M-16: a train is known by its train and wagon numbers and its railway receipt, not by a plate.
+// The rake record opens when the train is on record and closes when the wagons leave. Demo data local to this screen.
+
+const INITIAL = [
+  { wagon: 'WGN-40217', seal: 'RS-883102', handling: 'Unload to Shed 7', goods: 'Fly ash', kg: 58000, checked: null },
+  { wagon: 'WGN-40218', seal: 'RS-883103', handling: 'Transfer to road trucks', goods: 'Fly ash', kg: 58000, checked: null },
+  { wagon: 'WGN-40219', seal: 'RS-883104', handling: 'Self-driven vehicles (6)', goods: 'Tractors', kg: 21600, checked: null },
+  { wagon: 'WGN-40220', seal: 'RS-883105', handling: 'Pass-through, no unloading', goods: 'Sealed containers', kg: 40000, checked: null },
 ];
-const nextStage = (stage) => stages[stages.indexOf(stage) + 1];
 
 export default function RailCargo() {
-  const [wagons, setWagons] = useState(initialWagons);
-  const [toast, setToast] = useState('');
-  const count = (stage) => wagons.filter((w) => w.stage === stage).length;
-  const advance = (row) => {
-    const stage = nextStage(row.stage);
-    setWagons((ws) => ws.map((w) => (w.wagon === row.wagon ? { ...w, stage, measuredKg: stage === 'Weighed' ? w.liveKg : w.measuredKg } : w)));
-    setToast(`${row.wagon}: ${stage.toLowerCase()}.`);
+  const t = useT();
+  const [wagons, setWagons] = useState(INITIAL);
+  const [rep, setRep] = useState('');
+  const [signed, setSigned] = useState(null);
+  const [msg, setMsg] = useState('');
+  const check = (wagon, ok) => {
+    setWagons((ws) => ws.map((w) => (w.wagon === wagon ? { ...w, checked: ok ? 'Seal intact' : 'Difference recorded, photo attached' } : w)));
+    setMsg(ok ? `${wagon}: seal matches the wagon list` : `${wagon}: difference recorded with a photo`);
   };
-
+  const allChecked = wagons.every((w) => w.checked);
   return (
     <>
-      <PageHeader title="Rail cargo" links={[{ name: 'Operations' }, { name: 'Rail cargo' }]} subtitle="Rake RK-BEN-112: each wagon moves through entry, weighing and unloading." />
-      <AssumptionNote code="F51" sx={{ mb: 3 }}>Draft design, to be shared with BLPA first.</AssumptionNote>
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="Awaiting entry" value={count('Awaiting entry')} /></Grid>
-        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="In the port" value={count('Entered') + count('Weighed')} color="info" /></Grid>
-        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="Unloaded" value={count('Unloaded')} color="success" /></Grid>
-      </Grid>
-      <DataTable rows={wagons} searchKeys={['wagon', 'manifest']} searchPlaceholder="Search wagon or manifest" rowKey={(r) => r.wagon} columns={[
-        { key: 'wagon', label: 'Wagon', render: (r) => <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>{r.wagon}</Typography> },
-        { key: 'manifest', label: 'Manifest' },
-        { key: 'goods', label: 'Goods' },
-        { key: 'declaredKg', label: 'Declared', render: (r) => formatKg(r.declaredKg) },
-        { key: 'measuredKg', label: 'Weighed', render: (r) => (r.measuredKg ? formatKg(r.measuredKg) : '—') },
-        { key: 'stage', label: 'Stage', render: (r) => <Label color={stageColor[r.stage]}>{r.stage}</Label> },
-        { key: 'a', label: '', render: (r) => nextAction[r.stage] && <Button size="small" variant="outlined" onClick={() => advance(r)}>{nextAction[r.stage]}</Button> },
-      ]} />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
-      </Snackbar>
+      <PageHeader title={t('Rail cargo')} subtitle="Rail module is on at Benapole and Bhomra. BLPA bills storage and handling only; freight and demurrage are settled outside IBMS." />
+      <Stack spacing={3}>
+        <Card sx={{ p: 3 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 2 }}>
+            <Typography variant="h6">Rake record RK-BEN-112</Typography>
+            <StatusPill word={signed ? 'Closed' : 'Open'} />
+          </Stack>
+          <Facts cols={4}>
+            <Fact label="Train">Up goods 4417, Petrapole to Benapole</Fact>
+            <Fact label="Railway receipt">RR-ER-2026-558120</Fact>
+            <Fact label="Manifest">2026/601/08902 · from BNSW</Fact>
+            <Fact label="Wagons">{wagons.length}</Fact>
+          </Facts>
+        </Card>
+        <Card sx={{ p: 3 }}>
+          <SectionTitle>Joint check at the hand-over</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>BLPA and the railway check each wagon's seal and condition against the wagon list. Any difference is recorded with a photo.</Typography>
+          <ResponsiveTable
+            rowKey={(w) => w.wagon}
+            rows={wagons}
+            columns={[
+              { label: 'Wagon', render: (w) => w.wagon },
+              { label: 'Seal', render: (w) => w.seal },
+              { label: 'Goods', priority: 'low', render: (w) => `${w.goods} · ${formatKg(w.kg)}` },
+              { label: 'Handling', render: (w) => w.handling },
+              {
+                label: 'Check',
+                render: (w) => (w.checked ? <Typography variant="body2">{w.checked}</Typography> : (
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="outlined" onClick={() => check(w.wagon, true)}>Seal intact</Button>
+                    <Button size="small" color="warning" onClick={() => check(w.wagon, false)}>Record a difference</Button>
+                  </Stack>
+                )),
+              },
+            ]}
+          />
+        </Card>
+        <Card sx={{ p: 3 }}>
+          <SectionTitle>Sign the joint wagon list</SectionTitle>
+          {signed ? (
+            <Typography variant="body2">Signed by Anwar Hossain, rail siding officer, and {signed}, railway representative, on the officer's device with a signature image.</Typography>
+          ) : (
+            <Stack spacing={2}>
+              {!allChecked && <Alert severity="info">Check every wagon before the hand-over is signed. The rake record cannot close while a wagon is unaccounted for.</Alert>}
+              <TextField label="Railway representative's name and organisation" value={rep} onChange={(e) => setRep(e.target.value)} sx={{ maxWidth: 480 }} helperText="The representative has no IBMS account and countersigns on the officer's device." />
+              <Box><Button variant="contained" disabled={!allChecked || !rep.trim()} onClick={() => { setSigned(rep.trim()); setMsg('Joint wagon list signed'); }}>Sign wagon list</Button></Box>
+            </Stack>
+          )}
+        </Card>
+      </Stack>
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }

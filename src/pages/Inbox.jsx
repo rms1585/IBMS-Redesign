@@ -1,202 +1,104 @@
 import { useState } from 'react';
-import {
-  Box, Card, Stack, Typography, Button, Tabs, Tab, Divider, Alert, Snackbar, Tooltip,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, ToggleButtonGroup, ToggleButton,
-} from '@mui/material';
-import { PageHeader, SearchField, EmptyState, UserAvatar, ReasonDialog, AssumptionNote } from '../components/common';
-import Label from '../components/Label';
-import { inboxRequests, decidedRequests, currentUser } from '../data/mock';
-import { useTruckWeights, AUTHORITIES } from '../TruckWeightsContext';
-import { useCfAlerts } from '../CfAlertsContext';
-import { useAudit } from '../AuditContext';
-import { useCustoms } from '../CustomsContext';
+import { Box, Button, Card, Stack, TextField, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { PageHeader } from '../components/common';
+import { usePort } from '../demo/PortStore';
+import { formatDateTime } from '../demo/format';
+import { Confirmation, Plate, SectionTitle, StatusPill } from '../demo/ui';
+import { useT } from '../i18n/LanguageContext';
 
-const kindColor = {
-  'Port go-live': 'primary', 'Sensitive role assignment': 'error', 'Bill adjustment': 'warning',
-  'Storage-rule override': 'warning', 'Manual-status confirmation': 'info', Correction: 'info', 'Module change': 'secondary', 'Early re-weigh': 'warning',
-};
+// M-13: every approval and request in one inbox. The maker never sees Approve or Reject, the super admin included.
 
-// An early re-weigh needs both the Customs AC and the BLPA AD, each with remarks (F31). In this demo one person
-// decides for whichever authority is still pending; in IBMS each would sign in as themselves (#78).
-function ReweighDecision({ app, onClose, onSave }) {
-  const pending = Object.keys(AUTHORITIES).filter((k) => !app.decisions[k]);
-  const [authority, setAuthority] = useState(pending[0]);
-  const [decision, setDecision] = useState('Approved');
+function CorrectionItem({ c, onDone }) {
+  const p = usePort();
   const [remarks, setRemarks] = useState('');
+  const mine = c.by === p.actor.name;
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Decide {app.id}</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-          Re-weigh <Box component="span" sx={{ fontFamily: 'monospace' }}>{app.plate}</Box> early: {app.reason}
-        </Typography>
-        <Stack spacing={2}>
-          <TextField select fullWidth label="Deciding as" value={authority} onChange={(e) => setAuthority(e.target.value)}>
-            {pending.map((k) => <MenuItem key={k} value={k}>{AUTHORITIES[k]}</MenuItem>)}
-          </TextField>
-          <ToggleButtonGroup exclusive fullWidth color={decision === 'Approved' ? 'primary' : 'error'} value={decision} onChange={(e, v) => v && setDecision(v)}>
-            <ToggleButton value="Approved">Approve</ToggleButton>
-            <ToggleButton value="Rejected">Reject</ToggleButton>
-          </ToggleButtonGroup>
-          <TextField fullWidth required multiline minRows={3} label="Remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} helperText="Required from both authorities. Recorded in the audit log with your name and time." />
+    <Card variant="outlined" sx={{ p: 2.5 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 1 }}>
+        <Typography variant="subtitle1">Correction on {c.record}</Typography>
+        <StatusPill word={c.decision ? (c.decision.approve ? 'Approved' : 'Rejected') : mine ? 'Sent for approval' : 'Waiting approval'} />
+      </Stack>
+      <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0,1fr))' }, mb: 1.5 }}>
+        <Box><Typography variant="caption" color="text.secondary">Field</Typography><Typography variant="body2">{c.field}</Typography></Box>
+        <Box><Typography variant="caption" color="text.secondary">Value now</Typography><Typography variant="body2">{c.from}</Typography></Box>
+        <Box><Typography variant="caption" color="text.secondary">Value asked for</Typography><Typography variant="body2" fontWeight={600}>{c.to}</Typography></Box>
+      </Box>
+      <Typography variant="body2">Reason: {c.reason}</Typography>
+      <Typography variant="caption" color="text.secondary">Asked by {c.by}, {c.role} · {formatDateTime(c.at)}</Typography>
+      {c.decision && <Typography variant="body2" sx={{ mt: 1 }}>{c.decision.approve ? 'Approved' : 'Rejected'} by {c.decision.by}, {formatDateTime(c.decision.at)}{c.decision.remarks ? `: ${c.decision.remarks}` : ''}. Both values are kept on the record.</Typography>}
+      {!c.decision && mine && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>You asked for this change, so someone else decides it. It does not apply until approved.</Typography>}
+      {!c.decision && !mine && (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
+          <TextField size="small" label="Remarks (required to reject)" value={remarks} onChange={(e) => setRemarks(e.target.value)} sx={{ flex: 1 }} />
+          <Button variant="contained" onClick={() => { p.decideCorrection(c.id, true, remarks.trim()); onDone('Correction approved'); }}>Approve correction</Button>
+          <Button color="error" variant="outlined" disabled={!remarks.trim()} onClick={() => { p.decideCorrection(c.id, false, remarks.trim()); onDone('Correction rejected'); }}>Reject correction</Button>
         </Stack>
-        <AssumptionNote code="F31" sx={{ mt: 2 }}>How the Customs Assistant Commissioner signs in IBMS is to be confirmed with NBR.</AssumptionNote>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" color={decision === 'Approved' ? 'primary' : 'error'} disabled={!remarks.trim()} onClick={() => onSave(authority, decision, remarks.trim())}>
-          {decision === 'Approved' ? 'Approve' : 'Reject'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      )}
+    </Card>
   );
 }
-
-// Each authority's decision on an early re-weigh, or that it is still waiting.
-function ReweighDecisions({ app }) {
-  return (
-    <Stack spacing={0.5} sx={{ mt: 1 }}>
-      {Object.entries(AUTHORITIES).map(([k, name]) => {
-        const d = app.decisions[k];
-        return (
-          <Stack key={k} direction="row" spacing={1} alignItems="flex-start">
-            <Label color={d ? (d.decision === 'Approved' ? 'success' : 'error') : 'default'}>{d ? d.decision : 'Waiting'}</Label>
-            <Typography variant="body2" color="text.secondary">{name}{d && <> · {d.by}: “{d.remarks}”</>}</Typography>
-          </Stack>
-        );
-      })}
-    </Stack>
-  );
-}
-
-// Store applications shown in the same rows as the other requests.
-const asRequest = (a) => ({
-  id: a.id, kind: 'Early re-weigh', summary: `Re-weigh ${a.plate} early on ${a.manifest}: ${a.reason}`, requester: a.requester, port: 'BEN', at: a.at,
-  app: a, decision: a.status === 'Waiting' ? undefined : a.status,
-});
-
-// A paper release recorded when BNSW sent nothing; a second officer confirms it before it counts (F5, #84).
-const asPaperRequest = (p) => ({
-  id: p.id, kind: 'Manual-status confirmation', summary: `Paper release for ${p.manifest}: Release Order ${p.ro} (${p.reason})`,
-  requester: p.requester, port: 'BEN', at: p.at, mine: p.mine, paper: p,
-  decision: p.status === 'Waiting' ? undefined : p.status, decider: p.decider, reason: p.remarks,
-});
 
 export default function Inbox() {
-  const [tab, setTab] = useState('waiting');
-  const [waiting, setWaiting] = useState(inboxRequests);
-  const [decided, setDecided] = useState(decidedRequests);
-  const [search, setSearch] = useState('');
-  const [decide, setDecide] = useState(null);
-  const [toast, setToast] = useState('');
-  const [deciding, setDeciding] = useState(null);
-  const { applications, decideApplication } = useTruckWeights();
-  const { addAlert } = useCfAlerts();
-  const { addEvent } = useAudit();
-  const { paperRequests, decidePaperRelease } = useCustoms();
-  const paperWaiting = paperRequests.filter((p) => p.status === 'Waiting').map(asPaperRequest);
-  const paperDecided = paperRequests.filter((p) => p.status !== 'Waiting').map(asPaperRequest);
-  const reweighWaiting = applications.filter((a) => a.status === 'Waiting').map(asRequest);
-  const reweighDecided = applications.filter((a) => a.status !== 'Waiting').map(asRequest);
-
-  const match = (r) => `${r.summary} ${r.requester} ${r.port ?? ''}`.toLowerCase().includes(search.toLowerCase());
-  const list = (tab === 'waiting' ? [...paperWaiting, ...reweighWaiting, ...waiting] : [...paperDecided, ...reweighDecided, ...decided]).filter(match);
-
-  const recordReweigh = (authority, decision, remarks) => {
-    const app = deciding;
-    const status = decideApplication(app.id, authority, decision, remarks, currentUser.name);
-    addEvent({
-      actor: currentUser.name, role: AUTHORITIES[authority], module: 'Approvals', type: 'Approval',
-      text: `${decision} early re-weigh ${app.id} for ${app.plate} as ${AUTHORITIES[authority]}: ${remarks}`,
-    });
-    if (status !== 'Waiting') {
-      addAlert({ manifest: app.manifest, text: status === 'Approved' ? `Early re-weigh ${app.id} approved. ${app.plate} is weighed empty before it leaves.` : `Early re-weigh ${app.id} rejected.` });
-    }
-    setToast(status === 'Approved'
-      ? `${app.id} approved by both. Re-weigh ordered and the weighbridge is notified.`
-      : status === 'Rejected' ? `${app.id} rejected. The C&F agency is told.` : `${app.id}: your decision is recorded. Waiting for the other authority.`);
-    setDeciding(null);
-  };
-
-  const record = (reason) => {
-    const { req, decision } = decide;
-    if (req.paper) {
-      decidePaperRelease(req.id, decision, reason);
-      addEvent({ actor: currentUser.name, role: currentUser.role, module: 'Approvals', type: 'Approval', text: `${decision} paper release ${req.id} for ${req.paper.manifest} (Release Order ${req.paper.ro}): ${reason}` });
-      setToast(decision === 'Approved' ? `${req.paper.manifest} released from paper. The C&F agency is told.` : `${req.id} rejected. The release still waits for BNSW.`);
-      setDecide(null);
-      return;
-    }
-    setWaiting((w) => w.filter((x) => x.id !== req.id));
-    setDecided((d) => [{ ...req, decision, decider: currentUser.name, at: 'Just now', reason }, ...d]);
-    setToast(`${req.id} ${decision.toLowerCase()}.`);
-    setDecide(null);
-  };
-
+  const p = usePort();
+  const t = useT();
+  const [msg, setMsg] = useState('');
+  const open = p.state.corrections.filter((c) => !c.decision);
+  const decided = p.state.corrections.filter((c) => c.decision);
+  const passes = p.state.passes.filter((x) => p.passStatus(x) === 'Waiting approval');
+  const changes = p.state.truckChanges.filter((tc) => !tc.done);
+  const flags = p.state.visits.filter((v) => v.weigh?.overTolerance && !v.weigh.inspection);
+  const late = p.state.visits.filter((v) => v.late && v.gateIn);
   return (
     <>
-      <PageHeader title="Inbox" links={[{ name: 'Administration' }, { name: 'Inbox' }]} subtitle="Maker-checker decisions. A reviewer must hold the relevant permission and cannot decide their own request." />
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Tabs value={tab} onChange={(e, v) => setTab(v)}>
-          <Tab value="waiting" label={<Stack direction="row" spacing={1} alignItems="center"><span>Waiting for you</span><Label color="error">{waiting.filter((r) => !r.mine).length + reweighWaiting.length + paperWaiting.filter((r) => !r.mine).length}</Label></Stack>} />
-          <Tab value="decided" label="Decided" />
-        </Tabs>
-        <SearchField placeholder="Search summary, person or port" value={search} onChange={setSearch} />
-      </Stack>
-      <Card>
-        {list.length === 0 ? (
-          <EmptyState title={tab === 'waiting' ? 'Nothing is waiting for you' : 'No decisions yet'} description={tab === 'waiting' ? 'New requests appear here when they need your decision.' : undefined} sx={{ py: 10 }} />
-        ) : (
-          <Stack divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
-            {list.map((r) => (
-              <Stack key={r.id} direction="row" spacing={2} alignItems="center" sx={{ p: 3 }}>
-                <UserAvatar name={r.requester === 'Head office' ? 'Head Office' : r.requester} />
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-                    <Label color={kindColor[r.kind] ?? 'default'}>{r.kind}</Label>
-                    <Typography variant="caption" color="text.disabled">{r.id} · {r.at}</Typography>
-                  </Stack>
-                  <Typography variant="subtitle2">{r.summary}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Requested by {r.requester}{r.port ? ` · ${r.port}` : ''}
-                    {r.decision && !r.app && <> · {r.decision} by {r.decider}: “{r.reason}”</>}
-                  </Typography>
-                  {r.app && <ReweighDecisions app={r.app} />}
-                </Box>
-                {tab === 'waiting' ? (
-                  r.app ? (
-                    <Button variant="contained" onClick={() => setDeciding(r.app)}>Decide</Button>
-                  ) : r.mine ? (
-                    <Tooltip title="You made this request, so another authorised person must decide it.">
-                      <span><Label>Your request</Label></span>
-                    </Tooltip>
-                  ) : (
-                    <Stack direction="row" spacing={1}>
-                      <Button variant="outlined" color="error" onClick={() => setDecide({ req: r, decision: 'Rejected' })}>Reject</Button>
-                      <Button variant="contained" onClick={() => setDecide({ req: r, decision: 'Approved' })}>Approve</Button>
-                    </Stack>
-                  )
-                ) : (
-                  <Label color={r.decision === 'Approved' ? 'success' : 'error'}>{r.decision}</Label>
-                )}
+      <PageHeader title={t('Inbox')} subtitle={`${p.actor.name} · ${p.actor.role}`} />
+      <Stack spacing={3}>
+        <Card sx={{ p: 3 }}>
+          <SectionTitle>Approvals</SectionTitle>
+          <Stack spacing={2}>
+            {open.length === 0 && <Typography variant="body2" color="text.secondary">No correction is waiting. A request made from a locked value appears here for a second person.</Typography>}
+            {open.map((c) => <CorrectionItem key={c.id} c={c} onDone={setMsg} />)}
+          </Stack>
+        </Card>
+        <Card sx={{ p: 3 }}>
+          <SectionTitle>Needs attention</SectionTitle>
+          <Stack spacing={1.5}>
+            {passes.map((x) => (
+              <Stack key={x.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                <StatusPill word="Waiting approval" />
+                <Typography variant="body2">Exit Pass {x.id} for <Plate>{x.plate}</Plate>: {3 - Object.values(x.approvals).filter(Boolean).length} of 3 approvals missing</Typography>
+                <Button size="small" component={RouterLink} to="/inland-gate">Open</Button>
               </Stack>
             ))}
+            {changes.map((tc) => (
+              <Stack key={tc.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                <StatusPill word="Waiting approval" />
+                <Typography variant="body2">Truck change {tc.from} to {tc.to} on {tc.pass}: shed in-charge and Customs ARO approve</Typography>
+              </Stack>
+            ))}
+            {flags.map((v) => (
+              <Stack key={v.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                <StatusPill word="Weight over tolerance" />
+                <Typography variant="body2"><Plate>{v.plate}</Plate>: flagged to BLPA and Customs officials, no inspection outcome yet</Typography>
+              </Stack>
+            ))}
+            {late.map((v) => (
+              <Stack key={v.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                <StatusPill word="Manifest not yet available" />
+                <Typography variant="body2"><Plate>{v.plate}</Plate>: admitted {formatDateTime(v.gateIn.at)}, manifest {v.carPassManifest} not matched (EXC-04). Owner: posting officer.</Typography>
+              </Stack>
+            ))}
+            {!passes.length && !changes.length && !flags.length && !late.length && <Typography variant="body2" color="text.secondary">Nothing needs attention.</Typography>}
           </Stack>
+        </Card>
+        {decided.length > 0 && (
+          <Card sx={{ p: 3 }}>
+            <SectionTitle>Decided</SectionTitle>
+            <Stack spacing={2}>{decided.map((c) => <CorrectionItem key={c.id} c={c} onDone={setMsg} />)}</Stack>
+          </Card>
         )}
-      </Card>
-      {deciding && <ReweighDecision app={deciding} onClose={() => setDeciding(null)} onSave={recordReweigh} />}
-      <ReasonDialog
-        open={Boolean(decide)}
-        title={decide ? `${decide.decision === 'Approved' ? 'Approve' : 'Reject'} ${decide.req.id}?` : ''}
-        description={decide?.req.summary}
-        confirmLabel={decide?.decision === 'Approved' ? 'Approve' : 'Reject'}
-        confirmColor={decide?.decision === 'Approved' ? 'primary' : 'error'}
-        onClose={() => setDecide(null)}
-        onConfirm={record}
-      />
-      <Snackbar open={Boolean(toast)} autoHideDuration={3000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
-      </Snackbar>
+      </Stack>
+      <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );
 }
