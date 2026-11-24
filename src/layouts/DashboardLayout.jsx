@@ -13,33 +13,14 @@ import { roles, useRole } from '../RoleContext';
 import { usePort } from '../demo/PortStore';
 import { formatDateTime } from '../demo/format';
 import { useLanguage, useT } from '../i18n/LanguageContext';
-import blpaLogo from '../assets/blpa-logo.png';
-import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, CloudOffRoundedIcon, DarkModeOutlinedIcon, FullscreenRoundedIcon, InfoOutlinedIcon, LightModeOutlinedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, SearchRoundedIcon, TranslateRoundedIcon, WarningAmberRoundedIcon } from '../components/icons';
+import Logo from '../components/Logo';
+import { useSession } from '../demo/blocks/SessionGate';
+import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, CloudOffRoundedIcon, DarkModeOutlinedIcon, FullscreenRoundedIcon, InfoOutlinedIcon, LightModeOutlinedIcon, LogoutRoundedIcon, MenuRoundedIcon, NotificationsNoneRoundedIcon, SearchRoundedIcon, TranslateRoundedIcon, WarningAmberRoundedIcon } from '../components/icons';
 
 const NAV_WIDTH = 280;
 const NAV_MINI = 88;
 const HEADER = 72;
 
-
-function Logo({ mini }) {
-  return (
-    <Stack direction="row" alignItems="center" spacing={1.25} sx={{ px: mini ? 0 : 1, justifyContent: mini ? 'center' : 'flex-start' }}>
-      {/* White disc keeps the logo's dark-green ring legible on dark backgrounds. */}
-      <Box
-        component="img"
-        src={blpaLogo}
-        alt="Bangladesh Land Port Authority"
-        sx={{ width: 40, height: 40, flexShrink: 0, objectFit: 'contain', borderRadius: '50%', bgcolor: 'common.white', p: '2px' }}
-      />
-      {!mini && (
-        <Box sx={{ lineHeight: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.1 }}>IBMS</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>Land port management</Typography>
-        </Box>
-      )}
-    </Stack>
-  );
-}
 
 function NavItem({ item, mini }) {
   const theme = useTheme();
@@ -190,7 +171,9 @@ function Header({ navWidth, onOpenNav }) {
   const { mode, toggle } = useColorMode();
   const { lang, setLang } = useLanguage();
   const t = useT();
-  const { state, reset } = usePort();
+  const { state, reset, sync } = usePort();
+  const session = useSession();
+  const signedInAs = session.user && (session.user.name || session.user.email || session.user.preferred_username);
   const [anchor, setAnchor] = useState(null);
   const items = state.events.slice(0, 10);
   const [userAnchor, setUserAnchor] = useState(null);
@@ -262,10 +245,16 @@ function Header({ navWidth, onOpenNav }) {
         <Box sx={{ px: 1.5, py: 1 }}>
           <Typography variant="subtitle2">{role.person}</Typography>
           <Typography variant="body2" color="text.secondary">{role.name} · Benapole</Typography>
+          {signedInAs && <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>Signed in as {signedInAs}</Typography>}
         </Box>
         <Divider sx={{ borderStyle: 'dashed' }} />
         <MenuItem onClick={() => { setUserAnchor(null); navigate('/external'); }}>BNSW simulator (demo tool)</MenuItem>
-        <MenuItem onClick={() => { reset(); setUserAnchor(null); navigate(role.landing); }}>{t('Reset demo')}</MenuItem>
+        {/* Reset puts the shared port back for everyone, so only the presenter role offers it. */}
+        {role.id === 'super-admin' && (
+          <MenuItem disabled={sync.status === 'resetting'} onClick={() => { reset(); setUserAnchor(null); navigate(role.landing); }}>
+            <ListItemText primary={t('Reset demo')} secondary={sync.shared ? 'Restores the starting data for everyone' : null} primaryTypographyProps={{ variant: 'body2' }} secondaryTypographyProps={{ variant: 'caption' }} />
+          </MenuItem>
+        )}
         <Divider sx={{ borderStyle: 'dashed' }} />
         <MenuItem onClick={() => { setLang(lang === 'en' ? 'bn' : 'en'); setUserAnchor(null); }}>
           <ListItemIcon><TranslateRoundedIcon fontSize="small" /></ListItemIcon>
@@ -275,6 +264,12 @@ function Header({ navWidth, onOpenNav }) {
           <ListItemIcon>{mode === 'light' ? <DarkModeOutlinedIcon fontSize="small" /> : <LightModeOutlinedIcon fontSize="small" />}</ListItemIcon>
           {mode === 'light' ? 'Dark mode' : 'Light mode'}
         </MenuItem>
+        {session.signOut && (
+          <MenuItem onClick={() => { setUserAnchor(null); session.signOut(); }}>
+            <ListItemIcon><LogoutRoundedIcon fontSize="small" /></ListItemIcon>
+            Sign out
+          </MenuItem>
+        )}
         <Divider sx={{ borderStyle: 'dashed' }} />
         {/* Demo role switcher with the Annex 8 template roles. */}
         <Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 1.5, pt: 1, pb: 0.5 }}>{t('Switch role')} (demo)</Typography>
@@ -291,11 +286,28 @@ function Header({ navWidth, onOpenNav }) {
 
 // Any state that changes what a user can do shows as a full-width strip on every screen (Annex 24.10).
 function StatusStrips() {
-  const { state } = usePort();
+  const { state, sync } = usePort();
   const t = useT();
   const keyed = state.boes.filter((b) => b.source === 'Keyed by the agency').length + state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").length;
   return (
     <Stack spacing={1} sx={{ mb: 2, '&:empty': { display: 'none' } }}>
+      {sync.shared && !sync.online && (
+        <Alert severity="warning" icon={<CloudOffRoundedIcon />}>
+          <Typography variant="subtitle2">You are offline</Typography>
+          <Typography variant="body2">Changes stay on this screen and are saved when the connection is back. Other people's changes arrive then too.</Typography>
+        </Alert>
+      )}
+      {sync.status === 'save-failed' && (
+        <Alert severity="error" action={<Button color="inherit" size="small" onClick={sync.retry}>Try again</Button>}>
+          <Typography variant="subtitle2">Couldn't save your last change</Typography>
+          <Typography variant="body2">It is still on this screen but not yet shared with anyone. {sync.error}</Typography>
+        </Alert>
+      )}
+      {sync.status === 'resetting' && (
+        <Alert severity="info" icon={<InfoOutlinedIcon />}>
+          <Typography variant="body2">Resetting the demo port to its starting data for everyone…</Typography>
+        </Alert>
+      )}
       {state.bnswDown && (
         <Alert severity="warning" icon={<CloudOffRoundedIcon />}>
           <Typography variant="subtitle2">{t('BNSW-down mode')}</Typography>

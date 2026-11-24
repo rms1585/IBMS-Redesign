@@ -1,0 +1,17 @@
+{
+  "schemaName": "TruckChange",
+  "collectionName": "blx_TruckChanges",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "key",
+      "type": "String",
+      "description": "The record id used across the app, e.g. a manifest number or a visit id."
+    },
+    {
+      "name": "data",
+      "type": "String",
+      "description": "The record as JSON. A proposed truck change on an Exit Pass."
+    }
+  ]
+}

@@ -1,18 +1,25 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Button } from '@mui/material';
 import { useRole } from '../RoleContext';
 import { createSeed, PARTIES, PORT, TARIFF } from './seed';
 import { billableTonnes, dayKey, daysSince, formatBoe, searchKey } from './format';
+import { usesBlocks } from './blocks/config';
+import { applyLoaded, changedElsewhere, loadRecord, replaceRecord, saveRecord } from './blocks/remote';
+import { FullScreen, Waiting } from './blocks/SessionGate';
 
 // One operating record per manifest and per truck visit, built from entries each checkpoint adds (M2 4.9).
 // Every screen reads and writes this store, so a hold placed anywhere shows everywhere at once.
+// On the hosted site the record is shared through Blocks: every change is saved there and other
+// viewers' changes arrive within POLL_MS. On the local dev server it stays in this browser.
 
 const STORAGE_KEY = 'ibms-port-record-v1';
 const DAY_MS = 86400000;
+const POLL_MS = 10000;
 
 // Stored tares (BLPA's single tare rule: valid for three months).
 const TARES = { 'WB 23 D 1187': '2026-09-30', 'WB 11 C 4420': '2026-10-12', 'WB 25 A 3307': '2026-08-02' };
 
-const load = () => {
+const loadLocal = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
@@ -54,13 +61,125 @@ export const billTotals = (bill) => {
 
 const PortContext = createContext(null);
 
+function useOnline() {
+  const [online, setOnline] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
+  return online;
+}
+
 export function PortProvider({ children }) {
   const { role } = useRole();
-  const [state, setState] = useState(load);
+  const shared = usesBlocks();
+  const online = useOnline();
+  const [state, setState] = useState(() => (shared ? null : loadLocal()));
+  // loading, ready, saving, resetting, save-failed, load-failed; 'local' off the hosted site.
+  const [sync, setSync] = useState({ status: shared ? 'loading' : 'local', error: null });
+  const stateRef = useRef(state);
+  const savedRef = useRef(null); // the record as Blocks last confirmed it
+  const busyRef = useRef(false); // a save or reset is talking to Blocks
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* storage unavailable */ }
+    stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    if (shared) return;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* storage unavailable */ }
+  }, [shared, state]);
+
+  const loadShared = useCallback(async () => {
+    setSync({ status: 'loading', error: null });
+    try {
+      const loaded = await loadRecord();
+      applyLoaded(loaded);
+      let record = loaded.record;
+      if (!record) {
+        record = createSeed();
+        await saveRecord(record);
+      }
+      savedRef.current = record;
+      setState(record);
+      setSync({ status: 'ready', error: null });
+    } catch (e) {
+      setSync({ status: 'load-failed', error: e.message });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (shared) loadShared();
+  }, [shared, loadShared]);
+
+  // Saves whatever changed since Blocks last confirmed the record; changes made while a save is in
+  // flight go out in the next round.
+  const flush = useCallback(async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      while (stateRef.current && stateRef.current !== savedRef.current) {
+        const snapshot = stateRef.current;
+        setSync({ status: 'saving', error: null });
+        await saveRecord(snapshot);
+        savedRef.current = snapshot;
+      }
+      setSync({ status: 'ready', error: null });
+    } catch (e) {
+      setSync({ status: 'save-failed', error: e.message });
+    } finally {
+      busyRef.current = false;
+    }
+  }, []);
+
+  // Offline, changes wait on this screen; they go out as soon as the connection is back.
+  useEffect(() => {
+    if (shared && online && state && state !== savedRef.current) flush();
+  }, [shared, online, state, flush]);
+
+  // Other viewers' changes. Skipped while this viewer has unsaved changes, so nothing they did is lost.
+  const live = shared && state !== null;
+  useEffect(() => {
+    if (!live) return undefined;
+    const timer = setInterval(async () => {
+      const settled = () => !busyRef.current && stateRef.current === savedRef.current;
+      if (!settled() || !navigator.onLine || document.visibilityState !== 'visible') return;
+      try {
+        if (!(await changedElsewhere())) return;
+        const loaded = await loadRecord();
+        if (!settled() || !loaded.record) return;
+        applyLoaded(loaded);
+        savedRef.current = loaded.record;
+        setState(loaded.record);
+      } catch { /* try again on the next tick */ }
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [live]);
+
+  const resetRecord = useCallback(async () => {
+    const seed = createSeed();
+    if (!shared) {
+      setState(seed);
+      return;
+    }
+    busyRef.current = true;
+    setSync({ status: 'resetting', error: null });
+    try {
+      await replaceRecord(seed);
+      savedRef.current = seed;
+      setState(seed);
+      setSync({ status: 'ready', error: null });
+    } catch (e) {
+      setSync({ status: 'save-failed', error: e.message });
+    } finally {
+      busyRef.current = false;
+    }
+  }, [shared]);
 
   const actor = useMemo(() => ({ name: role.person, role: role.name }), [role]);
 
@@ -84,6 +203,7 @@ export function PortProvider({ children }) {
   );
 
   const value = useMemo(() => {
+    if (!state) return null;
     const s = state;
     const manifest = (id) => s.manifests.find((m) => m.id === id);
     const allLines = () => s.manifests.flatMap((m) => m.lines);
@@ -264,7 +384,7 @@ export function PortProvider({ children }) {
     };
 
     const actions = {
-      reset: () => setState(createSeed()),
+      reset: resetRecord,
 
       // Importer portal (M-15)
       tagAgency: (mid, bin, ain) =>
@@ -665,9 +785,21 @@ export function PortProvider({ children }) {
       lookup,
       receiptKgOfLine,
       ...actions,
+      sync: { ...sync, shared, online, retry: flush },
     };
-  }, [state, change, actor]);
+  }, [state, change, actor, resetRecord, sync, shared, online, flush]);
 
+  if (!state) {
+    if (sync.status === 'load-failed') {
+      return (
+        <FullScreen>
+          <Alert severity="error">{`Couldn't load the demo port from Blocks. ${online ? sync.error ?? '' : 'You are offline.'}`}</Alert>
+          <Button variant="contained" onClick={loadShared}>Try again</Button>
+        </FullScreen>
+      );
+    }
+    return <Waiting text="Loading the demo port" />;
+  }
   return <PortContext.Provider value={value}>{children}</PortContext.Provider>;
 }
 

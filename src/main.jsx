@@ -10,12 +10,14 @@ import { ColorModeProvider } from './ColorModeContext';
 import { RoleProvider } from './RoleContext';
 import { PortProvider } from './demo/PortStore';
 import { LanguageProvider } from './i18n/LanguageContext';
+import SessionGate from './demo/blocks/SessionGate';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ColorModeProvider>
       <LanguageProvider>
+      <SessionGate>
       <RoleProvider>
       <PortProvider>
         <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -23,6 +25,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </HashRouter>
       </PortProvider>
       </RoleProvider>
+      </SessionGate>
       </LanguageProvider>
     </ColorModeProvider>
   </React.StrictMode>,
