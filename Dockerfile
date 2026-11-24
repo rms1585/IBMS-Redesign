@@ -6,7 +6,7 @@ ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 COPY . .
-RUN npx vite build
+RUN npx vite build --mode blocks
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
