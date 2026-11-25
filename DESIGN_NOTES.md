@@ -403,8 +403,8 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   unavailable/available action with a reason, and an upload with a row-by-row check.
 - **A7–A11:** Customs manifest numbers everywhere; status words beside colours; "Send for approval", never
   "Submit"; a plain notice instead of a silent redirect; no green background behind text on Home.
-- **Step 2, interface standard (Annex 24):** top bar right side in the fixed order lookup, port, language, bell,
-  full screen, user (language also stays in the user menu for phones). Drawers ask before discarding typed input
+- **Step 2, interface standard (Annex 24):** top bar keeps M2's order: lookup and port on the left (product owner's
+  decision), then language, bell, full screen and user on the right (language also stays in the user menu for phones). Drawers ask before discarding typed input
   and the browser warns on leaving; a disabled main action shows its reason beside it. Bay and terminal-slot
   details show in a line under the grid, not only in tooltips. `prefers-reduced-motion` makes every transition
   instant and charts skip animation. Buttons and inputs are 48px tall and icon buttons 44px on a phone. Dashboard

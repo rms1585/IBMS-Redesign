@@ -197,11 +197,12 @@ function Header({ navWidth, onOpenNav }) {
       {onOpenNav && (
         <IconButton onClick={onOpenNav} aria-label="Open navigation" edge="start"><MenuRoundedIcon /></IconButton>
       )}
-      {/* M2 Annex 24.3: the right side follows a fixed order: lookup, port, language, bell, full screen, user. */}
-      <Box sx={{ flex: 1 }} />
+      {/* Lookup and port on the left; language, bell, full screen and user on the right, in M2's order (Annex 24.3).
+          The left placement is the product owner's decision of 2026-11-25. */}
       <Lookup />
       {/* The port name must not shrink: a squeezed nowrap label spills past its box. */}
       <Typography variant="subtitle2" sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap', flexShrink: 0 }}>{t('Port')}: Benapole</Typography>
+      <Box sx={{ flex: 1 }} />
       <Button
         size="small"
         variant="outlined"
