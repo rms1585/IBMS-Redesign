@@ -53,7 +53,7 @@ export default function Exceptions() {
         { key: 'when', label: 'When it applies' },
         { key: 'authority', label: 'Authority' },
         { key: 'status', label: 'Status', render: (r) => (isComplete(r) ? <Label color="success">Defined</Label> : <Label color="warning">Incomplete</Label>) },
-        { key: 'a', label: '', render: (r) => <Button size="small" color="inherit" onClick={() => setEditing(r)}>Edit</Button> },
+        { key: 'a', label: '', render: (r) => <Button size="small" variant="outlined" color="inherit" onClick={() => setEditing(r)}>Edit</Button> },
       ]} />
       {editing && (
         <EditDialog

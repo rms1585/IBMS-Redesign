@@ -165,7 +165,7 @@ export default function PlatformSetup() {
             { key: 'name', label: 'Vehicle type', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
             { key: 'wheels', label: 'Wheels' },
             { key: 'mode', label: 'Transport mode' },
-            { key: 'edit', label: '', render: () => <Button size="small" color="inherit">Edit</Button> },
+            { key: 'edit', label: '', render: () => <Button size="small" variant="outlined" color="inherit">Edit</Button> },
           ]}
         />
       )}
@@ -203,7 +203,7 @@ export default function PlatformSetup() {
           columns={[
             { key: 'date', label: 'Date' },
             { key: 'name', label: 'Holiday', render: (r) => <Stack direction="row" spacing={1} alignItems="center"><Typography variant="subtitle2">{r.name}</Typography>{r.upcoming && <Label color="info">Upcoming</Label>}</Stack> },
-            { key: 'rm', label: '', render: () => <Button size="small" color="error">Remove</Button> },
+            { key: 'rm', label: '', render: () => <Button size="small" variant="outlined" color="error">Remove</Button> },
           ]}
         />
       )}

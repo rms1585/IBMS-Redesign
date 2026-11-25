@@ -95,7 +95,7 @@ function StepResources({ port, modules }) {
                 <TableCell>{t}</TableCell>
                 <TableCell sx={{ color: d.includes('due') ? 'warning.text' : 'text.secondary' }}>{d}</TableCell>
                 <TableCell><Label color="success">{s}</Label></TableCell>
-                <TableCell sx={{ pr: 2, whiteSpace: 'nowrap' }}><Button size="small" color="inherit">Edit</Button><Button size="small" color="error">Retire</Button></TableCell>
+                <TableCell sx={{ pr: 2 }}><Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit">Edit</Button><Button size="small" variant="outlined" color="error">Retire</Button></Stack></TableCell>
               </TableRow>
             ))}
           </TableBody>

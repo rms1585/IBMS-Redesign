@@ -296,7 +296,7 @@ function Reports() {
         columns={[
           { label: 'Report', nowrap: true, render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
           { label: 'Contents', priority: 'low', render: (r) => <Box component="span" sx={{ color: 'text.secondary' }}>{r.desc}</Box> },
-          { label: 'Export', align: 'right', render: () => <><Button size="small" color="inherit">Preview</Button><Button size="small" color="inherit">CSV</Button><Button size="small" color="inherit">Excel</Button></> },
+          { label: 'Export', align: 'right', render: () => <Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit">Preview</Button><Button size="small" variant="outlined" color="inherit">CSV</Button><Button size="small" variant="outlined" color="inherit">Excel</Button></Stack> },
         ]}
       />
       <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 2 }}>

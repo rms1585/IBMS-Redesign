@@ -148,7 +148,7 @@ export default function Roles() {
           { key: 'scope', label: 'Scope' },
           { key: 'org', label: 'Organisation' },
           { key: 'tasks', label: 'Tasks' },
-          { key: 'act', label: '', render: (r) => <Stack direction="row" spacing={0.5}><Button size="small" color="inherit">View access</Button>{r.template ? <Button size="small" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small">Edit</Button>}</Stack> },
+          { key: 'act', label: '', render: (r) => <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }}>View access</Button>{r.template ? <Button size="small" variant="outlined" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small" variant="outlined" >Edit</Button>}</Stack> },
         ]}
       />
       <CreateRole open={open} onClose={() => setOpen(false)} onSave={(r) => { setList((l) => [...l, r]); setToast(`Role “${r.name}” created.`); }} />
