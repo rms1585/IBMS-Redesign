@@ -342,8 +342,11 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
 
 - After a change, verify in a browser at the sizes above (no page-level sideways scroll, nothing spilling out of
   cards, main flows still work: admit truck, weigh, approve in Inbox, record bank fallback).
-- **Redesign work goes to the `redesign-v02` branch only. `main` stays frozen** at the version the live site serves
-  (https://rms1585.github.io/IBMS-Redesign/); don't push or merge to it without the product owner's explicit go-ahead.
+- **M2 work goes to the `dev` branch. `main` stays frozen**; don't push or merge to it without the product owner's
+  explicit go-ahead.
+- **`dev` is the live preview:** every push to `dev` deploys to https://rms1585.github.io/IBMS-Redesign/ through
+  GitHub Pages (2026-11-25; it replaced the Blocks hosting, sign-in and shared storage). Anyone with the link can
+  open it; each viewer's edits stay in their own browser.
 - `redesign-v02` is previewed at https://rms1585.github.io/IBMS-Redesign-v02-preview/. That repo holds only the
   built files: run `npm run build` and push `dist/` to its `main` branch after each change.
 - Pushing a `v*` tag builds desktop installers into a GitHub Release (from `main` only).
@@ -356,8 +359,8 @@ The prototype now follows the M2 report and its annexes. Where these notes disag
 
 - **One operating record** (`src/demo/PortStore.jsx`): manifests and lines, truck visits (one visit carries
   every manifest on the truck), Bills of Entry with releases and per-truck exit notes, named holds, Delivery
-  Requests, Exit Passes, bills and an event log with the source of every value. Kept between pages and reloads;
-  "Reset demo" in the user menu restores the seed (`src/demo/seed.js`).
+  Requests, Exit Passes, bills and an event log with the source of every value. Kept in the viewer's browser
+  between pages and reloads, never shared; "Reset demo" in the user menu restores the seed (`src/demo/seed.js`).
 - **BNSW simulator** (External status, M-14): the only demo tool. Sends manifests, releases, exit notes and
   holds, and takes BNSW or the exit check down.
 - **Roles** are the Annex 8 template roles, each with a named person who signs what the role does.
