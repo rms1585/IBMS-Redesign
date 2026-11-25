@@ -170,7 +170,22 @@ export const modulesCatalog = [
   { key: 'billing', name: 'Billing & payment', actions: [['See', 'View bills'], ['Record and do', 'Record bank fallback payment'], ['Record and do', 'Confirm fallback payment', true], ['Set up', 'Request bill adjustment', true]] },
   { key: 'tracking', name: 'Manifest tracking', actions: [['See', 'View manifests and timeline']] },
   { key: 'reports', name: 'Dashboards & reports', actions: [['See', 'View dashboards'], ['Record and do', 'Export reports']] },
+  { key: 'access', name: 'Users & roles', actions: [['See', 'View users and roles'], ['Record and do', 'Invite user'], ['Set up', 'Assign role', true], ['Set up', 'Create or change role', true]] },
 ];
+
+// What each template role may do: module key -> the actions it has (names from modulesCatalog). Demo data.
+export const roleAccess = {
+  'Border gate operator': { gates: ['View arriving / leaving queues', 'Admit truck', 'Record departure'], tracking: ['View manifests and timeline'] },
+  'Weighbridge operator': { weigh: ['View weighing queue', 'Capture scale weight'], tracking: ['View manifests and timeline'] },
+  'Posting officer': { posting: ['View bay grid', 'Allocate bay', 'Record receipt'], gates: ['View arriving / leaving queues'], tracking: ['View manifests and timeline'] },
+  'Billing officer': { billing: ['View bills', 'Record bank fallback payment'], tracking: ['View manifests and timeline'], reports: ['View dashboards'] },
+  'Bill approver': { billing: ['View bills', 'Confirm fallback payment', 'Request bill adjustment'] },
+  'Port in-charge': 'all',
+  'Access administrator': { access: ['View users and roles', 'Invite user', 'Assign role', 'Create or change role'], reports: ['View dashboards'] },
+  'C&F agent user': { tracking: ['View manifests and timeline'], billing: ['View bills'], gates: ['View arriving / leaving queues'] },
+  'Bank counter': { billing: ['View bills', 'Record bank fallback payment'] },
+  'Benapole shift supervisor': { gates: ['View arriving / leaving queues', 'Admit truck', 'Record departure'], weigh: ['View weighing queue'], posting: ['View bay grid'], tracking: ['View manifests and timeline'], reports: ['View dashboards', 'Export reports'] },
+};
 
 export const users = [
   { name: 'Farhana Rahman', email: 'farhana.rahman@blpa.gov.bd', org: 'BLPA', assignments: ['Port in-charge @ BEN'], status: 'Active' },

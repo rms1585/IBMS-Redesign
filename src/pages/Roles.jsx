@@ -6,9 +6,101 @@ import FormDrawer from '../components/FormDrawer';
 import { PageHeader } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
-import { roles, modulesCatalog, ports } from '../data/mock';
-import { AddRoundedIcon } from '../components/icons';
+import { roles, modulesCatalog, ports, roleAccess, users } from '../data/mock';
+import { AddRoundedIcon, CheckRoundedIcon } from '../components/icons';
 import { useStoredState } from '../demo/PortStore';
+
+// A role's access as module key -> action names: what Create role saved, or the template's demo access.
+function accessMapOf(role) {
+  const map = role.access ?? roleAccess[role.name] ?? {};
+  return map === 'all' ? Object.fromEntries(modulesCatalog.map((m) => [m.key, m.actions.map((a) => a[1])])) : map;
+}
+
+// The same access with each action's group and sensitivity, in catalogue order.
+function accessOf(role) {
+  const map = accessMapOf(role);
+  return modulesCatalog
+    .filter((m) => map[m.key]?.length)
+    .map((m) => ({ ...m, granted: m.actions.filter((a) => map[m.key].includes(a[1])) }));
+}
+
+const GROUPS = ['See', 'Record and do', 'Set up'];
+
+function AccessDrawer({ role: picked, onClose, onCopy }) {
+  // Keep showing the last role while the drawer slides out.
+  const [role, setRole] = useState(picked);
+  useEffect(() => {
+    if (picked) setRole(picked);
+  }, [picked]);
+  const [people] = useStoredState('users', users);
+  const modules = role ? accessOf(role) : [];
+  const actions = modules.reduce((n, m) => n + m.granted.length, 0);
+  const holders = role ? people.filter((u) => u.assignments.some((a) => a.startsWith(`${role.name} @`))) : [];
+  return (
+    <FormDrawer
+      open={Boolean(picked)}
+      onClose={onClose}
+      title={role ? `Access: ${role.name}` : 'Access'}
+      subtitle={role ? `${role.scope} · ${role.org} · ${modules.length} module${modules.length === 1 ? '' : 's'}, ${actions} action${actions === 1 ? '' : 's'}` : ''}
+      width={560}
+      actions={(
+        <>
+          <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>
+          {role?.template && <Button variant="contained" onClick={() => onCopy(role)}>Copy to change it</Button>}
+        </>
+      )}
+    >
+      {role && (
+        <Stack spacing={3}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {role.template ? <Label>Template, read-only</Label> : <Label color="info">Local role</Label>}
+            {role.sensitive && <Label color="error">Sensitive: assigning it needs independent approval</Label>}
+          </Stack>
+          {modules.length === 0 && <Typography variant="body2" color="text.secondary">This role has no actions yet.</Typography>}
+          {modules.map((m) => (
+            <Box key={m.key}>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>{m.name}</Typography>
+              <Stack spacing={1.5}>
+                {GROUPS.map((g) => {
+                  const acts = m.granted.filter((a) => a[0] === g);
+                  if (!acts.length) return null;
+                  return (
+                    <Box key={g}>
+                      <Typography variant="overline" color="text.secondary" component="div">{g}</Typography>
+                      <Stack component="ul" spacing={0.75} sx={{ m: 0, pl: 0, listStyle: 'none' }}>
+                        {acts.map((a) => (
+                          <Stack component="li" key={a[1]} direction="row" spacing={1} alignItems="center">
+                            <CheckRoundedIcon fontSize="small" color="success" aria-hidden />
+                            <Typography variant="body2">{a[1]}</Typography>
+                            {a[2] && <Label color="error">Sensitive</Label>}
+                          </Stack>
+                        ))}
+                      </Stack>
+                    </Box>
+                  );
+                })}
+              </Stack>
+              <Divider sx={{ mt: 2, borderStyle: 'dashed' }} />
+            </Box>
+          ))}
+          <Box>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>People with this role</Typography>
+            {holders.length ? (
+              <Stack spacing={1}>
+                {holders.map((u) => (
+                  <Box key={u.email}>
+                    <Typography variant="subtitle2">{u.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">{u.assignments.filter((a) => a.startsWith(`${role.name} @`)).join(', ')} · {u.status}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+            ) : <Typography variant="body2" color="text.secondary">Nobody has this role yet. Assign it from Users.</Typography>}
+          </Box>
+        </Stack>
+      )}
+    </FormDrawer>
+  );
+}
 
 function CreateRole({ open, onClose, onSave }) {
   const [step, setStep] = useState(0);
@@ -40,7 +132,7 @@ function CreateRole({ open, onClose, onSave }) {
           {step < 3 ? (
             <Button variant="contained" disabled={!canNext} onClick={() => setStep(step + 1)}>Next</Button>
           ) : (
-            <Button variant="contained" onClick={() => { onSave({ name, scope, org: 'BLPA', modules: chosen.length, tasks: picked.length, template: false, sensitive }); close(); }}>Save role</Button>
+            <Button variant="contained" onClick={() => { onSave({ name, scope, org: 'BLPA', template: false, sensitive, access: Object.fromEntries(chosen.map((m) => [m.key, m.actions.filter((a) => actions[`${m.key}:${a[1]}`]).map((a) => a[1])])) }); close(); }}>Save role</Button>
           )}
         </>
       )}
@@ -131,6 +223,7 @@ export default function Roles() {
   const [tab, setTab] = useState('all');
   const [open, setOpen] = useState(false);
   const [copy, setCopy] = useState(null);
+  const [viewing, setViewing] = useState(null);
   const [copyName, setCopyName] = useState('');
   const [toast, setToast] = useState('');
   const rows = list.filter((r) => tab === 'all' || (tab === 'templates' ? r.template : !r.template));
@@ -154,14 +247,15 @@ export default function Roles() {
         searchPlaceholder="Search roles"
         columns={[
           { key: 'name', label: 'Role', render: (r) => <Stack direction="row" columnGap={1} rowGap={0.5} alignItems="center" flexWrap="wrap" sx={{ whiteSpace: 'normal', minWidth: 160 }}><Typography variant="subtitle2">{r.name}</Typography>{r.template && <Label>Template</Label>}{r.sensitive && <Label color="error">Sensitive</Label>}</Stack> },
-          { key: 'modules', label: 'Modules' },
+          { key: 'modules', label: 'Modules', render: (r) => accessOf(r).length },
           { key: 'scope', label: 'Scope', render: (r) => <Box component="span" sx={{ whiteSpace: 'normal' }}>{r.scope}</Box> },
           { key: 'org', label: 'Organisation' },
-          { key: 'tasks', label: 'Tasks' },
-          { key: 'act', label: '', render: (r) => <Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }}>View access</Button>{r.template ? <Button size="small" variant="outlined" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small" variant="outlined" >Edit</Button>}</Stack> },
+          { key: 'tasks', label: 'Actions', render: (r) => accessOf(r).reduce((n, m) => n + m.granted.length, 0) },
+          { key: 'act', label: '', render: (r) => <Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }} onClick={() => setViewing(r)}>View access</Button>{r.template ? <Button size="small" variant="outlined" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small" variant="outlined" >Edit</Button>}</Stack> },
         ]}
       />
       <CreateRole open={open} onClose={() => setOpen(false)} onSave={(r) => { setList((l) => [...l, r]); setToast(`Role “${r.name}” created.`); }} />
+      <AccessDrawer role={viewing} onClose={() => setViewing(null)} onCopy={(r) => { setViewing(null); setCopy(r); setCopyName(`${r.name} (BEN)`); }} />
       <FormDrawer
         open={Boolean(copy)}
         onClose={() => setCopy(null)}
@@ -170,7 +264,7 @@ export default function Roles() {
         actions={(
           <>
             <Button variant="outlined" color="inherit" onClick={() => setCopy(null)}>Cancel</Button>
-            <Button variant="contained" disabled={!copyName.trim()} onClick={() => { setList((l) => [...l, { ...copy, name: copyName, template: false }]); setCopy(null); setToast(`Copied as “${copyName}”.`); }}>Copy role</Button>
+            <Button variant="contained" disabled={!copyName.trim()} onClick={() => { setList((l) => [...l, { ...copy, name: copyName, template: false, access: accessMapOf(copy) }]); setCopy(null); setToast(`Copied as “${copyName}”.`); }}>Copy role</Button>
           </>
         )}
       >
