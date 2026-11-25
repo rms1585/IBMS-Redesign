@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  Box, Stack, Typography, Button, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, IconButton, Menu,
+  Box, Stack, Typography, Button, TextField, MenuItem, Alert, Snackbar, IconButton, Menu,
 } from '@mui/material';
-import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
+import FormDrawer from '../components/FormDrawer';
 import { PageHeader, UserAvatar, ReasonDialog } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -12,35 +12,46 @@ import { useStoredState } from '../demo/PortStore';
 
 const statusColor = { Active: 'success', Invited: 'info', Deactivated: 'default' };
 
-function InviteDialog({ open, onClose, onInvite }) {
-  const [f, setF] = useState({ name: '', type: 'BLPA staff', email: '', mobile: '', port: 'BEN', role: 'Border gate operator', acting: '' });
+const EMPTY_INVITE = { name: '', type: 'BLPA staff', email: '', mobile: '', port: 'BEN', role: 'Border gate operator', acting: '' };
+
+// The page remounts this (new key) each time it opens, so a new invitation always starts empty, while
+// staying mounted on close lets the drawer slide out.
+function InviteForm({ open, onClose, onInvite }) {
+  const [f, setF] = useState(EMPTY_INVITE);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email);
   const sensitive = roles.find((r) => r.name === f.role)?.sensitive;
+  const ready = f.name.trim() && emailOk;
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>New user</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2} sx={{ pt: 1 }}>
-          <Grid size={6}><TextField fullWidth required label="Full name" value={f.name} onChange={set('name')} /></Grid>
-          <Grid size={6}>
-            <TextField select fullWidth label="Organisation / person type" value={f.type} onChange={set('type')}>
-              {['BLPA staff', 'C&F agency', 'Importer / exporter', 'Bank staff'].map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-            </TextField>
-          </Grid>
-          <Grid size={6}><TextField fullWidth required label="Email" value={f.email} onChange={set('email')} error={Boolean(f.email) && !emailOk} helperText={f.email && !emailOk ? 'Enter a valid email' : ' '} /></Grid>
-          <Grid size={6}><TextField fullWidth label="Mobile" value={f.mobile} onChange={set('mobile')} /></Grid>
-          <Grid size={4}><TextField select fullWidth label="Port" value={f.port} onChange={set('port')}>{ports.map((p) => <MenuItem key={p.code} value={p.code}>{p.code}</MenuItem>)}</TextField></Grid>
-          <Grid size={8}><TextField select fullWidth label="Role" value={f.role} onChange={set('role')}>{roles.map((r) => <MenuItem key={r.name} value={r.name}>{r.name}</MenuItem>)}</TextField></Grid>
-          <Grid size={12}><TextField fullWidth type="date" label="Acting until (optional)" value={f.acting} onChange={set('acting')} slotProps={{ inputLabel: { shrink: true } }} helperText="Access ends automatically on this date" /></Grid>
-        </Grid>
-        {sensitive && <Alert severity="warning" sx={{ mt: 1 }}>“{f.role}” is sensitive. The assignment waits for independent approval before it takes effect.</Alert>}
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!f.name.trim() || !emailOk} onClick={() => onInvite(f, sensitive)}>Create and invite</Button>
-      </DialogActions>
-    </Dialog>
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title="New user"
+      subtitle="They get an email invitation to set up their account."
+      actions={(
+        <>
+          <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
+          <Button variant="contained" disabled={!ready} onClick={() => onInvite(f, sensitive)}>Create and invite</Button>
+        </>
+      )}
+    >
+      <Stack spacing={2.5} component="form" noValidate onSubmit={(e) => { e.preventDefault(); if (ready) onInvite(f, sensitive); }}>
+        <Typography variant="subtitle2">Person</Typography>
+        <TextField fullWidth required autoFocus label="Full name" value={f.name} onChange={set('name')} />
+        <TextField select fullWidth label="Organisation or person type" value={f.type} onChange={set('type')}>
+          {['BLPA staff', 'C&F agency', 'Importer / exporter', 'Bank staff'].map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+        </TextField>
+        <TextField fullWidth required type="email" label="Email" value={f.email} onChange={set('email')} error={Boolean(f.email) && !emailOk} helperText={f.email && !emailOk ? 'Enter a valid email, for example name@blpa.gov.bd' : 'The invitation goes to this address'} />
+        <TextField fullWidth type="tel" label="Mobile (optional)" value={f.mobile} onChange={set('mobile')} />
+        <Typography variant="subtitle2" sx={{ pt: 1 }}>Access</Typography>
+        <Stack direction="row" spacing={2}>
+          <TextField select label="Port" value={f.port} onChange={set('port')} sx={{ width: 120, flexShrink: 0 }}>{ports.map((p) => <MenuItem key={p.code} value={p.code}>{p.code}</MenuItem>)}</TextField>
+          <TextField select fullWidth label="Role" value={f.role} onChange={set('role')}>{roles.map((r) => <MenuItem key={r.name} value={r.name}>{r.name}</MenuItem>)}</TextField>
+        </Stack>
+        {sensitive && <Alert severity="warning">“{f.role}” is sensitive. The assignment waits for independent approval before it takes effect.</Alert>}
+        <TextField fullWidth type="date" label="Acting until (optional)" value={f.acting} onChange={set('acting')} slotProps={{ inputLabel: { shrink: true } }} helperText="Access ends automatically on this date" />
+      </Stack>
+    </FormDrawer>
   );
 }
 
@@ -61,6 +72,7 @@ function RowMenu({ user, onDeactivate }) {
 export default function Users() {
   const [list, setList] = useStoredState('users', initial);
   const [open, setOpen] = useState(false);
+  const [inviteKey, setInviteKey] = useState(0);
   const [deact, setDeact] = useState(null);
   const [toast, setToast] = useState('');
 
@@ -69,7 +81,7 @@ export default function Users() {
       <PageHeader
         title="Users"
         links={[{ name: 'Access and control' }, { name: 'Users' }]}
-        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New user</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => { setInviteKey((k) => k + 1); setOpen(true); }}>New user</Button>}
       />
       <DataTable
         rows={list}
@@ -89,7 +101,8 @@ export default function Users() {
           { key: 'm', label: '', render: (r) => <RowMenu user={r} onDeactivate={setDeact} /> },
         ]}
       />
-      <InviteDialog
+      <InviteForm
+        key={inviteKey}
         open={open}
         onClose={() => setOpen(false)}
         onInvite={(f, sensitive) => {
