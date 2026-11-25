@@ -104,31 +104,13 @@ function Tile({ item, lines }) {
   );
 }
 
-// Home uses the side navigation's categories, except that the long Administration list is split in three
-// as on the earlier Home, and the less frequent Other flows come last.
-const ADMIN_SPLIT = [
-  { title: 'Access and control', paths: ['/roles', '/users', '/audit'] },
-  { title: 'Platform', paths: ['/platform', '/external'] },
-];
-const LAST = 'Other flows';
-
-function homeGroups() {
-  const groups = navConfig.flatMap((g) => {
-    if (g.subheader !== 'Administration') return [{ title: g.subheader, items: g.items }];
-    const split = ADMIN_SPLIT.map((s) => ({ title: s.title, items: g.items.filter((i) => s.paths.includes(i.path)) }));
-    const taken = new Set(ADMIN_SPLIT.flatMap((s) => s.paths));
-    return [{ title: 'Administration and configuration', items: g.items.filter((i) => !taken.has(i.path)) }, ...split];
-  });
-  return [...groups.filter((g) => g.title !== LAST), ...groups.filter((g) => g.title === LAST)];
-}
-
 export default function Home() {
   const { canOpen } = useRole();
   const lines = useTileLines();
   const t = useT();
-  // Filtered to the current role; empty categories drop out.
-  const groups = homeGroups()
-    .map((g) => ({ ...g, items: g.items.filter((i) => i.path !== '/' && canOpen(i.path)) }))
+  // The side navigation's groups, filtered to the current role; empty groups drop out.
+  const groups = navConfig
+    .map((g) => ({ title: g.subheader, items: g.items.filter((i) => i.path !== '/' && canOpen(i.path)) }))
     .filter((g) => g.items.length);
   return (
     <>

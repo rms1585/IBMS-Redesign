@@ -100,7 +100,7 @@ export default function PlatformSetup() {
     <>
       <PageHeader
         title="Platform setup"
-        links={[{ name: 'Administration' }, { name: 'Platform setup' }, { name: label }]}
+        links={[{ name: 'Platform' }, { name: 'Platform setup' }, { name: label }]}
         subtitle="National registries are maintained once by head office and reused by every port."
         action={
           <>
