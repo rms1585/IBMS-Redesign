@@ -1,17 +1,23 @@
 import { Box, Divider, Drawer, IconButton, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { CloseRoundedIcon } from './icons';
 
 // A create or edit form that slides in from the right over the page: title and close at the top, the form
 // scrolls in the middle, and the actions stay pinned at the bottom so they are always in reach.
 // Full width on a phone. Escape, the close button or a click outside closes it.
-export default function FormDrawer({ open, onClose, title, subtitle, actions, children }) {
+// Keep it mounted and toggle `open`: a Drawer that mounts already open skips its slide-in.
+// `width` is 480 for a plain form; a stepped form with more on each step can ask for more room.
+export default function FormDrawer({ open, onClose, title, subtitle, actions, width = 480, children }) {
   const titleId = `form-drawer-${title.replace(/\W+/g, '-').toLowerCase()}`;
   return (
     <Drawer
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{ 'aria-labelledby': titleId, sx: { width: { xs: '100%', sm: 480 }, display: 'flex', flexDirection: 'column', boxShadow: (t) => t.customShadows.dialog } }}
+      transitionDuration={{ enter: 300, exit: 250 }}
+      // A light grey veil instead of MUI's 50% black, so the page stays readable behind the form.
+      sx={{ '& .MuiBackdrop-root': { bgcolor: (t) => alpha(t.palette.grey[800], 0.24) } }}
+      PaperProps={{ 'aria-labelledby': titleId, sx: { width: { xs: '100%', sm: width }, display: 'flex', flexDirection: 'column', boxShadow: (t) => t.customShadows.dialog } }}
     >
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} sx={{ px: 3, pt: 3, pb: 2 }}>
         <Box sx={{ minWidth: 0 }}>

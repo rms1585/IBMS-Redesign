@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box, Card, Stack, Typography, Button, Tabs, Tab, Stepper, Step, StepLabel, TextField, MenuItem, Grid2 as Grid, Checkbox, FormControlLabel, Alert, Snackbar, Divider,
 } from '@mui/material';
-import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
+import FormDrawer from '../components/FormDrawer';
 import { PageHeader } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -16,29 +16,48 @@ function CreateRole({ open, onClose, onSave }) {
   const [scope, setScope] = useState('Port');
   const [mods, setMods] = useState([]);
   const [actions, setActions] = useState({});
-  const close = () => { setStep(0); setName(''); setMods([]); setActions({}); onClose(); };
+  // Starts fresh each time it opens; staying mounted on close lets the drawer slide out.
+  useEffect(() => {
+    if (!open) return;
+    setStep(0); setName(''); setScope('Port'); setMods([]); setActions({});
+  }, [open]);
+  const close = onClose;
   const chosen = modulesCatalog.filter((m) => mods.includes(m.key));
   const picked = chosen.flatMap((m) => m.actions.filter((a) => actions[`${m.key}:${a[1]}`]).map((a) => ({ m: m.name, a })));
   const sensitive = picked.some((p) => p.a[2]);
   const canNext = [name.trim(), mods.length > 0, picked.length > 0, true][step];
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
-      <DialogTitle>Create role</DialogTitle>
-      <DialogContent>
-        <Stepper activeStep={step} sx={{ mb: 4 }}>
+    <FormDrawer
+      open={open}
+      onClose={close}
+      title="Create role"
+      subtitle="A role combines scope, modules and actions."
+      width={640}
+      actions={(
+        <>
+          <Button variant="outlined" color="inherit" onClick={step === 0 ? close : () => setStep(step - 1)}>{step === 0 ? 'Cancel' : 'Previous'}</Button>
+          {step < 3 ? (
+            <Button variant="contained" disabled={!canNext} onClick={() => setStep(step + 1)}>Next</Button>
+          ) : (
+            <Button variant="contained" onClick={() => { onSave({ name, scope, org: 'BLPA', modules: chosen.length, tasks: picked.length, template: false, sensitive }); close(); }}>Save role</Button>
+          )}
+        </>
+      )}
+    >
+        <Stepper activeStep={step} alternativeLabel sx={{ mb: 4 }}>
           {['Name and scope', 'Modules', 'Actions', 'Summary'].map((s) => <Step key={s}><StepLabel>{s}</StepLabel></Step>)}
         </Stepper>
         {step === 0 && (
-          <Grid container spacing={2}>
-            <Grid size={12}><TextField fullWidth required label="Role name" value={name} onChange={(e) => setName(e.target.value)} /></Grid>
+          <Grid container spacing={2.5}>
+            <Grid size={12}><TextField fullWidth required autoFocus label="Role name" value={name} onChange={(e) => setName(e.target.value)} /></Grid>
             <Grid size={12}><TextField fullWidth multiline minRows={2} label="Description" /></Grid>
-            <Grid size={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField select fullWidth label="Scope" value={scope} onChange={(e) => setScope(e.target.value)}>
                 {['Port', 'Port + gates/lanes', 'Port + scale', 'Port + shed/yard', 'Multi-port', 'Platform'].map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
               </TextField>
             </Grid>
-            <Grid size={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField select fullWidth label="Port" defaultValue="BEN">{ports.map((p) => <MenuItem key={p.code} value={p.code}>{p.name} ({p.code})</MenuItem>)}</TextField>
             </Grid>
           </Grid>
@@ -46,7 +65,7 @@ function CreateRole({ open, onClose, onSave }) {
         {step === 1 && (
           <Grid container spacing={1.5}>
             {modulesCatalog.map((m) => (
-              <Grid key={m.key} size={6}>
+              <Grid key={m.key} size={{ xs: 12, sm: 6 }}>
                 <Card variant="outlined" sx={{ boxShadow: 'none', px: 1.5, py: 0.5, borderColor: mods.includes(m.key) ? 'primary.main' : 'divider' }}>
                   <FormControlLabel
                     sx={{ width: '100%' }}
@@ -66,7 +85,7 @@ function CreateRole({ open, onClose, onSave }) {
                 <Box key={m.key}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="subtitle1">{m.name}</Typography>
-                    <Button size="small" color="inherit" onClick={() => setActions({ ...actions, ...Object.fromEntries(m.actions.map((a) => [`${m.key}:${a[1]}`, !allOn])) })}>{allOn ? 'Clear' : 'Tick all'}</Button>
+                    <Button size="small" variant="outlined" color="inherit" onClick={() => setActions({ ...actions, ...Object.fromEntries(m.actions.map((a) => [`${m.key}:${a[1]}`, !allOn])) })}>{allOn ? 'Clear' : 'Tick all'}</Button>
                   </Stack>
                   {['See', 'Record and do', 'Set up'].map((g) => {
                     const acts = m.actions.filter((a) => a[0] === g);
@@ -103,16 +122,7 @@ function CreateRole({ open, onClose, onSave }) {
             )}
           </>
         )}
-      </DialogContent>
-      <DialogActions>
-        <Button color="inherit" onClick={step === 0 ? close : () => setStep(step - 1)}>{step === 0 ? 'Cancel' : 'Previous'}</Button>
-        {step < 3 ? (
-          <Button variant="contained" disabled={!canNext} onClick={() => setStep(step + 1)}>Next</Button>
-        ) : (
-          <Button variant="contained" onClick={() => { onSave({ name, scope, org: 'BLPA', modules: chosen.length, tasks: picked.length, template: false, sensitive }); close(); }}>Save role</Button>
-        )}
-      </DialogActions>
-    </Dialog>
+    </FormDrawer>
   );
 }
 
@@ -152,18 +162,23 @@ export default function Roles() {
         ]}
       />
       <CreateRole open={open} onClose={() => setOpen(false)} onSave={(r) => { setList((l) => [...l, r]); setToast(`Role “${r.name}” created.`); }} />
-      <Dialog open={Boolean(copy)} onClose={() => setCopy(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Copy “{copy?.name}”</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>The template stays unchanged. Your copy is independent and can be edited.</Typography>
-          <TextField fullWidth label="New role name" value={copyName} onChange={(e) => setCopyName(e.target.value)} sx={{ mb: 2 }} />
+      <FormDrawer
+        open={Boolean(copy)}
+        onClose={() => setCopy(null)}
+        title={`Copy “${copy?.name ?? ''}”`}
+        subtitle="The template stays unchanged. Your copy is independent and can be edited."
+        actions={(
+          <>
+            <Button variant="outlined" color="inherit" onClick={() => setCopy(null)}>Cancel</Button>
+            <Button variant="contained" disabled={!copyName.trim()} onClick={() => { setList((l) => [...l, { ...copy, name: copyName, template: false }]); setCopy(null); setToast(`Copied as “${copyName}”.`); }}>Copy role</Button>
+          </>
+        )}
+      >
+        <Stack spacing={2.5}>
+          <TextField fullWidth autoFocus label="New role name" value={copyName} onChange={(e) => setCopyName(e.target.value)} />
           <TextField select fullWidth label="Port" defaultValue="BEN">{ports.map((p) => <MenuItem key={p.code} value={p.code}>{p.name}</MenuItem>)}</TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button variant="outlined" color="inherit" onClick={() => setCopy(null)}>Cancel</Button>
-          <Button variant="contained" disabled={!copyName.trim()} onClick={() => { setList((l) => [...l, { ...copy, name: copyName, template: false }]); setCopy(null); setToast(`Copied as “${copyName}”.`); }}>Copy role</Button>
-        </DialogActions>
-      </Dialog>
+        </Stack>
+      </FormDrawer>
       <Snackbar open={Boolean(toast)} autoHideDuration={3000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
       </Snackbar>

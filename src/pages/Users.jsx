@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box, Stack, Typography, Button, TextField, MenuItem, Alert, Snackbar, IconButton, Menu,
 } from '@mui/material';
@@ -14,10 +14,12 @@ const statusColor = { Active: 'success', Invited: 'info', Deactivated: 'default'
 
 const EMPTY_INVITE = { name: '', type: 'BLPA staff', email: '', mobile: '', port: 'BEN', role: 'Border gate operator', acting: '' };
 
-// The page remounts this (new key) each time it opens, so a new invitation always starts empty, while
-// staying mounted on close lets the drawer slide out.
+// Stays mounted so the drawer can slide in and out; the form empties itself each time it opens.
 function InviteForm({ open, onClose, onInvite }) {
   const [f, setF] = useState(EMPTY_INVITE);
+  useEffect(() => {
+    if (open) setF(EMPTY_INVITE);
+  }, [open]);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email);
   const sensitive = roles.find((r) => r.name === f.role)?.sensitive;
@@ -72,7 +74,6 @@ function RowMenu({ user, onDeactivate }) {
 export default function Users() {
   const [list, setList] = useStoredState('users', initial);
   const [open, setOpen] = useState(false);
-  const [inviteKey, setInviteKey] = useState(0);
   const [deact, setDeact] = useState(null);
   const [toast, setToast] = useState('');
 
@@ -81,7 +82,7 @@ export default function Users() {
       <PageHeader
         title="Users"
         links={[{ name: 'Access and control' }, { name: 'Users' }]}
-        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => { setInviteKey((k) => k + 1); setOpen(true); }}>New user</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New user</Button>}
       />
       <DataTable
         rows={list}
@@ -102,7 +103,6 @@ export default function Users() {
         ]}
       />
       <InviteForm
-        key={inviteKey}
         open={open}
         onClose={() => setOpen(false)}
         onInvite={(f, sensitive) => {

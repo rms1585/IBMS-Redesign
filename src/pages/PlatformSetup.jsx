@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box, Card, Stack, Typography, Tabs, Tab, Button, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Step, StepLabel, Stepper,
 } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader, formatBDT } from '../components/common';
+import FormDrawer from '../components/FormDrawer';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { ports, products, vehicleTypes, agencies, traders, holidays, tariffLines } from '../data/mock';
@@ -48,39 +49,44 @@ function BulkImport({ open, onClose, what }) {
   );
 }
 
+const EMPTY_PORT = { code: '', name: '', station: '', tariff: 'TO-2026-03 (invented reference)' };
+
+// Stays mounted so the drawer slides in and out; the form empties itself each time it opens.
 function CreatePort({ open, onClose, onCreate }) {
-  const [f, setF] = useState({ code: '', name: '', station: '', tariff: 'TO-2026-03 (invented reference)' });
+  const [f, setF] = useState(EMPTY_PORT);
+  useEffect(() => {
+    if (open) setF(EMPTY_PORT);
+  }, [open]);
   const dup = ports.some((p) => p.code === f.code.toUpperCase());
   const codeOk = /^[A-Za-z]{3}$/.test(f.code) && !dup;
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Create port</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2} sx={{ pt: 1 }}>
-          <Grid size={4}>
-            <TextField
-              fullWidth required label="Port code" value={f.code}
-              onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase().slice(0, 3) })}
-              error={Boolean(f.code) && !codeOk}
-              helperText={dup ? 'This code is already used' : 'Three letters; fixed after creation'}
-            />
-          </Grid>
-          <Grid size={8}><TextField fullWidth required label="Port name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Grid>
-          <Grid size={12}><TextField fullWidth label="Customs station code" value={f.station} onChange={(e) => setF({ ...f, station: e.target.value })} helperText="Routes incoming NSW messages to this port" /></Grid>
-          <Grid size={12}>
-            <TextField select fullWidth required label="Tariff order" value={f.tariff} onChange={(e) => setF({ ...f, tariff: e.target.value })}>
-              <MenuItem value="TO-2026-03 (invented reference)">TO-2026-03 (invented reference)</MenuItem>
-              <MenuItem value="TO-2025-11 (invented reference)">TO-2025-11 (invented reference)</MenuItem>
-            </TextField>
-          </Grid>
-        </Grid>
-        {codeOk && <Typography variant="caption" color="text.secondary">Bills and passes will be numbered {f.code}-BILL-… and {f.code}-PASS-…</Typography>}
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!codeOk || !f.name} onClick={() => onCreate(f)}>Create port</Button>
-      </DialogActions>
-    </Dialog>
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title="Create port"
+      subtitle="The port administrator completes the setup afterwards."
+      actions={(
+        <>
+          <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
+          <Button variant="contained" disabled={!codeOk || !f.name.trim()} onClick={() => onCreate(f)}>Create port</Button>
+        </>
+      )}
+    >
+      <Stack spacing={2.5}>
+        <TextField
+          fullWidth required label="Port code" value={f.code}
+          onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase().slice(0, 3) })}
+          error={Boolean(f.code) && !codeOk}
+          helperText={dup ? 'This code is already used' : codeOk ? `Bills and passes will be numbered ${f.code}-BILL-… and ${f.code}-PASS-…` : 'Three letters; fixed after creation'}
+        />
+        <TextField fullWidth required label="Port name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+        <TextField fullWidth label="Customs station code" value={f.station} onChange={(e) => setF({ ...f, station: e.target.value })} helperText="Routes incoming NSW messages to this port" />
+        <TextField select fullWidth required label="Tariff order" value={f.tariff} onChange={(e) => setF({ ...f, tariff: e.target.value })}>
+          <MenuItem value="TO-2026-03 (invented reference)">TO-2026-03 (invented reference)</MenuItem>
+          <MenuItem value="TO-2025-11 (invented reference)">TO-2025-11 (invented reference)</MenuItem>
+        </TextField>
+      </Stack>
+    </FormDrawer>
   );
 }
 
