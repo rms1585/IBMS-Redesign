@@ -196,23 +196,13 @@ function Header({ navWidth, onOpenNav }) {
       {onOpenNav && (
         <IconButton onClick={onOpenNav} aria-label="Open navigation" edge="start"><MenuRoundedIcon /></IconButton>
       )}
-      <Label color="warning" sx={{ display: { xs: 'none', sm: 'inline-flex' } }}>{t('Demonstration system')}</Label>
+      {/* Fixed-width items must not shrink: a squeezed nowrap label lets its text spill past its background. */}
+      <Label color="warning" sx={{ display: { xs: 'none', sm: 'inline-flex' }, flexShrink: 0 }}>{t('Demonstration system')}</Label>
 
       <Box sx={{ flex: 1 }} />
 
       <Lookup />
-      <Typography variant="subtitle2" sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap' }}>{t('Port')}: Benapole</Typography>
-      <Button
-        size="small"
-        variant="outlined"
-        color="inherit"
-        onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
-        aria-label={`${t('Language')}: ${lang === 'en' ? 'English' : 'বাংলা'}`}
-        startIcon={<TranslateRoundedIcon fontSize="small" />}
-        sx={{ minWidth: 0, display: { xs: 'none', sm: 'inline-flex' } }}
-      >
-        {lang === 'en' ? 'বাংলা' : 'English'}
-      </Button>
+      <Typography variant="subtitle2" sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap', flexShrink: 0 }}>{t('Port')}: Benapole</Typography>
       <Tooltip title="Notifications">
         <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Notifications">
           <Badge badgeContent={items.length} color="error"><NotificationsNoneRoundedIcon /></Badge>
