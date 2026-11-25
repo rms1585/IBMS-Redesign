@@ -7,6 +7,7 @@ import { PageHeader, AssumptionNote } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { useStoredState } from '../demo/PortStore';
+import { tr } from '../i18n/LanguageContext';
 
 const NOT_SET = 'To be defined';
 const initialExceptions = [
@@ -26,14 +27,14 @@ function EditDialog({ exception, onClose, onSave }) {
       <DialogTitle>{exception.name}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <TextField fullWidth required label="Who decides" value={f.decider} onChange={set('decider')} placeholder="BLPA names this role" />
-          <TextField fullWidth required label="When it applies" value={f.when} onChange={set('when')} />
-          <TextField fullWidth required label="Authority" value={f.authority} onChange={set('authority')} placeholder="The order or rule that allows it" />
+          <TextField fullWidth required label={tr("Who decides")} value={f.decider} onChange={set('decider')} placeholder={tr("BLPA names this role")} />
+          <TextField fullWidth required label={tr("When it applies")} value={f.when} onChange={set('when')} />
+          <TextField fullWidth required label={tr("Authority")} value={f.authority} onChange={set('authority')} placeholder={tr("The order or rule that allows it")} />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!f.decider.trim() || !f.when.trim() || !f.authority.trim()} onClick={() => onSave({ decider: f.decider.trim(), when: f.when.trim(), authority: f.authority.trim() })}>Save for all ports</Button>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button>
+        <Button variant="contained" disabled={!f.decider.trim() || !f.when.trim() || !f.authority.trim()} onClick={() => onSave({ decider: f.decider.trim(), when: f.when.trim(), authority: f.authority.trim() })}>{tr("Save for all ports")}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -45,15 +46,15 @@ export default function Exceptions() {
   const [toast, setToast] = useState('');
   return (
     <>
-      <PageHeader title="Exception catalogue" links={[{ name: 'Administration' }, { name: 'Exception catalogue' }]} subtitle="One definition of each exception, applied the same way at every port." />
+      <PageHeader title={tr("Exception catalogue")} links={[{ name: 'Administration' }, { name: 'Exception catalogue' }]} subtitle={tr("One definition of each exception, applied the same way at every port.")} />
       <AssumptionNote code="F62" sx={{ mb: 3 }}>BLPA still has to name who decides each exception. The minutes don't give the conditions or authority, so those are left open.</AssumptionNote>
-      <DataTable rows={exceptions} searchKeys={['id', 'name']} searchPlaceholder="Search exceptions" rowKey={(r) => r.id} columns={[
+      <DataTable rows={exceptions} searchKeys={['id', 'name']} searchPlaceholder={tr("Search exceptions")} rowKey={(r) => r.id} columns={[
         { key: 'name', label: 'Exception', render: (r) => <><Typography variant="subtitle2">{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.id} · all ports</Typography></> },
         { key: 'decider', label: 'Who decides', render: (r) => r.decider || <Label color="warning">BLPA to name</Label> },
         { key: 'when', label: 'When it applies' },
         { key: 'authority', label: 'Authority' },
         { key: 'status', label: 'Status', render: (r) => (isComplete(r) ? <Label color="success">Defined</Label> : <Label color="warning">Incomplete</Label>) },
-        { key: 'a', label: '', render: (r) => <Button size="small" variant="outlined" color="inherit" onClick={() => setEditing(r)}>Edit</Button> },
+        { key: 'a', label: '', render: (r) => <Button size="small" variant="outlined" color="inherit" onClick={() => setEditing(r)}>{tr("Edit")}</Button> },
       ]} />
       {editing && (
         <EditDialog

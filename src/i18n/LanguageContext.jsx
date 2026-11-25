@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import bn from './bn';
 
 // Bangla and English for every label, chosen per user and kept between sessions (Annex 24.7).
@@ -13,6 +13,13 @@ const readStored = () => {
   }
 };
 
+const translate = (lang, s) => (lang === 'bn' && typeof s === 'string' ? bn[s] ?? s : s);
+
+// The language in force, for `tr()` in places that are not hooks (JSX attributes in long screens). The layout
+// remounts the screen when the language changes, so those strings are re-read.
+let current = readStored();
+export const tr = (s) => translate(current, s);
+
 const LanguageContext = createContext({ lang: 'en', setLang: () => {}, t: (s) => s });
 
 export function LanguageProvider({ children }) {
@@ -21,7 +28,12 @@ export function LanguageProvider({ children }) {
     setLangState(l);
     try { localStorage.setItem(STORAGE_KEY, l); } catch { /* storage unavailable */ }
   }, []);
-  const t = useCallback((s) => (lang === 'bn' && typeof s === 'string' ? bn[s] ?? s : s), [lang]);
+  current = lang;
+  const t = useCallback((s) => translate(lang, s), [lang]);
+  // Screen readers pronounce the page in the chosen language (audit M3).
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   const value = useMemo(() => ({ lang, setLang, t }), [lang, setLang, t]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

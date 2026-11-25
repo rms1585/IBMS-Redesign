@@ -5,7 +5,7 @@ import {
   Menu, MenuItem, ListItemIcon, ListItemText, Collapse, Drawer, Paper, TextField, useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { navConfig } from './navConfig';
+import { flatNav, navConfig } from './navConfig';
 import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
@@ -69,7 +69,7 @@ function NavItem({ item, mini }) {
         variant={mini ? 'caption' : 'body2'}
         noWrap
         sx={{
-          fontWeight: 500,
+          fontWeight: 400,
           // Collapsed-nav labels sit under 24px icons in an 88px rail; caption (12px) clips most titles, so 10px is a
           // recorded exception to the type scale.
           ...(mini ? { fontSize: 10, lineHeight: 1.2, maxWidth: '100%', textAlign: 'center' } : { flex: 1, textAlign: 'left' }),
@@ -105,7 +105,7 @@ function NavGroup({ group, mini }) {
             typography: 'overline', letterSpacing: 0.4, cursor: 'pointer',
             // The overline's own 16px line height, so a heading that wraps stays one block; the padding keeps the
             // single-line heading at its earlier 48px.
-            color: 'text.disabled', bgcolor: 'transparent', lineHeight: 16 / 12, pl: 1.5, pt: 2.5, pb: 1.5,
+            color: 'text.secondary', bgcolor: 'transparent', lineHeight: 16 / 12, pl: 1.5, pt: 2.5, pb: 1.5,
             display: 'flex', alignItems: 'center', gap: 0.5, '&:hover': { color: 'text.primary' },
           }}
         >
@@ -129,6 +129,7 @@ function NavGroup({ group, mini }) {
 // Lookup on every screen: plate, manifest, Bill of Entry, pass number or the port's alias (Annex 24.3).
 function Lookup() {
   const navigate = useNavigate();
+  const phoneHeader = useMediaQuery(useTheme().breakpoints.down('sm'));
   const { lookup } = usePort();
   const t = useT();
   const [q, setQ] = useState('');
@@ -141,13 +142,14 @@ function Lookup() {
         size="small"
         fullWidth
         value={q}
-        placeholder={t('Plate, manifest, Bill of Entry or pass')}
+        // The full hint does not fit a phone's header, so phones show just "Search" (audit m8).
+        placeholder={phoneHeader ? t('Search') : t('Plate, manifest, Bill of Entry or pass')}
         inputProps={{ 'aria-label': t('Lookup') }}
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) go(results[0]); if (e.key === 'Escape') setOpen(false); }}
-        InputProps={{ startAdornment: <SearchRoundedIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> }}
+        InputProps={{ startAdornment: <SearchRoundedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} aria-hidden /> }}
       />
       {open && q.trim().length >= 3 && (
         <Paper sx={{ position: 'absolute', top: 44, left: 0, right: 0, zIndex: 1300, boxShadow: 8, py: 0.5 }}>
@@ -349,6 +351,13 @@ export default function DashboardLayout() {
   const [miniChoice, setMiniChoice] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const mini = miniChoice ?? !isDesktop;
+  const t = useT();
+  const { lang } = useLanguage();
+  // Each screen names the browser tab after itself (audit m9).
+  useEffect(() => {
+    const item = flatNav.filter((i) => pathname === i.path || (i.path !== '/' && pathname.startsWith(`${i.path}/`))).pop();
+    document.title = item && item.path !== '/' ? `${t(item.title)} · IBMS` : 'IBMS';
+  }, [pathname, t]);
   const navWidth = isTablet ? (mini ? NAV_MINI : NAV_WIDTH) : 0;
 
   useEffect(() => setDrawerOpen(false), [pathname]);
@@ -379,12 +388,27 @@ export default function DashboardLayout() {
         </Drawer>
       )}
 
+      {/* First stop for keyboard users: jumps past the navigation and header (audit m9). */}
+      <Box
+        component="a"
+        href="#main-content"
+        onClick={(e) => { e.preventDefault(); document.getElementById('main-content')?.focus(); }}
+        sx={{
+          position: 'fixed', top: 8, left: 8, zIndex: 2000, px: 2, py: 1, borderRadius: 1, typography: 'subtitle2',
+          bgcolor: 'background.paper', color: 'text.primary', boxShadow: (t) => t.customShadows.dialog,
+          transform: 'translateY(-200%)', '&:focus': { transform: 'none', outline: (t) => `2px solid ${t.palette.primary.dark}` },
+        }}
+      >
+        {t('Skip to content')}
+      </Box>
       <Header navWidth={navWidth} onOpenNav={isTablet ? null : () => setDrawerOpen(true)} />
 
       <Box
         component="main"
+        id="main-content"
+        tabIndex={-1}
         sx={{
-          flex: 1, minWidth: 0, pl: `${navWidth}px`, pt: `${HEADER + 8}px`,
+          flex: 1, minWidth: 0, pl: `${navWidth}px`, pt: `${HEADER + 8}px`, '&:focus': { outline: 'none' },
           transition: theme.transitions.create('padding-left', { duration: 200 }),
         }}
       >
@@ -392,7 +416,8 @@ export default function DashboardLayout() {
         <Box sx={{ px: { xs: 2, sm: 3, lg: 5 }, pb: 8, maxWidth: 1600, mx: 'auto', containerType: 'inline-size', containerName: 'main' }}>
           {/* Screens outside the current role's modules send the user back to Home. */}
           <StatusStrips />
-          {canOpen(pathname) ? <Outlet /> : <Navigate to={role.landing} replace />}
+          {/* Keyed by language so screens that use tr() re-read their strings when the language changes. */}
+          {canOpen(pathname) ? <Outlet key={lang} /> : <Navigate to={role.landing} replace />}
         </Box>
       </Box>
     </Box>

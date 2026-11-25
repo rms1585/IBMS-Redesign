@@ -68,7 +68,7 @@ function BillDetail({ bill, onDone }) {
           <ReasonField value={reason} onChange={setReason} />
           <Stack direction="row" spacing={1}>
             <Button variant="contained" disabled={!Number(amount) || !reason.trim()} onClick={() => { p.requestCorrection({ record: bill.paymentId, field: 'Correcting line', from: '–', to: formatBDT(Number(amount)), reason: reason.trim() }); setCorrecting(false); setAmount(''); setReason(''); onDone('Correcting line sent for approval'); }}>Send for approval</Button>
-            <Button onClick={() => setCorrecting(false)}>Cancel</Button>
+            <Button variant="outlined" color="inherit" onClick={() => setCorrecting(false)}>Cancel</Button>
           </Stack>
         </Stack>
       ) : <Button size="small" variant="outlined" sx={{ mt: 1.5 }} onClick={() => setCorrecting(true)}>Add a correcting line</Button>}

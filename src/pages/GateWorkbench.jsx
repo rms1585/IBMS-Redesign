@@ -81,10 +81,10 @@ function EntryBench({ onDone }) {
               <TextField label="Plate" value={typedPlate} onChange={(e) => setTypedPlate(e.target.value)} />
               <ReasonField value={reason} onChange={setReason} helper="The failed read and the typed plate are logged." />
               {typedPlate && typedPlate.replace(/\s/g, '').toUpperCase() !== v.plate.replace(/\s/g, '') && <Alert severity="error">The typed plate does not match the selected truck.</Alert>}
-              <Box><Button onClick={() => setTyping(false)}>Use the camera read</Button></Box>
+              <Box><Button variant="outlined" color="inherit" onClick={() => setTyping(false)}>Use the camera read</Button></Box>
             </Stack>
           ) : (
-            <Box><Button size="small" onClick={() => setTyping(true)}>Camera could not read the plate</Button></Box>
+            <Box><Button size="small" variant="outlined" color="inherit" onClick={() => setTyping(true)}>Camera could not read the plate</Button></Box>
           )}
         </Stack>
       ) : <Typography variant="body2" color="text.secondary">Select a truck from the queue.</Typography>}

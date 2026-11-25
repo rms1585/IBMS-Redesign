@@ -6,6 +6,7 @@ import { agencyOf, billTotals, importerName, usePort } from '../demo/PortStore';
 import { dayKey, formatBDT, formatBoe, formatDateTime, formatKg } from '../demo/format';
 import { ApprovalRow, Confirmation, Fact, Facts, HoldRow, Id, Plate, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
 import { AgencyPicker, LicenceBanner, useAgency } from './CfPortal';
+import { tr } from '../i18n/LanguageContext';
 
 const CLASSES = [['10-wheel truck', 3], ['12-wheel truck', 4], ['6-wheel truck', 2], ['Covered van', 2]];
 
@@ -26,17 +27,17 @@ function EnterTruck({ mid, ain, onDone }) {
       <Typography variant="subtitle1" gutterBottom>Enter an incoming truck</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>As written on the Car Pass. The gate checks the plate and Car Pass number against this entry. No driving licence is needed.</Typography>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-        <TextField required label="Plate" value={f.plate} onChange={set('plate')} helperText="As registered, for example WB 23 D 1187" />
-        <TextField select label="Vehicle class" value={f.cls} onChange={set('cls')} helperText="The gate confirms it by counting axles">
+        <TextField required label={tr("Plate")} value={f.plate} onChange={set('plate')} helperText={tr("As registered, for example WB 23 D 1187")} />
+        <TextField select label={tr("Vehicle class")} value={f.cls} onChange={set('cls')} helperText={tr("The gate confirms it by counting axles")}>
           {CLASSES.map(([c, a]) => <MenuItem key={c} value={c}>{c} ({a} axles)</MenuItem>)}
         </TextField>
-        <TextField required label="Driver's name" value={f.driverName} onChange={set('driverName')} />
-        <TextField required label="Driver's identity number on the Car Pass" value={f.driverId} onChange={set('driverId')} helperText="BLPA and Customs are still to name the document for foreign drivers" />
-        <TextField required label="Car Pass number" value={f.carPass} onChange={set('carPass')} />
+        <TextField required label={tr("Driver's name")} value={f.driverName} onChange={set('driverName')} />
+        <TextField required label={tr("Driver's identity number on the Car Pass")} value={f.driverId} onChange={set('driverId')} helperText={tr("BLPA and Customs are still to name the document for foreign drivers")} />
+        <TextField required label={tr("Car Pass number")} value={f.carPass} onChange={set('carPass')} />
       </Box>
       <Stack spacing={1.5} sx={{ mt: 2 }}>
-        {problem && <Refusal title="Truck entry refused" items={[problem]} />}
-        <Box><Button variant="contained" disabled={missing.length > 0 || Boolean(problem)} onClick={save}>Enter truck</Button></Box>
+        {problem && <Refusal title={tr("Truck entry refused")} items={[problem]} />}
+        <Box><Button variant="contained" disabled={missing.length > 0 || Boolean(problem)} onClick={save}>{tr("Enter truck")}</Button></Box>
       </Stack>
     </Card>
   );
@@ -63,13 +64,13 @@ function RecordBoe({ m, lines, ain, onDone }) {
         ))}
       </Stack>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '120px 120px 1fr 180px' }, mt: 1.5 }}>
-        <TextField label="Type" value="C" disabled />
-        <TextField label="Office" value={p.port.stationCode} disabled />
-        <TextField required label="Registration number" value={reg} onChange={(e) => setReg(e.target.value)} placeholder="C-48512" />
-        <TextField required label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} InputLabelProps={{ shrink: true }} />
+        <TextField label={tr("Type")} value="C" disabled />
+        <TextField label={tr("Office")} value={p.port.stationCode} disabled />
+        <TextField required label={tr("Registration number")} value={reg} onChange={(e) => setReg(e.target.value)} placeholder={tr("C-48512")} />
+        <TextField required label={tr("Date")} type="date" value={date} onChange={(e) => setDate(e.target.value)} InputLabelProps={{ shrink: true }} />
       </Box>
       <Stack spacing={1.5} sx={{ mt: 2 }}>
-        <Refusal title="Bill of Entry not recorded" items={blockers.filter((b) => b !== 'Select at least one line.')} />
+        <Refusal title={tr("Bill of Entry not recorded")} items={blockers.filter((b) => b !== 'Select at least one line.')} />
         <Box>
           <Button variant="contained" disabled={blockers.length > 0 || !reg.trim()} onClick={() => { p.recordBoe({ mid: m.id, bin: importers[0], ain, lineIds: sel, reg: reg.trim().toUpperCase(), date }); onDone('Bill of Entry recorded'); setReg(''); }}>
             Record Bill of Entry
@@ -100,12 +101,12 @@ function RaiseRequest({ b, ain, onDone }) {
       <Typography variant="subtitle1" gutterBottom>Raise a Delivery Request</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>One delivery day (today), a quantity up to the released balance and a ceiling of trucks. The bill is raised on submission; each local truck enters on an Entry Pass against a paid slot.</Typography>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
-        <TextField label="Delivery day" value={dayKey()} disabled />
-        <TextField required label="Quantity (kg)" type="number" value={kg} onChange={(e) => setKg(e.target.value)} helperText={`Released balance in custody: ${formatKg(balance)}`} />
-        <TextField required label="Ceiling of trucks" type="number" value={ceiling} onChange={(e) => setCeiling(e.target.value)} inputProps={{ min: 1, max: 6 }} />
+        <TextField label={tr("Delivery day")} value={dayKey()} disabled />
+        <TextField required label={tr("Quantity (kg)")} type="number" value={kg} onChange={(e) => setKg(e.target.value)} helperText={`Released balance in custody: ${formatKg(balance)}`} />
+        <TextField required label={tr("Ceiling of trucks")} type="number" value={ceiling} onChange={(e) => setCeiling(e.target.value)} inputProps={{ min: 1, max: 6 }} />
       </Box>
       <Stack spacing={1.5} sx={{ mt: 2 }}>
-        <Refusal title="Delivery Request refused" items={blockers} />
+        <Refusal title={tr("Delivery Request refused")} items={blockers} />
         <Box>
           <Button variant="contained" disabled={blockers.length > 0 || !n || Number(ceiling) < 1} onClick={() => { p.raiseDeliveryRequest({ boeId: b.id, kg: n, ceiling: Number(ceiling) }); onDone('Delivery Request raised and bill issued'); setKg(''); }}>
             Raise Delivery Request
@@ -137,7 +138,7 @@ function BillCard({ bill, onPay }) {
       <Stack direction="row" justifyContent="space-between"><Typography variant="body2">VAT 15%</Typography><Typography variant="body2">{formatBDT(tot.vat)}</Typography></Stack>
       <Stack direction="row" justifyContent="space-between"><Typography variant="subtitle2">Total</Typography><Typography variant="subtitle2">{formatBDT(tot.total)}</Typography></Stack>
       {bill.status === 'Payment due' && onPay && (
-        <Button variant="contained" sx={{ mt: 1.5 }} onClick={onPay}>Pay online</Button>
+        <Button variant="contained" sx={{ mt: 1.5 }} onClick={onPay}>{tr("Pay online")}</Button>
       )}
       {bill.status === 'Paid' && <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>Paid {formatDateTime(bill.paidAt)} · {bill.provider}</Typography>}
     </Card>
@@ -163,8 +164,8 @@ function Slot({ d, slot, idx, onDone }) {
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ py: 1 }}>
       <Typography variant="body2" color="text.secondary">Slot {idx + 1}</Typography>
-      <TextField size="small" label="Plate of the local truck" value={plate} onChange={(e) => setPlate(e.target.value)} disabled={bill.status !== 'Paid'} helperText={bill.status !== 'Paid' ? 'Pay the bill first; slots open once it is paid' : 'Key it up to the moment the truck enters'} />
-      <Button variant="outlined" disabled={!plate.trim() || bill.status !== 'Paid'} onClick={() => { p.bindPlate(d.id, idx, plate.trim()); onDone(`Plate ${plate.trim()} keyed`); setPlate(''); }}>Key plate</Button>
+      <TextField size="small" label={tr("Plate of the local truck")} value={plate} onChange={(e) => setPlate(e.target.value)} disabled={bill.status !== 'Paid'} helperText={bill.status !== 'Paid' ? 'Pay the bill first; slots open once it is paid' : 'Key it up to the moment the truck enters'} />
+      <Button variant="outlined" disabled={!plate.trim() || bill.status !== 'Paid'} onClick={() => { p.bindPlate(d.id, idx, plate.trim()); onDone(`Plate ${plate.trim()} keyed`); setPlate(''); }}>{tr("Key plate")}</Button>
     </Stack>
   );
 }
@@ -188,12 +189,12 @@ function PassSigning({ pass, onDone, ain }) {
       </Stack>
       {pass.invalidatedBy && <Alert severity="error" sx={{ mt: 1 }}>A hold invalidated this pass. Lifting the hold does not revive it; a new pass is issued with its approvals.</Alert>}
       <Box sx={{ mt: 1 }}>
-        <ApprovalRow title="Shed in-charge" approval={pass.approvals.shed} />
-        <ApprovalRow title="Customs Assistant Revenue Officer" approval={pass.approvals.aro} />
+        <ApprovalRow title={tr("Shed in-charge")} approval={pass.approvals.shed} />
+        <ApprovalRow title={tr("Customs Assistant Revenue Officer")} approval={pass.approvals.aro} />
         <ApprovalRow
           title={`C&F authorized signer (${agency.signer})`}
           approval={pass.approvals.signer}
-          action={!pass.invalidatedBy && !pass.used && <Button size="small" variant="contained" disabled={Boolean(p.licenceProblem(ain))} onClick={() => { p.signPass(pass.id, 'signer'); onDone('Exit Pass signed'); }}>Sign Exit Pass</Button>}
+          action={!pass.invalidatedBy && !pass.used && <Button size="small" variant="contained" disabled={Boolean(p.licenceProblem(ain))} onClick={() => { p.signPass(pass.id, 'signer'); onDone('Exit Pass signed'); }}>{tr("Sign Exit Pass")}</Button>}
         />
       </Box>
       {pass.approvals.shed && !pass.used && !pass.invalidatedBy && (
@@ -202,15 +203,15 @@ function PassSigning({ pass, onDone, ain }) {
             <Alert severity="warning">Truck change {tc.from} to {tc.to} sent for approval to the shed in-charge and the Customs ARO. You proposed it, so you cannot approve it.</Alert>
           ) : changing ? (
             <Stack spacing={1.5}>
-              <TextField size="small" label="New plate" value={newPlate} onChange={(e) => setNewPlate(e.target.value)} />
-              <ReasonField value={reason} onChange={setReason} label="Reason for the truck change" />
+              <TextField size="small" label={tr("New plate")} value={newPlate} onChange={(e) => setNewPlate(e.target.value)} />
+              <ReasonField value={reason} onChange={setReason} label={tr("Reason for the truck change")} />
               <Stack direction="row" spacing={1}>
-                <Button variant="contained" disabled={!newPlate.trim() || !reason.trim()} onClick={() => { p.proposeTruckChange(pass.id, newPlate.trim(), reason.trim()); setChanging(false); onDone('Truck change sent for approval'); }}>Send for approval</Button>
-                <Button onClick={() => setChanging(false)}>Cancel</Button>
+                <Button variant="contained" disabled={!newPlate.trim() || !reason.trim()} onClick={() => { p.proposeTruckChange(pass.id, newPlate.trim(), reason.trim()); setChanging(false); onDone('Truck change sent for approval'); }}>{tr("Send for approval")}</Button>
+                <Button variant="outlined" color="inherit" onClick={() => setChanging(false)}>{tr("Cancel")}</Button>
               </Stack>
             </Stack>
           ) : (
-            <Button size="small" onClick={() => setChanging(true)}>Propose a truck change</Button>
+            <Button size="small" variant="outlined" color="inherit" onClick={() => setChanging(true)}>{tr("Propose a truck change")}</Button>
           )}
         </Box>
       )}
@@ -227,7 +228,7 @@ export default function CfManifest() {
   if (!m || !Object.values(m.tags).includes(ain)) {
     return (
       <>
-        <PageHeader title="Consignment" links={[{ name: 'C&F portal', href: '/cf-portal' }, { name: 'Not found' }]} action={canPick && <AgencyPicker ain={ain} pick={pick} />} />
+        <PageHeader title={tr("Consignment")} links={[{ name: 'C&F portal', href: '/cf-portal' }, { name: 'Not found' }]} action={canPick && <AgencyPicker ain={ain} pick={pick} />} />
         <Alert severity="info">This consignment is not tagged to your agency, so it is not shown. An importer tags its agency in its own portal.</Alert>
       </>
     );
@@ -292,10 +293,10 @@ export default function CfManifest() {
                     {b.closed && <StatusPill word="Closed" />}
                   </Stack>
                   <Facts cols={4}>
-                    <Fact label="Importer">{importerName(b.importer)}</Fact>
-                    <Fact label="Released">{b.release ? <>{formatKg(b.release.kg)} <SourceMarker source={b.release.source} /></> : '–'}</Fact>
-                    <Fact label="Delivered">{formatKg(b.deliveredKg)}</Fact>
-                    <Fact label="Balance in custody">{b.release ? formatKg(p.releasedBalance(b)) : '–'}</Fact>
+                    <Fact label={tr("Importer")}>{importerName(b.importer)}</Fact>
+                    <Fact label={tr("Released")}>{b.release ? <>{formatKg(b.release.kg)} <SourceMarker source={b.release.source} /></> : '–'}</Fact>
+                    <Fact label={tr("Delivered")}>{formatKg(b.deliveredKg)}</Fact>
+                    <Fact label={tr("Balance in custody")}>{b.release ? formatKg(p.releasedBalance(b)) : '–'}</Fact>
                   </Facts>
                   <Stack spacing={2} sx={{ mt: 2.5 }}>
                     {!b.closed && <RaiseRequest b={b} ain={ain} onDone={setMsg} />}

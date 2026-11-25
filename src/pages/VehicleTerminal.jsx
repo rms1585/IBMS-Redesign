@@ -5,6 +5,7 @@ import { PageHeader, EmptyState, AssumptionNote, DetailRow } from '../components
 import { Workbench, QueueCard } from '../components/Workbench';
 import Label from '../components/Label';
 import { useStoredState } from '../demo/PortStore';
+import { tr } from '../i18n/LanguageContext';
 
 const blocks = [
   { code: 'A', use: 'Foreign trucks', rows: 3, cols: 8 },
@@ -96,21 +97,21 @@ export default function VehicleTerminal() {
 
   return (
     <>
-      <PageHeader title="Cargo vehicle terminal" links={[{ name: 'Operations' }, { name: 'Cargo vehicle terminal' }]} subtitle="Assign waiting vehicles to a block and see each block's space at a glance." />
+      <PageHeader title={tr("Cargo vehicle terminal")} links={[{ name: 'Operations' }, { name: 'Cargo vehicle terminal' }]} subtitle={tr("Assign waiting vehicles to a block and see each block's space at a glance.")} />
       <AssumptionNote code="F23" sx={{ mb: 3 }}>The terminal's position in the flow will be taken from BLPA's master plan.</AssumptionNote>
       <Workbench
         queue={
           <QueueCard
-            title="Waiting vehicles"
+            title={tr("Waiting vehicles")}
             count={filtered.length}
             search={search}
             onSearch={setSearch}
-            placeholder="Search plate or manifest"
+            placeholder={tr("Search plate or manifest")}
             items={filtered}
             getKey={(v) => v.plate}
             selectedKey={selected}
             onSelect={(k) => { setSelected(k); setSlot(null); }}
-            emptyText="No vehicles waiting"
+            emptyText={tr("No vehicles waiting")}
             renderItem={(v) => (
               <>
                 <Stack direction="row" justifyContent="space-between" gap={1}>
@@ -136,11 +137,11 @@ export default function VehicleTerminal() {
             {current ? (
               <>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>Assignment</Typography>
-                <DetailRow labelWidth={72} label="Vehicle">{current.plate}</DetailRow>
-                <DetailRow labelWidth={72} label="Slot">{slot ?? 'Not chosen'}</DetailRow>
+                <DetailRow labelWidth={72} label={tr("Vehicle")}>{current.plate}</DetailRow>
+                <DetailRow labelWidth={72} label={tr("Slot")}>{slot ?? 'Not chosen'}</DetailRow>
                 <Button fullWidth variant="contained" size="large" sx={{ mt: 2 }} disabled={!slot} onClick={assign}>{slot ? `Assign ${slot}` : 'Assign slot'}</Button>
               </>
-            ) : <EmptyState title="Select a vehicle" sx={{ py: 3 }} />}
+            ) : <EmptyState title={tr("Select a vehicle")} sx={{ py: 3 }} />}
           </Card>,
         ]}
       />

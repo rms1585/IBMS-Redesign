@@ -60,7 +60,7 @@ function Holds({ body, onDone }) {
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
               <TextField size="small" label="Reference for the lift" value={ref} onChange={(e) => setRef(e.target.value)} />
               <Button variant="contained" onClick={() => { p.liftHold(h.id, ref.trim() || undefined); setLifting(null); setRef(''); onDone('Hold lifted. Passes it invalidated stay invalid'); }}>Lift hold</Button>
-              <Button onClick={() => setLifting(null)}>Cancel</Button>
+              <Button variant="outlined" color="inherit" onClick={() => setLifting(null)}>Cancel</Button>
             </Stack>
           )}
         </Box>
@@ -90,12 +90,12 @@ function WeightFlags({ onDone }) {
           ) : open === v.id ? (
             <Stack spacing={1.5} sx={{ mt: 1.5 }}>
               <ReasonField label="Outcome of the inspection" value={reason} onChange={setReason} />
-              <Stack direction="row" spacing={1}><Button variant="contained" disabled={!reason.trim()} onClick={() => { p.recordInspection(v.id, reason.trim()); setOpen(null); setReason(''); onDone('Inspection outcome recorded'); }}>Record outcome</Button><Button onClick={() => setOpen(null)}>Cancel</Button></Stack>
+              <Stack direction="row" spacing={1}><Button variant="contained" disabled={!reason.trim()} onClick={() => { p.recordInspection(v.id, reason.trim()); setOpen(null); setReason(''); onDone('Inspection outcome recorded'); }}>Record outcome</Button><Button variant="outlined" color="inherit" onClick={() => setOpen(null)}>Cancel</Button></Stack>
             </Stack>
           ) : (
             <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
               <Button size="small" color="error" variant="outlined" onClick={() => { p.placeHold({ target: { kind: 'truck', id: v.plate, label: `truck ${v.plate}`, manifest: v.manifests[0] }, body: 'Customs', reason: 'Weight over tolerance: goods to be inspected' }); onDone('Customs hold placed on the truck'); }}>Place a hold on the truck</Button>
-              <Button size="small" onClick={() => setOpen(v.id)}>Record the inspection outcome</Button>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setOpen(v.id)}>Record the inspection outcome</Button>
             </Stack>
           )}
         </Card>

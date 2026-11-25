@@ -9,6 +9,7 @@ import Label from '../components/Label';
 import { users as initial, roles, ports } from '../data/mock';
 import { AddRoundedIcon, MoreVertRoundedIcon } from '../components/icons';
 import { useStoredState } from '../demo/PortStore';
+import { tr } from '../i18n/LanguageContext';
 
 const statusColor = { Active: 'success', Invited: 'info', Deactivated: 'default' };
 
@@ -28,30 +29,30 @@ function InviteForm({ open, onClose, onInvite }) {
     <FormDrawer
       open={open}
       onClose={onClose}
-      title="New user"
-      subtitle="They get an email invitation to set up their account."
+      title={tr("New user")}
+      subtitle={tr("They get an email invitation to set up their account.")}
       actions={(
         <>
-          <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-          <Button variant="contained" disabled={!ready} onClick={() => onInvite(f, sensitive)}>Create and invite</Button>
+          <Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button>
+          <Button variant="contained" disabled={!ready} onClick={() => onInvite(f, sensitive)}>{tr("Create and invite")}</Button>
         </>
       )}
     >
       <Stack spacing={2.5} component="form" noValidate onSubmit={(e) => { e.preventDefault(); if (ready) onInvite(f, sensitive); }}>
         <Typography variant="subtitle2">Person</Typography>
-        <TextField fullWidth required autoFocus label="Full name" value={f.name} onChange={set('name')} />
-        <TextField select fullWidth label="Organisation or person type" value={f.type} onChange={set('type')}>
+        <TextField fullWidth required autoFocus label={tr("Full name")} value={f.name} onChange={set('name')} />
+        <TextField select fullWidth label={tr("Organisation or person type")} value={f.type} onChange={set('type')}>
           {['BLPA staff', 'C&F agency', 'Importer / exporter', 'Bank staff'].map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
         </TextField>
-        <TextField fullWidth required type="email" label="Email" value={f.email} onChange={set('email')} error={Boolean(f.email) && !emailOk} helperText={f.email && !emailOk ? 'Enter a valid email, for example name@blpa.gov.bd' : 'The invitation goes to this address'} />
-        <TextField fullWidth type="tel" label="Mobile (optional)" value={f.mobile} onChange={set('mobile')} />
+        <TextField fullWidth required type="email" label={tr("Email")} value={f.email} onChange={set('email')} error={Boolean(f.email) && !emailOk} helperText={f.email && !emailOk ? 'Enter a valid email, for example name@blpa.gov.bd' : 'The invitation goes to this address'} />
+        <TextField fullWidth type="tel" label={tr("Mobile (optional)")} value={f.mobile} onChange={set('mobile')} />
         <Typography variant="subtitle2" sx={{ pt: 1 }}>Access</Typography>
         <Stack direction="row" spacing={2}>
-          <TextField select label="Port" value={f.port} onChange={set('port')} sx={{ width: 120, flexShrink: 0 }}>{ports.map((p) => <MenuItem key={p.code} value={p.code}>{p.code}</MenuItem>)}</TextField>
-          <TextField select fullWidth label="Role" value={f.role} onChange={set('role')}>{roles.map((r) => <MenuItem key={r.name} value={r.name}>{r.name}</MenuItem>)}</TextField>
+          <TextField select label={tr("Port")} value={f.port} onChange={set('port')} sx={{ width: 120, flexShrink: 0 }}>{ports.map((p) => <MenuItem key={p.code} value={p.code}>{p.code}</MenuItem>)}</TextField>
+          <TextField select fullWidth label={tr("Role")} value={f.role} onChange={set('role')}>{roles.map((r) => <MenuItem key={r.name} value={r.name}>{r.name}</MenuItem>)}</TextField>
         </Stack>
         {sensitive && <Alert severity="warning">“{f.role}” is sensitive. The assignment waits for independent approval before it takes effect.</Alert>}
-        <TextField fullWidth type="date" label="Acting until (optional)" value={f.acting} onChange={set('acting')} slotProps={{ inputLabel: { shrink: true } }} helperText="Access ends automatically on this date" />
+        <TextField fullWidth type="date" label={tr("Acting until (optional)")} value={f.acting} onChange={set('acting')} slotProps={{ inputLabel: { shrink: true } }} helperText={tr("Access ends automatically on this date")} />
       </Stack>
     </FormDrawer>
   );
@@ -61,11 +62,11 @@ function RowMenu({ user, onDeactivate }) {
   const [a, setA] = useState(null);
   return (
     <>
-      <IconButton size="small" onClick={(e) => { e.stopPropagation(); setA(e.currentTarget); }}><MoreVertRoundedIcon fontSize="small" /></IconButton>
+      <IconButton size="small" aria-label={`Actions for ${user.name}`} onClick={(e) => { e.stopPropagation(); setA(e.currentTarget); }}><MoreVertRoundedIcon fontSize="small" /></IconButton>
       <Menu anchorEl={a} open={Boolean(a)} onClose={() => setA(null)}>
         <MenuItem onClick={() => setA(null)}>Add role assignment</MenuItem>
         <MenuItem onClick={() => setA(null)}>Resend invitation</MenuItem>
-        <MenuItem disabled={user.status === 'Deactivated'} onClick={() => { setA(null); onDeactivate(user); }} sx={{ color: 'error.main' }}>Deactivate…</MenuItem>
+        <MenuItem disabled={user.status === 'Deactivated'} onClick={() => { setA(null); onDeactivate(user); }} sx={{ color: 'error.text' }}>Deactivate…</MenuItem>
       </Menu>
     </>
   );
@@ -80,14 +81,14 @@ export default function Users() {
   return (
     <>
       <PageHeader
-        title="Users"
+        title={tr("Users")}
         links={[{ name: 'Access and control' }, { name: 'Users' }]}
-        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New user</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>{tr("New user")}</Button>}
       />
       <DataTable
         rows={list}
         searchKeys={['name', 'email', 'org']}
-        searchPlaceholder="Search person, email, role or port"
+        searchPlaceholder={tr("Search person, email, role or port")}
         rowKey={(r) => r.email}
         columns={[
           { key: 'name', label: 'Person', render: (r) => (
@@ -114,8 +115,8 @@ export default function Users() {
       <ReasonDialog
         open={Boolean(deact)}
         title={`Deactivate ${deact?.name ?? ''}?`}
-        description="Access is revoked immediately. Their past records keep their name as author."
-        confirmLabel="Deactivate"
+        description={tr("Access is revoked immediately. Their past records keep their name as author.")}
+        confirmLabel={tr("Deactivate")}
         confirmColor="error"
         onClose={() => setDeact(null)}
         onConfirm={() => { setList((l) => l.map((u) => (u.email === deact.email ? { ...u, status: 'Deactivated' } : u))); setToast(`${deact.name} deactivated.`); setDeact(null); }}

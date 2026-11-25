@@ -1,6 +1,7 @@
 import { Box, Card, Stack, Typography, ButtonBase, Button, Divider } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { SearchField, EmptyState } from './common';
+import { tr } from '../i18n/LanguageContext';
 import Label from './Label';
 import { VideocamRoundedIcon } from './icons';
 
@@ -50,7 +51,8 @@ export function Workbench({ queue, center, rail }) {
   );
 }
 
-export function QueueCard({ title, count, search, onSearch, placeholder, items, selectedKey, onSelect, renderItem, getKey, emptyText, header }) {
+export function QueueCard({ title: titleText, count, search, onSearch, placeholder, items, selectedKey, onSelect, renderItem, getKey, emptyText: emptyTextRaw, header }) {
+  const [title, emptyText] = [tr(titleText), tr(emptyTextRaw)];
   const theme = useTheme();
   return (
     <Card sx={{ position: 'sticky', top: 88, [PHONE]: { position: 'static' } }}>
@@ -134,11 +136,11 @@ export function CameraCard({ lane, plate, expected, onReread, before = 'admittin
           {match === null ? <Label>No read</Label> : match ? <Label color="success">Matches selected truck</Label> : <Label color="error">Does not match</Label>}
         </Stack>
         {match === false && (
-          <Typography variant="body2" color="error.main">
+          <Typography variant="body2" color="error.text">
             {source} read {plate}, expected {expected}. Check the vehicle before {before}.
           </Typography>
         )}
-        <Typography variant="caption" color="text.disabled">A camera match supports, but does not replace, the operator&apos;s identity check.</Typography>
+        <Typography variant="caption" color="text.secondary">A camera match supports, but does not replace, the operator&apos;s identity check.</Typography>
         {onReread && <Button variant="outlined" color="inherit" size="small" onClick={onReread} sx={{ alignSelf: 'flex-start' }}>Re-read plate</Button>}
       </Stack>
     </Card>
@@ -166,7 +168,7 @@ export function BridgeCameraCard({ lane, inPosition, onRecheck }) {
           {inPosition ? <Label color="success">Within marked area</Label> : <Label color="error">Outside marked area</Label>}
         </Stack>
         {!inPosition && (
-          <Typography variant="body2" color="error.main">
+          <Typography variant="body2" color="error.text">
             Part of the truck is outside the marked area. Ask the driver to move fully onto the bridge.
           </Typography>
         )}

@@ -92,10 +92,10 @@ export default function Weighbridge() {
                 <Typography variant="subtitle2">Scale down: type the weight</Typography>
                 <TextField label="Weight (kg)" type="number" value={typedKg} onChange={(e) => setTypedKg(e.target.value)} />
                 <ReasonField value={reason} onChange={setReason} helper="The weight is flagged for review; the failed reading and the typed entry are logged." />
-                <Box><Button onClick={() => setTyping(false)}>Use the scale reading</Button></Box>
+                <Box><Button variant="outlined" color="inherit" onClick={() => setTyping(false)}>Use the scale reading</Button></Box>
               </Stack>
             ) : (
-              <Box><Button size="small" onClick={() => setTyping(true)}>Scale or plate reader down</Button></Box>
+              <Box><Button size="small" variant="outlined" color="inherit" onClick={() => setTyping(true)}>Scale or plate reader down</Button></Box>
             )}
           </Stack>
         ) : <Typography variant="body2" color="text.secondary">Select a truck from the worklist.</Typography>}

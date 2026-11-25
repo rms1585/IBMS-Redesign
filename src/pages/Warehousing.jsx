@@ -83,10 +83,10 @@ function UnloadingBench({ onDone }) {
                 <ReasonField value={reason} onChange={setReason} label="Reason for the rejection" />
                 <Stack direction="row" spacing={1}>
                   <Button variant="contained" color="error" disabled={!reason.trim()} onClick={() => { p.decidePosting(v.id, false, reason.trim()); setRejecting(false); setReason(''); onDone('Posting rejected'); }}>Reject posting</Button>
-                  <Button onClick={() => setRejecting(false)}>Cancel</Button>
+                  <Button variant="outlined" color="inherit" onClick={() => setRejecting(false)}>Cancel</Button>
                 </Stack>
               </Stack>
-            ) : <Box><Button onClick={() => setRejecting(true)}>Reject with a reason</Button></Box>
+            ) : <Box><Button variant="outlined" color="inherit" onClick={() => setRejecting(true)}>Reject with a reason</Button></Box>
           ) : (
             <>
               <SectionTitle>Labour association</SectionTitle>

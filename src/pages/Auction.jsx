@@ -4,6 +4,7 @@ import { PageHeader, KpiCard, AssumptionNote, ReasonDialog, formatKg } from '../
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { useStoredState } from '../demo/PortStore';
+import { tr } from '../i18n/LanguageContext';
 
 const ONE_MONTH = 30;
 const TWO_MONTHS = 60;
@@ -41,19 +42,19 @@ export default function Auction() {
 
   return (
     <>
-      <PageHeader title="Auction and destruction" links={[{ name: 'Operations' }, { name: 'Auction and destruction' }]} subtitle="Uncleared goods turn yellow at one month and red at two months." />
+      <PageHeader title={tr("Auction and destruction")} links={[{ name: 'Operations' }, { name: 'Auction and destruction' }]} subtitle={tr("Uncleared goods turn yellow at one month and red at two months.")} />
       <AssumptionNote code="F28" sx={{ mb: 3 }}>The minutes don't state the auction-list age. Here the notice is due at two months.</AssumptionNote>
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="One month or more" value={inStock.filter((l) => l.ageDays >= ONE_MONTH && l.ageDays < TWO_MONTHS).length} color="warning" /></Grid>
-        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="Two months or more" value={inStock.filter((l) => l.ageDays >= TWO_MONTHS).length} color="error" /></Grid>
-        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title="Notices due" value={inStock.filter((l) => l.ageDays >= TWO_MONTHS && !l.notice).length} color="primary" /></Grid>
+        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title={tr("One month or more")} value={inStock.filter((l) => l.ageDays >= ONE_MONTH && l.ageDays < TWO_MONTHS).length} color="warning" /></Grid>
+        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title={tr("Two months or more")} value={inStock.filter((l) => l.ageDays >= TWO_MONTHS).length} color="error" /></Grid>
+        <Grid size={{ xs: 12, sm: 4 }}><KpiCard title={tr("Notices due")} value={inStock.filter((l) => l.ageDays >= TWO_MONTHS && !l.notice).length} color="primary" /></Grid>
       </Grid>
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
-        <Tab value="ageing" label="Ageing stock" />
+        <Tab value="ageing" label={tr("Ageing stock")} />
         <Tab value="destruction" label={<Stack direction="row" spacing={1} alignItems="center"><span>Destruction list</span><Label>{listed.filter((l) => l.stage === 'listed').length}</Label></Stack>} />
       </Tabs>
       {tab === 'ageing' ? (
-        <DataTable rows={inStock} searchKeys={['id', 'product', 'manifest']} searchPlaceholder="Search lot, goods or manifest" rowKey={(r) => r.id} columns={[
+        <DataTable rows={inStock} searchKeys={['id', 'product', 'manifest']} searchPlaceholder={tr("Search lot, goods or manifest")} rowKey={(r) => r.id} columns={[
           ...lotColumns,
           { key: 'notice', label: 'Auction notice', render: (r) => (r.notice ? <Label color="success">Sent</Label> : r.ageDays >= TWO_MONTHS ? <Label color="error">Due</Label> : <Label>Not due</Label>) },
           // One actions column: the two buttons sit side by side and stack when the table is narrow, so the
@@ -61,32 +62,32 @@ export default function Auction() {
           {
             key: 'actions', label: '', render: (r) => (
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" justifyContent="flex-end" sx={{ minWidth: 170 }}>
-                {r.ageDays >= TWO_MONTHS && !r.notice && <Button size="small" variant="outlined" onClick={() => { update(r.id, { notice: true }); setToast(`Auction notice sent for ${r.id}.`); }}>Send notice</Button>}
-                <Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }} onClick={() => setListing(r)}>Add to destruction list</Button>
+                {r.ageDays >= TWO_MONTHS && !r.notice && <Button size="small" variant="outlined" onClick={() => { update(r.id, { notice: true }); setToast(`Auction notice sent for ${r.id}.`); }}>{tr("Send notice")}</Button>}
+                <Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }} onClick={() => setListing(r)}>{tr("Add to destruction list")}</Button>
               </Stack>
             ),
           },
         ]} />
       ) : (
-        <DataTable rows={listed} searchKeys={['id', 'product']} searchPlaceholder="Search lot or goods" rowKey={(r) => r.id} columns={[
+        <DataTable rows={listed} searchKeys={['id', 'product']} searchPlaceholder={tr("Search lot or goods")} rowKey={(r) => r.id} columns={[
           ...lotColumns,
           { key: 'stage', label: 'Status', render: (r) => (r.stage === 'destroyed' ? <Label color="error">Destroyed</Label> : <Label color="warning">Listed</Label>) },
-          { key: 'a', label: '', render: (r) => (r.stage === 'listed' ? <Button size="small" variant="outlined" color="error" onClick={() => setDestroying(r)}>Record as destroyed</Button> : <Typography variant="caption" color="text.secondary">Removed from stock</Typography>) },
+          { key: 'a', label: '', render: (r) => (r.stage === 'listed' ? <Button size="small" variant="outlined" color="error" onClick={() => setDestroying(r)}>{tr("Record as destroyed")}</Button> : <Typography variant="caption" color="text.secondary">Removed from stock</Typography>) },
         ]} />
       )}
       <ReasonDialog
         open={Boolean(listing)}
         title={`Add ${listing?.id ?? ''} to the destruction list?`}
-        description="The lot leaves ageing stock and waits to be recorded as destroyed."
-        confirmLabel="Add to list"
+        description={tr("The lot leaves ageing stock and waits to be recorded as destroyed.")}
+        confirmLabel={tr("Add to list")}
         onClose={() => setListing(null)}
         onConfirm={() => { update(listing.id, { stage: 'listed' }); setToast(`${listing.id} added to the destruction list.`); setListing(null); }}
       />
       <ReasonDialog
         open={Boolean(destroying)}
         title={`Record ${destroying?.id ?? ''} as destroyed?`}
-        description="The goods are removed from stock. The record stays in this list."
-        confirmLabel="Record as destroyed"
+        description={tr("The goods are removed from stock. The record stays in this list.")}
+        confirmLabel={tr("Record as destroyed")}
         confirmColor="error"
         onClose={() => setDestroying(null)}
         onConfirm={() => { update(destroying.id, { stage: 'destroyed' }); setToast(`${destroying.id} recorded as destroyed and removed from stock.`); setDestroying(null); }}

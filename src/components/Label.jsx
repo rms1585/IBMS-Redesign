@@ -23,6 +23,7 @@ export default function Label({ color = 'default', variant = 'soft', startIcon, 
   return (
     <Box
       component="span"
+      className="ibms-label"
       sx={{
         height: 24,
         minWidth: 24,
@@ -35,7 +36,7 @@ export default function Label({ color = 'default', variant = 'soft', startIcon, 
         justifyContent: 'center',
         gap: 0.5,
         px: 0.75,
-        fontSize: 12,
+        fontSize: theme.typography.caption.fontSize,
         fontWeight: 700,
         ...styles[variant],
         '& svg': { width: 16, height: 16 },

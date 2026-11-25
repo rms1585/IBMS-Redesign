@@ -10,6 +10,7 @@ import Label from '../components/Label';
 import { storageRules } from '../data/mock';
 import { AddRoundedIcon, UploadFileRoundedIcon } from '../components/icons';
 import { useStoredState } from '../demo/PortStore';
+import { tr } from '../i18n/LanguageContext';
 
 const categories = ['Food', 'Chemical', 'Baby products', 'Textile', 'Rubber', 'Stone'];
 const stateColor = { Active: 'success', 'Waiting for approval': 'warning', Draft: 'default' };
@@ -29,25 +30,25 @@ function RuleDrawer({ open, onClose, onSave }) {
     <FormDrawer
       open={open}
       onClose={onClose}
-      title="New local storage rule"
-      subtitle="Saved as a draft. A port in-charge or head-office approver publishes it."
+      title={tr("New local storage rule")}
+      subtitle={tr("Saved as a draft. A port in-charge or head-office approver publishes it.")}
       actions={(
         <>
-          <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-          <Button variant="contained" disabled={!ready} onClick={() => onSave(f)}>Save draft</Button>
+          <Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button>
+          <Button variant="contained" disabled={!ready} onClick={() => onSave(f)}>{tr("Save draft")}</Button>
         </>
       )}
     >
       <Stack spacing={2.5}>
-        <TextField select fullWidth label="Category A" value={f.a} onChange={(e) => setF({ ...f, a: e.target.value })}>{categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}</TextField>
-        <TextField select fullWidth label="Must not be with category B" value={f.b} error={same} helperText={same ? 'Choose a different category' : ' '} onChange={(e) => setF({ ...f, b: e.target.value })}>{categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}</TextField>
-        <TextField select fullWidth label="Scope" value={f.scope} onChange={(e) => setF({ ...f, scope: e.target.value })}>
+        <TextField select fullWidth label={tr("Category A")} value={f.a} onChange={(e) => setF({ ...f, a: e.target.value })}>{categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}</TextField>
+        <TextField select fullWidth label={tr("Must not be with category B")} value={f.b} error={same} helperText={same ? 'Choose a different category' : ' '} onChange={(e) => setF({ ...f, b: e.target.value })}>{categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}</TextField>
+        <TextField select fullWidth label={tr("Scope")} value={f.scope} onChange={(e) => setF({ ...f, scope: e.target.value })}>
           {[['bay', 'Same bay'], ['adjacent', 'Adjacent bays'], ['zone', 'Same zone'], ['facility', 'Same facility']].map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}
         </TextField>
         {f.scope === 'adjacent' && (
-          <TextField fullWidth label="Minimum gap (bays)" value={f.gap} error={!gapOk} onChange={(e) => setF({ ...f, gap: e.target.value.replace(/\D/g, '') })} helperText="1 forbids every touching bay, edge or corner" />
+          <TextField fullWidth label={tr("Minimum gap (bays)")} value={f.gap} error={!gapOk} onChange={(e) => setF({ ...f, gap: e.target.value.replace(/\D/g, '') })} helperText={tr("1 forbids every touching bay, edge or corner")} />
         )}
-        <TextField fullWidth required multiline minRows={3} label="Evidence or reason" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} helperText="Read by the approver" />
+        <TextField fullWidth required multiline minRows={3} label={tr("Evidence or reason")} value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} helperText={tr("Read by the approver")} />
         <Alert severity="info">Rules work both ways: A not with B also means B not with A.</Alert>
       </Stack>
     </FormDrawer>
@@ -73,8 +74,8 @@ function FormatDialog({ open, onClose }) {
         <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'background.neutral', typography: 'caption', fontWeight: 700 }}>Food,Chemical,adjacent,1,Contamination risk</Box>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>
-        <Button variant="contained" startIcon={<UploadFileRoundedIcon />}>Choose file</Button>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{tr("Close")}</Button>
+        <Button variant="contained" startIcon={<UploadFileRoundedIcon />}>{tr("Choose file")}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -92,13 +93,13 @@ export default function StorageRules() {
   return (
     <>
       <PageHeader
-        title="Storage rules"
+        title={tr("Storage rules")}
         links={[{ name: 'Administration' }, { name: 'Storage rules' }]}
-        subtitle="Active rules combine national rules with approved local rules. They are checked at bay allocation, at receipt and when custody moves."
+        subtitle={tr("Active rules combine national rules with approved local rules. They are checked at bay allocation, at receipt and when custody moves.")}
         action={
           <>
-            <Button variant="outlined" color="inherit" startIcon={<UploadFileRoundedIcon />} onClick={() => setFmt(true)}>Import rules</Button>
-            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>New rule</Button>
+            <Button variant="outlined" color="inherit" startIcon={<UploadFileRoundedIcon />} onClick={() => setFmt(true)}>{tr("Import rules")}</Button>
+            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>{tr("New rule")}</Button>
           </>
         }
       />
@@ -110,13 +111,13 @@ export default function StorageRules() {
       <DataTable
         rows={rows}
         searchKeys={['a', 'b', 'reason']}
-        searchPlaceholder="Search category or reason"
+        searchPlaceholder={tr("Search category or reason")}
         columns={[
           { key: 'pair', label: 'Categories', render: (r) => <Stack direction="row" spacing={1} alignItems="center"><Label color="info">{r.a}</Label><Typography variant="caption" color="text.secondary">not with</Typography><Label color="info">{r.b}</Label></Stack> },
           { key: 'scope', label: 'Scope', render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.scope}{r.scope === 'adjacent' ? ` · gap ${r.gap}` : ''}</span> },
           { key: 'source', label: 'Source', render: (r) => <Label color={r.source === 'National' ? 'default' : 'primary'}>{r.source}</Label> },
           { key: 'reason', label: 'Reason' },
-          { key: 'act', label: '', render: (r) => (r.source === 'National' ? <Typography variant="caption" color="text.disabled">Set by head office</Typography> : r.state === 'Active' ? <Button size="small" color="error">Retire</Button> : r.state === 'Draft' ? <Button size="small" onClick={() => { setRules((rs) => rs.map((x) => (x === r ? { ...x, state: 'Waiting for approval' } : x))); setToast('Sent for approval.'); }}>Submit</Button> : <Label color="warning">With approver</Label>) },
+          { key: 'act', label: '', render: (r) => (r.source === 'National' ? <Typography variant="caption" color="text.secondary">Set by head office</Typography> : r.state === 'Active' ? <Button size="small" color="error">{tr("Retire")}</Button> : r.state === 'Draft' ? <Button size="small" onClick={() => { setRules((rs) => rs.map((x) => (x === r ? { ...x, state: 'Waiting for approval' } : x))); setToast('Sent for approval.'); }}>{tr("Submit")}</Button> : <Label color="warning">With approver</Label>) },
         ]}
       />
       <RuleDrawer open={open} onClose={() => setOpen(false)} onSave={(f) => { setRules((rs) => [...rs, { ...f, gap: f.scope === 'adjacent' ? Number(f.gap) : null, source: 'Local · BEN', state: 'Draft' }]); setOpen(false); setTab('Draft'); setToast('Draft saved.'); }} />

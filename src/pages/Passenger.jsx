@@ -20,6 +20,7 @@ import amexLogo from '../assets/payment/amex.png';
 import mastercardLogo from '../assets/payment/mastercard.jpg';
 import visaLogo from '../assets/payment/visa.jpg';
 import { useStoredState } from '../demo/PortStore';
+import { tr } from '../i18n/LanguageContext';
 
 // Benapole charges as shown on BLPA's passenger site (passenger.blpa.gov.bd), read 10 Nov 2026.
 const FACILITY_CHARGE = 52.27;
@@ -94,15 +95,15 @@ function ChargeTable() {
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5, overflow: 'hidden' }}>
       <Table size="small">
         <TableHead>
-          <TableRow><TableCell>Charge</TableCell><TableCell align="right">Per passenger (BDT)</TableCell></TableRow>
+          <TableRow><TableCell>Charge</TableCell><TableCell align="right">Per passenger</TableCell></TableRow>
         </TableHead>
         <TableBody>
           {rows.map(([label, amount]) => (
-            <TableRow key={label}><TableCell>{label}</TableCell><TableCell align="right">{amount.toFixed(2)}</TableCell></TableRow>
+            <TableRow key={label}><TableCell>{label}</TableCell><TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{formatBDT(amount)}</TableCell></TableRow>
           ))}
           <TableRow>
             <TableCell sx={{ fontWeight: 700 }}>Grand Total</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 700 }}>{PASSENGER_TOTAL.toFixed(2)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatBDT(PASSENGER_TOTAL)}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -168,33 +169,33 @@ function PassengerForm({ paidToday, onClose, onSave }) {
       <Typography variant="h6" gutterBottom>Record passenger</Typography>
       <Box>
         <Grid container spacing={2} sx={{ pt: 1 }}>
-          <Grid size={{ xs: 12, sm: 4 }}><TextField fullWidth required label="Passenger name" value={f.name} onChange={set('name')} /></Grid>
+          <Grid size={{ xs: 12, sm: 4 }}><TextField fullWidth required label={tr("Passenger name")} value={f.name} onChange={set('name')} /></Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField fullWidth label="Phone number" placeholder="01XXXXXXXXX" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, '') })} error={Boolean(phone)} helperText={phone || ' '} slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 11 } }} />
+            <TextField fullWidth label={tr("Phone number")} placeholder={tr("01XXXXXXXXX")} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, '') })} error={Boolean(phone)} helperText={phone || ' '} slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 11 } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField select fullWidth required label="Departure/arrival port" value={f.port} onChange={set('port')}>
+            <TextField select fullWidth required label={tr("Departure/arrival port")} value={f.port} onChange={set('port')}>
               {ports.map((p) => <MenuItem key={p} value={p}>{p}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <Autocomplete
               options={countries} value={f.country} onChange={(e, v) => setF({ ...f, country: v })}
-              renderInput={(params) => <TextField {...params} required label="Country code" />}
+              renderInput={(params) => <TextField {...params} required label={tr("Country code")} />}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
-              fullWidth required label="Passport number" value={f.passport} onChange={set('passport')}
+              fullWidth required label={tr("Passport number")} value={f.passport} onChange={set('passport')}
               helperText={alreadyPaid ? 'This passport already paid today. Online fees stay valid for several days.' : ' '}
               slotProps={{ formHelperText: { sx: { color: alreadyPaid ? 'warning.main' : undefined } } }}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField fullWidth required type="date" label="Departure date" value={f.date} onChange={set('date')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField fullWidth required type="date" label={tr("Departure date")} value={f.date} onChange={set('date')} slotProps={{ inputLabel: { shrink: true } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField select fullWidth label="Passenger category" value={f.category} onChange={set('category')}>
+            <TextField select fullWidth label={tr("Passenger category")} value={f.category} onChange={set('category')}>
               {categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
             </TextField>
           </Grid>
@@ -203,7 +204,7 @@ function PassengerForm({ paidToday, onClose, onSave }) {
         </Grid>
       </Box>
       <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 2 }}>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button>
         <Button variant="contained" disabled={!valid} onClick={() => onSave({ ...f, name: f.name.trim(), phone: f.phone.trim(), passport })}>
           Record passenger
         </Button>
@@ -220,13 +221,13 @@ function BusForm({ onClose, onSave }) {
       <Typography variant="h6" gutterBottom>Record bus terminal payment</Typography>
       <Box>
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <TextField fullWidth required label="Vehicle number" value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} helperText={`Charge ${formatBDT(BUS_TERMINAL_CHARGE)} (demo rate)`} />
-          <TextField fullWidth label="Operator" value={operator} onChange={(e) => setOperator(e.target.value)} />
+          <TextField fullWidth required label={tr("Vehicle number")} value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} helperText={`Charge ${formatBDT(BUS_TERMINAL_CHARGE)} (demo rate)`} />
+          <TextField fullWidth label={tr("Operator")} value={operator} onChange={(e) => setOperator(e.target.value)} />
         </Stack>
       </Box>
       <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 2 }}>
-        <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!plate.trim()} onClick={() => onSave(plate.trim(), operator.trim() || '—')}>Record payment</Button>
+        <Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button>
+        <Button variant="contained" disabled={!plate.trim()} onClick={() => onSave(plate.trim(), operator.trim() || '—')}>{tr("Record payment")}</Button>
       </Stack>
     </Card>
   );
@@ -238,13 +239,13 @@ function CheckPoint({ receipts, used, onUse }) {
   const r = receipts.find((x) => x.id.toUpperCase() === q.trim().toUpperCase());
   return (
     <Card sx={{ p: 3, mb: 3 }}>
-      <TextField label="Ticket number" value={q} onChange={(e) => setQ(e.target.value)} placeholder="PF-BEN-55103" sx={{ maxWidth: 360, mb: 2 }} fullWidth />
+      <TextField label={tr("Ticket number")} value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("PF-BEN-55103")} sx={{ maxWidth: 360, mb: 2 }} fullWidth />
       {q && !r && <Alert severity="error" variant="outlined">No paid ticket {q}. The passenger goes back to the counter.</Alert>}
       {r && (
         <Stack spacing={1.5}>
           <Typography variant="subtitle1">{r.name} · passport {maskPassport(r.passport)}</Typography>
           <Stack direction="row" spacing={1}><Label color="success">Paid</Label><Label color={r.date === today() ? 'success' : 'error'}>{r.date === today() ? 'Pass valid' : 'Not valid today'}</Label>{used.includes(r.id) && <Label>Pass used</Label>}</Stack>
-          <Box><Button variant="contained" disabled={used.includes(r.id) || r.date !== today()} onClick={() => onUse(r.id)}>Mark ticket used</Button></Box>
+          <Box><Button variant="contained" disabled={used.includes(r.id) || r.date !== today()} onClick={() => onUse(r.id)}>{tr("Mark ticket used")}</Button></Box>
         </Stack>
       )}
     </Card>
@@ -277,22 +278,22 @@ export default function Passenger() {
   return (
     <>
       <PageHeader
-        title="Passenger and bus terminal"
+        title={tr("Passenger and bus terminal")}
         links={[{ name: 'Operations' }, { name: 'Passenger' }]}
-        subtitle="BLPA's passenger facility fee and bus terminal payments."
+        subtitle={tr("BLPA's passenger facility fee and bus terminal payments.")}
         action={(tab === 'fees' || tab === 'buses') && !dialog && <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setDialog(true)}>{tab === 'fees' ? 'Issue ticket' : 'Record bus arrival'}</Button>}
       />
       <Alert severity="info" sx={{ mb: 2 }}>IBMS records BLPA's own fee only and has no link to Immigration's system.</Alert>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Every passenger pays, arriving and departing; there are no exemptions. The ticket number is the payment ID, and paid comes only from the provider. On departure the check point comes before Immigration.</Typography>
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6 }}><KpiCard title="Passengers today" value={passengers} caption={formatBDT(passengers * PASSENGER_TOTAL)} /></Grid>
-        <Grid size={{ xs: 12, sm: 6 }}><KpiCard title="Buses today" value={buses.length} caption={formatBDT(buses.length * BUS_TERMINAL_CHARGE)} color="info" /></Grid>
+        <Grid size={{ xs: 12, sm: 6 }}><KpiCard title={tr("Passengers today")} value={passengers} caption={formatBDT(passengers * PASSENGER_TOTAL)} /></Grid>
+        <Grid size={{ xs: 12, sm: 6 }}><KpiCard title={tr("Buses today")} value={buses.length} caption={formatBDT(buses.length * BUS_TERMINAL_CHARGE)} color="info" /></Grid>
       </Grid>
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
-        <Tab value="fees" label="Passengers" />
-        <Tab value="buses" label="Bus desk" />
-        <Tab value="check" label="Check point" />
-        <Tab value="reconcile" label="Daily reconciliation" />
+        <Tab value="fees" label={tr("Passengers")} />
+        <Tab value="buses" label={tr("Bus desk")} />
+        <Tab value="check" label={tr("Check point")} />
+        <Tab value="reconcile" label={tr("Daily reconciliation")} />
       </Tabs>
       {dialog && tab === 'fees' && (
         <PassengerForm
@@ -319,7 +320,7 @@ export default function Passenger() {
       {tab === 'check' && <CheckPoint receipts={receipts} used={used} onUse={(id) => { setUsed([...used, id]); setToast(`Ticket ${id} marked used at the check point.`); }} />}
       {tab === 'reconcile' && <Reconciliation receipts={receipts} used={used} />}
       {tab === 'fees' ? (
-        <DataTable rows={receipts} searchKeys={['id', 'name', 'passport']} searchPlaceholder="Search name, passport or receipt" rowKey={(r) => r.id} columns={[
+        <DataTable rows={receipts} searchKeys={['id', 'name', 'passport']} searchPlaceholder={tr("Search name, passport or receipt")} rowKey={(r) => r.id} columns={[
           { key: 'id', label: 'Receipt', render: (r) => <Typography variant="subtitle2">{r.id}</Typography> },
           { key: 'name', label: 'Passenger', render: (r) => <><Typography variant="body2">{r.name}</Typography><Typography variant="caption" color="text.secondary">Passport {maskPassport(r.passport)}</Typography></> },
           { key: 'country', label: 'Country', render: (r) => r.country.split('-')[0] },
@@ -330,7 +331,7 @@ export default function Passenger() {
           { key: 'by', label: 'Counter' },
         ]} />
       ) : tab === 'buses' && (
-        <DataTable rows={buses} searchKeys={['plate', 'operator']} searchPlaceholder="Search vehicle number or operator" rowKey={(r) => r.id} columns={[
+        <DataTable rows={buses} searchKeys={['plate', 'operator']} searchPlaceholder={tr("Search vehicle number or operator")} rowKey={(r) => r.id} columns={[
           { key: 'id', label: 'Receipt', render: (r) => <Typography variant="subtitle2">{r.id}</Typography> },
           { key: 'plate', label: 'Vehicle number', render: (r) => <Typography variant="body2" fontWeight={700}>{r.plate}</Typography> },
           { key: 'operator', label: 'Operator' },

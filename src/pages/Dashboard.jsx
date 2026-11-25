@@ -73,7 +73,8 @@ function useFigures() {
 function Operations({ f }) {
   const theme = useTheme();
   const days = lastSevenDays();
-  const tones = [theme.palette.primary.main, theme.palette.primary.dark, theme.palette.warning.main, theme.palette.info.main, theme.palette.success.main, theme.palette.error.main];
+  // Hues far apart, so neighbouring stages never read as the same colour (audit m7).
+  const tones = [theme.palette.primary.main, theme.palette.info.main, theme.palette.warning.main, theme.palette.grey[600], theme.palette.error.main, theme.palette.info.light];
   const stages = Object.entries(f.byStage).map(([label, value], i) => ({ id: label, label, value, color: tones[i % tones.length] }));
   const attention = [
     { what: 'Exit Passes waiting approval', n: f.passesWaiting, tone: 'warning' },

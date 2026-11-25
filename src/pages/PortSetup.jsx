@@ -15,6 +15,7 @@ import FormDrawer, { useFreshForm } from '../components/FormDrawer';
 const NO_SETTINGS = {};
 const DEFAULT_MODULES = { warehousing: true, outsideYard: false, rail: true, busTerminal: true, truckScanner: false, exportStorage: false };
 import { AddRoundedIcon, CancelRoundedIcon, CheckCircleRoundedIcon, LockOutlinedIcon } from '../components/icons';
+import { tr } from '../i18n/LanguageContext';
 
 const steps = [
   { key: 'port', title: 'The port', desc: 'Name and Customs station' },
@@ -28,12 +29,12 @@ function StepPort({ port }) {
   return (
     <Grid container spacing={2.5}>
       <Grid size={4}>
-        <TextField fullWidth label="Port code" value={port.code} disabled slotProps={{ input: { endAdornment: <LockOutlinedIcon fontSize="small" sx={{ color: 'text.disabled' }} /> } }} helperText="Fixed after creation" />
+        <TextField fullWidth label={tr("Port code")} value={port.code} disabled slotProps={{ input: { endAdornment: <LockOutlinedIcon fontSize="small" sx={{ color: 'text.disabled' }} /> } }} helperText={tr("Fixed after creation")} />
       </Grid>
-      <Grid size={8}><TextField fullWidth label="Port name" defaultValue={port.name} /></Grid>
-      <Grid size={12}><TextField fullWidth label="Customs station" defaultValue={port.station} helperText="Incoming NSW messages are routed by this station code" /></Grid>
+      <Grid size={8}><TextField fullWidth label={tr("Port name")} defaultValue={port.name} /></Grid>
+      <Grid size={12}><TextField fullWidth label={tr("Customs station")} defaultValue={port.station} helperText={tr("Incoming NSW messages are routed by this station code")} /></Grid>
       <Grid size={12}>
-        <TextField fullWidth label="Tariff order" value={port.tariff} disabled helperText="Assigned by head office. Rates are set centrally, not per port." />
+        <TextField fullWidth label={tr("Tariff order")} value={port.tariff} disabled helperText={tr("Assigned by head office. Rates are set centrally, not per port.")} />
       </Grid>
     </Grid>
   );
@@ -86,13 +87,13 @@ function ResourceDrawer({ open, onClose, onSave, taken }) {
     <FormDrawer
       open={open}
       onClose={onClose}
-      title="Add resource"
-      subtitle="It starts as Setting up and goes live when the port administrator confirms it."
-      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ name: f.name.trim(), type: f.type, detail: kind.format(f.detail.trim()) })}>Add resource</Button></>}
+      title={tr("Add resource")}
+      subtitle={tr("It starts as Setting up and goes live when the port administrator confirms it.")}
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ name: f.name.trim(), type: f.type, detail: kind.format(f.detail.trim()) })}>{tr("Add resource")}</Button></>}
     >
       <Stack spacing={2.5}>
-        <TextField select fullWidth label="Type" value={f.type} onChange={set('type')} helperText="Sheds and yards are added in Warehouse layout">{Object.keys(RESOURCE_TYPES).map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}</TextField>
-        <TextField fullWidth required autoFocus label="Name" placeholder={f.type === 'Weighbridge' ? 'Scale 3' : `${f.type} 2`} value={f.name} onChange={set('name')} error={dup} helperText={dup ? 'A resource with this name already exists' : ' '} />
+        <TextField select fullWidth label={tr("Type")} value={f.type} onChange={set('type')} helperText={tr("Sheds and yards are added in Warehouse layout")}>{Object.keys(RESOURCE_TYPES).map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}</TextField>
+        <TextField fullWidth required autoFocus label={tr("Name")} placeholder={f.type === 'Weighbridge' ? 'Scale 3' : `${f.type} 2`} value={f.name} onChange={set('name')} error={dup} helperText={dup ? 'A resource with this name already exists' : ' '} />
         <TextField fullWidth required type={kind.type ?? 'text'} label={kind.label} placeholder={kind.placeholder} value={f.detail} onChange={set('detail')} helperText={kind.help} slotProps={kind.type === 'date' ? { inputLabel: { shrink: true } } : undefined} />
       </Stack>
     </FormDrawer>
@@ -120,7 +121,7 @@ function StepResources({ port, modules }) {
     <>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="body2" color="text.secondary">Border gates face the zero line. Inland gates face the Bangladesh road.</Typography>
-        <Button variant="outlined" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setAdding(true)}>Add resource</Button>
+        <Button variant="outlined" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setAdding(true)}>{tr("Add resource")}</Button>
       </Stack>
       <Card variant="outlined" sx={{ boxShadow: 'none' }}>
         <Table size="small">
@@ -132,7 +133,7 @@ function StepResources({ port, modules }) {
                 <TableCell>{t}</TableCell>
                 <TableCell sx={{ color: d.includes('due') ? 'warning.text' : 'text.secondary' }}>{d}</TableCell>
                 <TableCell><Label color={s === 'Live' ? 'success' : 'warning'}>{s}</Label></TableCell>
-                <TableCell sx={{ pr: 2 }}><Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit">Edit</Button><Button size="small" variant="outlined" color="error">Retire</Button></Stack></TableCell>
+                <TableCell sx={{ pr: 2 }}><Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit">{tr("Edit")}</Button><Button size="small" variant="outlined" color="error">{tr("Retire")}</Button></Stack></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -144,7 +145,7 @@ function StepResources({ port, modules }) {
           <Grid size={{ xs: 12, sm: 6 }}><TextField
             fullWidth
             size="small"
-            label="Weight tolerance at this port (%)"
+            label={tr("Weight tolerance at this port (%)")}
             value={tolerance}
             onChange={(e) => setTolerance(e.target.value)}
             error={!toleranceValid}
@@ -232,13 +233,13 @@ function StepGoLive({ port, modules, onRequest }) {
           <Typography variant="subtitle2">{checks.filter(([, ok]) => ok).length} of {checks.length} checks pass</Typography>
           <LinearProgress variant="determinate" value={(checks.filter(([, ok]) => ok).length / checks.length) * 100} sx={{ mt: 1 }} />
         </Box>
-        <Button variant="outlined" color="inherit">Re-run checks</Button>
+        <Button variant="outlined" color="inherit">{tr("Re-run checks")}</Button>
       </Stack>
       <Stack spacing={1.25}>
         {checks.map(([l, ok, required]) => (
           <Stack key={l} direction="row" spacing={1.25} alignItems="center">
             {ok ? <CheckCircleRoundedIcon color="success" fontSize="small" /> : <CancelRoundedIcon color={required ? 'error' : 'disabled'} fontSize="small" />}
-            <Typography variant="body2" sx={{ flex: 1 }} color={ok || !required ? 'text.primary' : 'error.main'}>{l}</Typography>
+            <Typography variant="body2" sx={{ flex: 1 }} color={ok || !required ? 'text.primary' : 'error.text'}>{l}</Typography>
             {!required && <Label>Advisory</Label>}
           </Stack>
         ))}
@@ -249,7 +250,7 @@ function StepGoLive({ port, modules, onRequest }) {
       ) : (
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="body2" color="text.secondary">A head-office approver reviews the request. You cannot approve your own request.</Typography>
-          <Button variant="contained" size="large" onClick={onRequest}>Request go-live</Button>
+          <Button variant="contained" size="large" onClick={onRequest}>{tr("Request go-live")}</Button>
         </Stack>
       )}
     </>
@@ -269,7 +270,7 @@ export default function PortSetup() {
 
   return (
     <>
-      <PageHeader title="Port setup" links={[{ name: 'Administration' }, { name: 'Port setup' }, { name: `${port.name} (${port.code})` }]} />
+      <PageHeader title={tr("Port setup")} links={[{ name: 'Administration' }, { name: 'Port setup' }, { name: `${port.name} (${port.code})` }]} />
       {/* Ports as compact tabs; the selected port's status and readiness show in the steps panel. */}
       <Tabs
         value={portCode}
@@ -286,7 +287,7 @@ export default function PortSetup() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: `${stateColor(p.state)}.main` }} />
                 <span>{p.name}</span>
-                <Typography component="span" variant="caption" color="text.disabled" sx={{ fontWeight: 700 }}>{p.code}</Typography>
+                <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>{p.code}</Typography>
               </Stack>
             }
           />
@@ -344,9 +345,9 @@ export default function PortSetup() {
             </Box>
             <Divider sx={{ borderStyle: 'dashed' }} />
             <Stack direction="row" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
-              <Button color="inherit" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>Previous</Button>
+              <Button variant="outlined" color="inherit" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>{tr("Previous")}</Button>
               <Stack direction="row" spacing={1.5}>
-                {step < 4 && <Button variant="outlined" color="inherit" onClick={() => setToast('Changes saved.')}>Save</Button>}
+                {step < 4 && <Button variant="outlined" color="inherit" onClick={() => setToast('Changes saved.')}>{tr("Save")}</Button>}
                 {step < 4 && <Button variant="contained" onClick={() => setStep((s) => s + 1)}>Next: {steps[step + 1].title}</Button>}
               </Stack>
             </Stack>

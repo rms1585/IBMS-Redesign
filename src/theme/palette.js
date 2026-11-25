@@ -83,12 +83,14 @@ export function createPalette(mode) {
   const overlay = overlayBase(mode);
   return {
     mode,
-    primary,
+    // `text` is the readable shade of each colour on the page background: the dark shade in light mode,
+    // the light shade in dark mode, so coloured text passes 4.5:1 in both.
+    primary: light ? primary : { ...primary, text: primary.light },
     secondary,
-    info,
-    success,
+    info: light ? info : { ...info, text: info.light },
+    success: light ? success : { ...success, text: success.light },
     warning,
-    error,
+    error: light ? error : { ...error, text: error.light },
     grey,
     common: { black: '#000000', white: '#FFFFFF' },
     divider: alpha(overlay, light ? 0.12 : 0.2),

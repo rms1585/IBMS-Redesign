@@ -125,7 +125,10 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
 - Compact tables (`size="small"`) in side panels and dialogs may wrap.
 - **A drawer never scrolls sideways.** Only a table may, inside its own area: wrap any table in a drawer in
   `TableScroll` (`src/components/common.jsx`). Drawers keep `maxWidth: '100vw'` so they fit a phone.
-- **All columns are left-aligned:** headers and cells, including amounts, counts, statuses and action buttons.
+- **Text columns are left-aligned; figures are right-aligned** (amounts, weights, counts), as M2 Annex 24 sets and
+  `ResponsiveTable` does. Figures never wrap; descriptions take the extra lines. Row actions sit at the right.
+- **On a phone every table becomes cards** (`RowCards` in `src/demo/ui.jsx`, used by `ResponsiveTable` and
+  `DataTable`), so nothing scrolls sideways. A row that opens something is a keyboard stop with a chevron.
   Don't use `align="right"` / `align="center"` on table cells or DataTable columns.
 - Two-line cells are intentional where used: an ID with a secondary line under it (manifest + product,
   receipt + date, payer + method).

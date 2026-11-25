@@ -67,7 +67,7 @@ export default function Inbox() {
               <Stack key={x.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
                 <StatusPill word="Waiting approval" />
                 <Typography variant="body2">Exit Pass {x.id} for <Plate>{x.plate}</Plate>: {3 - Object.values(x.approvals).filter(Boolean).length} of 3 approvals missing</Typography>
-                <Button size="small" component={RouterLink} to="/inland-gate">Open</Button>
+                <Button size="small" variant="outlined" component={RouterLink} to="/inland-gate">Open</Button>
               </Stack>
             ))}
             {changes.map((tc) => (

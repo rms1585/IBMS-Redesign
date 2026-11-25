@@ -5,6 +5,7 @@ import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { products } from '../data/mock';
 import { useStoredState } from '../demo/PortStore';
+import { tr } from '../i18n/LanguageContext';
 
 const DEFAULT_ROUTES = Object.fromEntries(products.map((p) => [p.code, p.route]));
 
@@ -23,15 +24,15 @@ export default function Routing() {
   return (
     <>
       <PageHeader
-        title="Products & routing"
+        title={tr("Products & routing")}
         links={[{ name: 'Administration' }, { name: 'Products & routing' }]}
-        subtitle="Products are national. This port chooses one enabled branch for each product it handles."
+        subtitle={tr("Products are national. This port chooses one enabled branch for each product it handles.")}
       />
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="National products" value={products.length} /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Warehouse" value={counts('Warehouse')} color="primary" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Transshipment" value={counts('Transshipment')} color="info" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Stone route" value={counts('Stone route')} color="warning" caption="Branch disabled: turn it on in Port setup, step 2" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("National products")} value={products.length} /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("Warehouse")} value={counts('Warehouse')} color="primary" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("Transshipment")} value={counts('Transshipment')} color="info" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("Stone route")} value={counts('Stone route')} color="warning" caption="Branch disabled: turn it on in Port setup, step 2" /></Grid>
       </Grid>
       <Alert severity="info" sx={{ mb: 3 }}>
         At a live port, a route change stays pending until the port in-charge or head office approves it. Cargo with no route goes to a routing exception and is never sent down a branch by default.
@@ -39,7 +40,7 @@ export default function Routing() {
       <DataTable
         rows={rows}
         searchKeys={['name', 'code']}
-        searchPlaceholder="Search product name or code"
+        searchPlaceholder={tr("Search product name or code")}
         columns={[
           { key: 'code', label: 'Code' },
           { key: 'name', label: 'Product', render: (r) => <><Typography variant="subtitle2">{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.type} · suggested {r.type === 'Perishable' ? 'straight across' : 'into the port'}</Typography></> },

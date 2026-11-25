@@ -10,6 +10,7 @@ import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { ports, products, vehicleTypes, agencies, traders, holidays, tariffLines } from '../data/mock';
 import { AddRoundedIcon, UploadFileRoundedIcon } from '../components/icons';
+import { tr } from '../i18n/LanguageContext';
 
 function BulkImport({ open, onClose, what }) {
   const [step, setStep] = useState(0);
@@ -64,25 +65,25 @@ function CreatePort({ open, onClose, onCreate, taken }) {
     <FormDrawer
       open={open}
       onClose={onClose}
-      title="Create port"
-      subtitle="The port administrator completes the setup afterwards."
+      title={tr("Create port")}
+      subtitle={tr("The port administrator completes the setup afterwards.")}
       actions={(
         <>
-          <Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button>
-          <Button variant="contained" disabled={!codeOk || !f.name.trim()} onClick={() => onCreate(f)}>Create port</Button>
+          <Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button>
+          <Button variant="contained" disabled={!codeOk || !f.name.trim()} onClick={() => onCreate(f)}>{tr("Create port")}</Button>
         </>
       )}
     >
       <Stack spacing={2.5}>
         <TextField
-          fullWidth required label="Port code" value={f.code}
+          fullWidth required label={tr("Port code")} value={f.code}
           onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase().slice(0, 3) })}
           error={Boolean(f.code) && !codeOk}
           helperText={dup ? 'This code is already used' : codeOk ? `Bills and passes will be numbered ${f.code}-BILL-… and ${f.code}-PASS-…` : 'Three letters; fixed after creation'}
         />
-        <TextField fullWidth required label="Port name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-        <TextField fullWidth label="Customs station code" value={f.station} onChange={(e) => setF({ ...f, station: e.target.value })} helperText="Routes incoming NSW messages to this port" />
-        <TextField select fullWidth required label="Tariff order" value={f.tariff} onChange={(e) => setF({ ...f, tariff: e.target.value })}>
+        <TextField fullWidth required label={tr("Port name")} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+        <TextField fullWidth label={tr("Customs station code")} value={f.station} onChange={(e) => setF({ ...f, station: e.target.value })} helperText={tr("Routes incoming NSW messages to this port")} />
+        <TextField select fullWidth required label={tr("Tariff order")} value={f.tariff} onChange={(e) => setF({ ...f, tariff: e.target.value })}>
           <MenuItem value="TO-2026-03 (invented reference)">TO-2026-03 (invented reference)</MenuItem>
           <MenuItem value="TO-2025-11 (invented reference)">TO-2025-11 (invented reference)</MenuItem>
         </TextField>
@@ -184,22 +185,22 @@ function RegisterDrawer({ register, open, onClose, onSave }) {
       onClose={onClose}
       title={spec.title}
       subtitle={spec.subtitle}
-      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!ready} onClick={() => onSave(spec.toRow(Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === 'string' ? x.trim() : x]))))}>{spec.action}</Button></>}
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button><Button variant="contained" disabled={!ready} onClick={() => onSave(spec.toRow(Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === 'string' ? x.trim() : x]))))}>{spec.action}</Button></>}
     >
       <Stack spacing={2.5}>
         {spec.fields.map((f, i) => {
           const error = shown(f);
-          const common = { key: f.key, fullWidth: true, required: f.required, autoFocus: i === 0, label: f.label, value: v[f.key], onChange: set(f.key), error: Boolean(error), helperText: error || f.help || ' ', placeholder: f.placeholder };
-          if (f.kind === 'select') return <TextField select {...common}>{f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}</TextField>;
+          const common = { fullWidth: true, required: f.required, autoFocus: i === 0, label: tr(f.label), value: v[f.key], onChange: set(f.key), error: Boolean(error), helperText: tr(error || f.help) || ' ', placeholder: f.placeholder };
+          if (f.kind === 'select') return <TextField key={f.key} select {...common}>{f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}</TextField>;
           if (f.kind === 'multi') {
             return (
-              <TextField select {...common} slotProps={{ select: { multiple: true, renderValue: (x) => x.join(', ') } }}>
+              <TextField key={f.key} select {...common} slotProps={{ select: { multiple: true, renderValue: (x) => x.join(', ') } }}>
                 {f.options.map((o) => <MenuItem key={o} value={o}><Checkbox size="small" checked={v[f.key].includes(o)} /><ListItemText primary={o} /></MenuItem>)}
               </TextField>
             );
           }
-          if (f.kind === 'date') return <TextField type="date" {...common} slotProps={{ inputLabel: { shrink: true } }} />;
-          return <TextField {...common} />;
+          if (f.kind === 'date') return <TextField key={f.key} type="date" {...common} slotProps={{ inputLabel: { shrink: true } }} />;
+          return <TextField key={f.key} {...common} />;
         })}
       </Stack>
     </FormDrawer>
@@ -237,9 +238,9 @@ export default function PlatformSetup() {
   return (
     <>
       <PageHeader
-        title="Platform setup"
+        title={tr("Platform setup")}
         links={[{ name: 'Platform' }, { name: 'Platform setup' }, { name: label }]}
-        subtitle="National registries are maintained once by head office and reused by every port."
+        subtitle={tr("National registries are maintained once by head office and reused by every port.")}
         action={
           <>
             {tab !== 'tariff' && <Button variant="outlined" color="inherit" startIcon={<UploadFileRoundedIcon />} onClick={() => setImportOpen(true)}>Import {label.toLowerCase()}</Button>}
@@ -261,7 +262,7 @@ export default function PlatformSetup() {
                 <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">TO-2026-03</Typography><Label color="success">Active</Label></Stack>
                 <Typography variant="body2" color="text.secondary">Invented reference · effective 1 Mar 2026 · billing at BEN, BUR, SON, AKH</Typography>
               </Box>
-              <Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">Edit details</Button><Button variant="outlined" color="error">Deactivate</Button></Stack>
+              <Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">{tr("Edit details")}</Button><Button variant="outlined" color="error">{tr("Deactivate")}</Button></Stack>
             </Stack>
             <Alert severity="info" sx={{ mt: 2 }}>Demonstration values, not legal rates. Free days: storage 3, haltage 1.</Alert>
           </Card>
@@ -275,7 +276,7 @@ export default function PlatformSetup() {
           <DataTable
             rows={tariffLines}
             searchKeys={['charge']}
-            searchPlaceholder="Search charges"
+            searchPlaceholder={tr("Search charges")}
             columns={[
               { key: 'charge', label: 'Charge', render: (r) => <Typography variant="subtitle2">{r.charge}</Typography> },
               { key: 'basis', label: 'Basis' },
@@ -289,7 +290,7 @@ export default function PlatformSetup() {
         <DataTable
           rows={productList}
           searchKeys={['name', 'code', 'hs']}
-          searchPlaceholder="Search product, code or HS code"
+          searchPlaceholder={tr("Search product, code or HS code")}
           columns={[
             { key: 'code', label: 'Code' },
             { key: 'name', label: 'Product', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
@@ -304,13 +305,13 @@ export default function PlatformSetup() {
         <DataTable
           rows={vehicleList}
           searchKeys={['name']}
-          searchPlaceholder="Search vehicle type"
+          searchPlaceholder={tr("Search vehicle type")}
           columns={[
             { key: 'code', label: 'Code' },
             { key: 'name', label: 'Vehicle type', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
             { key: 'wheels', label: 'Wheels' },
             { key: 'mode', label: 'Transport mode' },
-            { key: 'edit', label: '', render: () => <Button size="small" variant="outlined" color="inherit">Edit</Button> },
+            { key: 'edit', label: '', render: () => <Button size="small" variant="outlined" color="inherit">{tr("Edit")}</Button> },
           ]}
         />
       )}
@@ -318,7 +319,7 @@ export default function PlatformSetup() {
         <DataTable
           rows={agencyList}
           searchKeys={['name', 'licence']}
-          searchPlaceholder="Search agency or licence"
+          searchPlaceholder={tr("Search agency or licence")}
           columns={[
             { key: 'name', label: 'Agency', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
             { key: 'licence', label: 'Licence' },
@@ -331,7 +332,7 @@ export default function PlatformSetup() {
         <DataTable
           rows={traderList}
           searchKeys={['name', 'bin']}
-          searchPlaceholder="Search company or BIN"
+          searchPlaceholder={tr("Search company or BIN")}
           columns={[
             { key: 'name', label: 'Company', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
             { key: 'bin', label: 'BIN' },
@@ -344,11 +345,11 @@ export default function PlatformSetup() {
         <DataTable
           rows={holidayList}
           searchKeys={['name', 'date']}
-          searchPlaceholder="Search name or date"
+          searchPlaceholder={tr("Search name or date")}
           columns={[
             { key: 'date', label: 'Date' },
             { key: 'name', label: 'Holiday', render: (r) => <Stack direction="row" spacing={1} alignItems="center"><Typography variant="subtitle2">{r.name}</Typography>{r.upcoming && <Label color="info">Upcoming</Label>}</Stack> },
-            { key: 'rm', label: '', render: () => <Button size="small" variant="outlined" color="error">Remove</Button> },
+            { key: 'rm', label: '', render: () => <Button size="small" variant="outlined" color="error">{tr("Remove")}</Button> },
           ]}
         />
       )}
@@ -356,7 +357,7 @@ export default function PlatformSetup() {
         <DataTable
           rows={portList}
           searchKeys={['code', 'name']}
-          searchPlaceholder="Search code or name"
+          searchPlaceholder={tr("Search code or name")}
           columns={[
             { key: 'code', label: 'Code', render: (r) => <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{r.code}</Typography> },
             { key: 'name', label: 'Port', render: (r) => <><Typography variant="subtitle2">{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.station}</Typography></> },

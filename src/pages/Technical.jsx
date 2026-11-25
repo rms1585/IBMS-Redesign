@@ -6,6 +6,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPla
 import { PageHeader, KpiCard, SectionCard } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
+import { tr } from '../i18n/LanguageContext';
 
 const nodes = [
   { port: 'BEN', station: 'Benapole Customs House', state: 'Healthy', held: 0, feeds: 'Manifest, Customs statuses, release, holds, agency status', fallback: false },
@@ -20,13 +21,13 @@ export default function Technical() {
   const [toast, setToast] = useState('');
   return (
     <>
-      <PageHeader title="Technical settings" links={[{ name: 'Administration' }, { name: 'Technical settings' }]} subtitle="National Single Window is the source of IGM, Customs statuses, release, holds and agency statuses." />
+      <PageHeader title={tr("Technical settings")} links={[{ name: 'Administration' }, { name: 'Technical settings' }]} subtitle={tr("National Single Window is the source of IGM, Customs statuses, release, holds and agency statuses.")} />
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="NSW health (simulated)" value="2 of 3 nodes up" color="warning" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Messages held" value="20" caption="Delivered when the feed recovers" color="error" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Online payments today" value="312" caption="Latest 10:58 · BDT 4.8 L" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title={tr("NSW health (simulated)")} value="2 of 3 nodes up" color="warning" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title={tr("Messages held")} value="20" caption="Delivered when the feed recovers" color="error" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title={tr("Online payments today")} value="312" caption="Latest 10:58 · BDT 4.8 L" /></Grid>
       </Grid>
-      <SectionCard title="Ports and stations">
+      <SectionCard title={tr("Ports and stations")}>
         <DataTable card={false} rows={nodes} columns={[
           { key: 'port', label: 'Port', render: (r) => <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{r.port}</Typography> },
           { key: 'station', label: 'Station' },
@@ -34,7 +35,7 @@ export default function Technical() {
           { key: 'held', label: 'Held' },
           { key: 'feeds', label: 'Feed modes' },
           { key: 'fallback', label: 'Paper fallback', render: (r) => (
-            <Switch checked={r.fallback} disabled={r.state === 'Healthy' && !r.fallback} onChange={(e) => (e.target.checked ? setConsent(r) : setToast(`Paper fallback turned off for ${r.port}.`))} />
+            <Switch inputProps={{ 'aria-label': `Paper fallback at ${r.port}` }} checked={r.fallback} disabled={r.state === 'Healthy' && !r.fallback} onChange={(e) => (e.target.checked ? setConsent(r) : setToast(`Paper fallback turned off for ${r.port}.`))} />
           ) },
         ]} />
       </SectionCard>
@@ -43,11 +44,11 @@ export default function Technical() {
         <DialogTitle>Turn on paper fallback for {consent?.port}?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Needs a written-consent reference and head-office approval. It takes effect only after approval.</Typography>
-          <TextField fullWidth required label="Consent reference" value={ref} onChange={(e) => setRef(e.target.value)} />
+          <TextField fullWidth required label={tr("Consent reference")} value={ref} onChange={(e) => setRef(e.target.value)} />
         </DialogContent>
         <DialogActions>
-          <Button variant="outlined" color="inherit" onClick={() => setConsent(null)}>Cancel</Button>
-          <Button variant="contained" disabled={!ref.trim()} onClick={() => { setToast(`Request sent to head office for ${consent.port}.`); setConsent(null); setRef(''); }}>Send for approval</Button>
+          <Button variant="outlined" color="inherit" onClick={() => setConsent(null)}>{tr("Cancel")}</Button>
+          <Button variant="contained" disabled={!ref.trim()} onClick={() => { setToast(`Request sent to head office for ${consent.port}.`); setConsent(null); setRef(''); }}>{tr("Send for approval")}</Button>
         </DialogActions>
       </Dialog>
       <Snackbar open={Boolean(toast)} autoHideDuration={3000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>

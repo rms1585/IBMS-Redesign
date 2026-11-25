@@ -3,6 +3,7 @@ import { PageHeader, formatBDT, DetailRow, AssumptionNote } from '../components/
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { tariffLines, truckClassRates } from '../data/mock';
+import { tr } from '../i18n/LanguageContext';
 
 const classRows = Object.entries(truckClassRates).map(([cls, rates]) => ({ cls, ...rates }));
 
@@ -10,14 +11,14 @@ export default function Charges() {
   const billed = tariffLines.filter((t) => t.billedHere);
   return (
     <>
-      <PageHeader title="What this port charges" links={[{ name: 'Administration' }, { name: 'What this port charges' }]} subtitle="Read-only. Rates are set centrally on the tariff order; turning a module on adds its charges." />
+      <PageHeader title={tr("What this port charges")} links={[{ name: 'Administration' }, { name: 'What this port charges' }]} subtitle={tr("Read-only. Rates are set centrally on the tariff order; turning a module on adds its charges.")} />
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ p: 3, height: '100%' }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}><Typography variant="h6">TO-2026-03</Typography><Label color="success">In force</Label></Stack>
-            <DetailRow label="Reference">Invented reference (demo)</DetailRow>
-            <DetailRow label="Effective">1 March 2026 · version 2</DetailRow>
-            <DetailRow label="Enabled modules">Gates, weighing, billing, warehousing, transshipment</DetailRow>
+            <DetailRow label={tr("Reference")}>Invented reference (demo)</DetailRow>
+            <DetailRow label={tr("Effective")}>1 March 2026 · version 2</DetailRow>
+            <DetailRow label={tr("Enabled modules")}>Gates, weighing, billing, warehousing, transshipment</DetailRow>
           </Card>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>

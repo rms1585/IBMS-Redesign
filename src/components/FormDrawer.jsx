@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { Box, Divider, Drawer, IconButton, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { CloseRoundedIcon } from './icons';
+import { tr } from '../i18n/LanguageContext';
 
 // A create or edit form that slides in from the right over the page: title and close at the top, the form
 // scrolls in the middle, and the actions stay pinned at the bottom so they are always in reach.
 // Full width on a phone. Escape, the close button or a click outside closes it.
 // Keep it mounted and toggle `open`: a Drawer that mounts already open skips its slide-in.
 // `width` is 480 for a plain form; a stepped form with more on each step can ask for more room.
-export default function FormDrawer({ open, onClose, title, subtitle, actions, width = 480, children }) {
-  const titleId = `form-drawer-${title.replace(/\W+/g, '-').toLowerCase()}`;
+export default function FormDrawer({ open, onClose, title: titleText, subtitle: subtitleText, actions, width = 480, children }) {
+  const [title, subtitle] = [tr(titleText), tr(subtitleText)];
+  const titleId = `form-drawer-${String(titleText).replace(/\W+/g, '-').toLowerCase()}`;
   return (
     <Drawer
       anchor="right"

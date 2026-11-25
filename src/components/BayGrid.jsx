@@ -46,11 +46,11 @@ export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
     <Box sx={{ display: 'inline-grid', gridTemplateColumns: `24px repeat(${zone.cols}, ${size}px)`, gap: 0.75 }}>
       <Box />
       {cols.map((i) => (
-        <Typography key={i} variant="caption" color="text.disabled" align="center">C{String(i + 1).padStart(2, '0')}</Typography>
+        <Typography key={i} variant="caption" color="text.secondary" align="center">C{String(i + 1).padStart(2, '0')}</Typography>
       ))}
       {rows.map((r) => (
         <Box key={r} sx={{ display: 'contents' }}>
-          <Typography variant="caption" color="text.disabled" sx={{ alignSelf: 'center' }}>R{r + 1}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>R{r + 1}</Typography>
           {cols.map((i) => {
             const code = `${zone.code}-R${r + 1}-C${String(i + 1).padStart(2, '0')}`;
             const s = bayState(zone.code, r, i);

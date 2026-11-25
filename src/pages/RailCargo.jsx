@@ -59,7 +59,7 @@ export default function RailCargo() {
                 render: (w) => (w.checked ? <Typography variant="body2">{w.checked}</Typography> : (
                   <Stack direction="row" spacing={1}>
                     <Button size="small" variant="outlined" onClick={() => check(w.wagon, true)}>Seal intact</Button>
-                    <Button size="small" color="warning" onClick={() => check(w.wagon, false)}>Record a difference</Button>
+                    <Button size="small" variant="outlined" color="inherit" onClick={() => check(w.wagon, false)}>Record a difference</Button>
                   </Stack>
                 )),
               },

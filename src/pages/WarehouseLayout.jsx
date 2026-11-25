@@ -8,6 +8,7 @@ import { BayGrid, BayLegend } from '../components/BayGrid';
 import Label from '../components/Label';
 import { facilities, bayState } from '../data/mock';
 import { AddRoundedIcon, MoreHorizRoundedIcon, WarehouseRoundedIcon } from '../components/icons';
+import { tr } from '../i18n/LanguageContext';
 
 function zoneStats(z) {
   let used = 0; let blocked = 0;
@@ -33,7 +34,7 @@ function ZoneCard({ zone, onAction }) {
           </Typography>
           <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>{zone.categories.map((c) => <Label key={c} color="info">{c}</Label>)}</Stack>
         </Box>
-        <Button size="small" variant="outlined" color="inherit" endIcon={<MoreHorizRoundedIcon />} onClick={(e) => setAnchor(e.currentTarget)}>Edit grid</Button>
+        <Button size="small" variant="outlined" color="inherit" endIcon={<MoreHorizRoundedIcon />} onClick={(e) => setAnchor(e.currentTarget)}>{tr("Edit grid")}</Button>
         <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
           <MenuItem onClick={() => act('Add row')}>Add row</MenuItem>
           <MenuItem onClick={() => act('Add column')}>Add column</MenuItem>
@@ -42,7 +43,7 @@ function ZoneCard({ zone, onAction }) {
           <Divider />
           <MenuItem onClick={() => act('Remove last row')}>Remove last row</MenuItem>
           <MenuItem onClick={() => act('Re-grid')}>Re-grid</MenuItem>
-          <MenuItem onClick={() => act('Remove zone')} sx={{ color: 'error.main' }}>Remove zone</MenuItem>
+          <MenuItem onClick={() => act('Remove zone')} sx={{ color: 'error.text' }}>Remove zone</MenuItem>
         </Menu>
       </Stack>
       <Box sx={{ overflowX: 'auto' }}><BayGrid zone={zone} size={40} /></Box>
@@ -65,14 +66,14 @@ function FacilityDrawer({ open, onClose, onSave, taken }) {
     <FormDrawer
       open={open}
       onClose={onClose}
-      title="Create facility"
-      subtitle="Add zones once it exists. Sheds and open yards attract storage rent; transshipment yards do not."
-      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ ...f, code })}>Create facility</Button></>}
+      title={tr("Create facility")}
+      subtitle={tr("Add zones once it exists. Sheds and open yards attract storage rent; transshipment yards do not.")}
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ ...f, code })}>{tr("Create facility")}</Button></>}
     >
       <Stack spacing={2.5}>
-        <TextField fullWidth required autoFocus label="Name" placeholder="Shed 14" value={f.name} onChange={set('name')} />
-        <TextField select fullWidth label="Kind" value={f.kind} onChange={set('kind')} helperText={f.kind === 'Transshipment yard' ? 'Positions for transfers, no bays and no separation rules' : ' '}>{KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}</TextField>
-        <TextField fullWidth required label="Short code" value={code} onChange={set('code')} error={Boolean(f.code) && !codeOk} helperText={taken.includes(code) ? 'This code is already used' : 'Two to four letters or digits, for example S14. Starts every zone and bay code.'} />
+        <TextField fullWidth required autoFocus label={tr("Name")} placeholder={tr("Shed 14")} value={f.name} onChange={set('name')} />
+        <TextField select fullWidth label={tr("Kind")} value={f.kind} onChange={set('kind')} helperText={f.kind === 'Transshipment yard' ? 'Positions for transfers, no bays and no separation rules' : ' '}>{KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}</TextField>
+        <TextField fullWidth required label={tr("Short code")} value={code} onChange={set('code')} error={Boolean(f.code) && !codeOk} helperText={taken.includes(code) ? 'This code is already used' : 'Two to four letters or digits, for example S14. Starts every zone and bay code.'} />
       </Stack>
     </FormDrawer>
   );
@@ -89,16 +90,16 @@ function ZoneDrawer({ open, onClose, onSave, facility }) {
       onClose={onClose}
       title={`Add zone to ${facility.name}`}
       subtitle={`The new zone is ${code}. Its bays are numbered ${code}-R1 onwards.`}
-      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ code, rows: Number(f.rows), cols: Number(f.cols), capacityT: Number(f.capacityT), categories: f.categories })}>Add zone</Button></>}
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ code, rows: Number(f.rows), cols: Number(f.cols), capacityT: Number(f.capacityT), categories: f.categories })}>{tr("Add zone")}</Button></>}
     >
       <Stack spacing={2.5}>
         <Stack direction="row" spacing={2}>
-          <TextField fullWidth required autoFocus label="Rows" inputMode="numeric" value={f.rows} onChange={set('rows')} error={!ok.rows} helperText={ok.rows ? ' ' : '1 to 20'} />
-          <TextField fullWidth required label="Bays per row" inputMode="numeric" value={f.cols} onChange={set('cols')} error={!ok.cols} helperText={ok.cols ? ' ' : '1 to 20'} />
+          <TextField fullWidth required autoFocus label={tr("Rows")} inputMode="numeric" value={f.rows} onChange={set('rows')} error={!ok.rows} helperText={ok.rows ? ' ' : '1 to 20'} />
+          <TextField fullWidth required label={tr("Bays per row")} inputMode="numeric" value={f.cols} onChange={set('cols')} error={!ok.cols} helperText={ok.cols ? ' ' : '1 to 20'} />
         </Stack>
-        <TextField fullWidth required label="Capacity per bay (t)" inputMode="numeric" value={f.capacityT} onChange={set('capacityT')} error={!ok.capacityT} helperText={ok.capacityT ? `${(ok.rows && ok.cols) ? Number(f.rows) * Number(f.cols) : '–'} bays in all` : '1 to 200 tonnes'} />
+        <TextField fullWidth required label={tr("Capacity per bay (t)")} inputMode="numeric" value={f.capacityT} onChange={set('capacityT')} error={!ok.capacityT} helperText={ok.capacityT ? `${(ok.rows && ok.cols) ? Number(f.rows) * Number(f.cols) : '–'} bays in all` : '1 to 200 tonnes'} />
         <TextField
-          select fullWidth label="Accepted categories" value={f.categories} onChange={set('categories')}
+          select fullWidth label={tr("Accepted categories")} value={f.categories} onChange={set('categories')}
           slotProps={{ select: { multiple: true, renderValue: (v) => v.join(', ') } }}
           error={!f.categories.length} helperText={f.categories.length ? 'Storage rules still apply between categories' : 'Choose at least one'}
         >
@@ -129,10 +130,10 @@ export default function WarehouseLayout() {
   return (
     <>
       <PageHeader
-        title="Warehouse layout"
+        title={tr("Warehouse layout")}
         links={[{ name: 'Administration' }, { name: 'Warehouse layout' }]}
-        subtitle="Facility → zone → bay grid. Sheds and open yards hold cargo and attract storage rent; transshipment yards do not."
-        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setAdding('facility')}>Create facility</Button>}
+        subtitle={tr("Facility → zone → bay grid. Sheds and open yards hold cargo and attract storage rent; transshipment yards do not.")}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setAdding('facility')}>{tr("Create facility")}</Button>}
       />
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 3 }}>
@@ -159,7 +160,7 @@ export default function WarehouseLayout() {
           <SectionCard
             title={f.name}
             subheader={f.kind}
-            action={<Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">Change kind</Button><Button variant="outlined" color="error">Retire</Button>{f.kind !== 'Transshipment yard' && <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setAdding('zone')}>Add zone</Button>}</Stack>}
+            action={<Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">{tr("Change kind")}</Button><Button variant="outlined" color="error">{tr("Retire")}</Button>{f.kind !== 'Transshipment yard' && <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setAdding('zone')}>{tr("Add zone")}</Button>}</Stack>}
           >
             <Box sx={{ px: 3, pb: 3 }}>
               {f.zones.length ? (
@@ -200,8 +201,8 @@ export default function WarehouseLayout() {
       <ReasonDialog
         open={Boolean(blockZone)}
         title={`Block zone ${blockZone?.code ?? ''}?`}
-        description="Blocked bays cannot receive new allocations. Existing cargo stays where it is."
-        confirmLabel="Block zone"
+        description={tr("Blocked bays cannot receive new allocations. Existing cargo stays where it is.")}
+        confirmLabel={tr("Block zone")}
         confirmColor="error"
         onClose={() => setBlockZone(null)}
         onConfirm={() => { setToast({ severity: 'success', text: `Zone ${blockZone.code} blocked.` }); setBlockZone(null); }}

@@ -7,12 +7,17 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { InboxOutlinedIcon, SearchRoundedIcon, TrendingDownRoundedIcon, TrendingUpRoundedIcon } from './icons';
 import Label from './Label';
+import { tr } from '../i18n/LanguageContext';
 
 export function PageHeader({ title, links = [], action, subtitle }) {
+  // Shared pieces translate their own text, so every screen gets Bangla headings and labels (audit M3).
+  [title, subtitle] = [tr(title), tr(subtitle)];
+  links = links.map((l) => ({ ...l, name: tr(l.name) }));
   return (
     <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2} sx={{ mb: 4 }}>
       <Box sx={{ minWidth: 0, flex: '1 1 320px' }}>
-        <Typography variant="h4" gutterBottom={links.length > 0 || Boolean(subtitle)}>
+        {/* The page title is the page's one h1, styled as h4 (audit m4). */}
+        <Typography variant="h4" component="h1" gutterBottom={links.length > 0 || Boolean(subtitle)}>
           {title}
         </Typography>
         {links.length > 0 && (
@@ -23,7 +28,7 @@ export function PageHeader({ title, links = [], action, subtitle }) {
                   {l.name}
                 </Link>
               ) : (
-                <Typography key={l.name} variant="body2" color={i === links.length - 1 ? 'text.disabled' : 'text.primary'}>
+                <Typography key={l.name} variant="body2" color={i === links.length - 1 ? 'text.secondary' : 'text.primary'}>
                   {l.name}
                 </Typography>
               ),
@@ -41,7 +46,8 @@ export function PageHeader({ title, links = [], action, subtitle }) {
   );
 }
 
-export function SearchField({ placeholder = 'Search…', value, onChange, sx }) {
+export function SearchField({ placeholder: hint = 'Search…', value, onChange, sx }) {
+  const placeholder = tr(hint);
   return (
     <TextField
       size="small"
@@ -50,10 +56,12 @@ export function SearchField({ placeholder = 'Search…', value, onChange, sx }) 
       onChange={(e) => onChange(e.target.value)}
       sx={{ minWidth: { xs: 0, sm: 260 }, ...sx }}
       slotProps={{
+        // The placeholder is the only visible label, so it also names the field for screen readers.
+        htmlInput: { 'aria-label': placeholder.replace(/…$/, '') },
         input: {
           startAdornment: (
             <InputAdornment position="start">
-              <SearchRoundedIcon sx={{ color: 'text.disabled' }} />
+              <SearchRoundedIcon sx={{ color: 'text.secondary' }} aria-hidden />
             </InputAdornment>
           ),
         },
@@ -68,8 +76,9 @@ export function TableScroll({ children }) {
 }
 
 export function EmptyState({ title = 'No data', description, sx }) {
+  [title, description] = [tr(title), tr(description)];
   return (
-    <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ py: 6, px: 3, textAlign: 'center', color: 'text.disabled', ...sx }}>
+    <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ py: 6, px: 3, textAlign: 'center', color: 'text.secondary', ...sx }}>
       <InboxOutlinedIcon sx={{ fontSize: 48, opacity: 0.6 }} />
       <Typography variant="subtitle1" color="text.secondary">{title}</Typography>
       {description && <Typography variant="body2">{description}</Typography>}
@@ -78,6 +87,7 @@ export function EmptyState({ title = 'No data', description, sx }) {
 }
 
 export function KpiCard({ title, value, change, icon, color = 'primary', caption, note, noteTo }) {
+  [title, caption] = [tr(title), tr(caption)];
   const theme = useTheme();
   const up = change == null ? null : change >= 0;
   return (
@@ -122,6 +132,7 @@ export function KpiCard({ title, value, change, icon, color = 'primary', caption
 }
 
 export function SectionCard({ title, subheader, action, children, sx, contentSx }) {
+  [title, subheader] = [tr(title), tr(subheader)];
   return (
     <Card sx={sx}>
       {(title || action) && (
@@ -204,6 +215,6 @@ export function ReasonDialog({ open, title, description, confirmLabel = 'Confirm
 }
 
 export const formatBDT = (n) =>
-  `BDT ${Number(n).toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `BDT\u00a0${Number(n).toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const formatKg = (n) => `${Number(n).toLocaleString('en-US')} kg`;
+export const formatKg = (n) => `${Number(n).toLocaleString('en-US')}\u00a0kg`;

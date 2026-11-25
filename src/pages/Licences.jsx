@@ -34,7 +34,7 @@ function AgencyLicence({ agency, onDone }) {
         <Fact label="Verified by">{l.verifiedBy ?? '–'}</Fact>
       </Facts>
       {word !== 'Verified' && (
-        <Typography variant="body2" color="error.main" sx={{ mt: 2 }}>
+        <Typography variant="body2" color="error.text" sx={{ mt: 2 }}>
           {p.licenceProblem(agency.ain)} Truck entry, Bills of Entry, Delivery Requests, billing and pass approvals are blocked. No role or setting can waive this.
         </Typography>
       )}
@@ -51,7 +51,7 @@ function AgencyLicence({ agency, onDone }) {
           </Box>
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
             <Button variant="contained" disabled={!number.trim() || !validTo} onClick={() => { p.recordLicence(agency.ain, { number: number.trim(), validTo }); setEditing(false); setNumber(''); setValidTo(''); onDone('Licence recorded. It stays unverified until checked'); }}>Record licence</Button>
-            <Button onClick={() => setEditing(false)}>Cancel</Button>
+            <Button variant="outlined" color="inherit" onClick={() => setEditing(false)}>Cancel</Button>
           </Stack>
         </Box>
       )}

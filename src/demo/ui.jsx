@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Box, Button, Card, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import Label from '../components/Label';
-import { CancelRoundedIcon, CheckCircleRoundedIcon, InfoOutlinedIcon } from '../components/icons';
+import { CancelRoundedIcon, CheckCircleRoundedIcon, ChevronRightRoundedIcon, InfoOutlinedIcon } from '../components/icons';
 import { muiColorOf } from './status';
 import { formatDateTime } from './format';
 import { useT } from '../i18n/LanguageContext';
@@ -67,12 +67,12 @@ export function ActionFoot({ checks = [], label, onClick, keyHint, disabled, ext
   return (
     <Stack spacing={1} sx={{ pt: 1.5, mt: 'auto', borderTop: 1, borderColor: 'divider' }}>
       {blocker && (
-        <Typography variant="body2" color="error.main" role="status">
+        <Typography variant="body2" color="error.text" role="status">
           <Box component="span" sx={{ fontWeight: 600 }}>{blocker.label ?? 'Blocked'}: </Box>{blocker.text}
         </Typography>
       )}
       <Button size="large" variant="contained" color={color} disabled={Boolean(blocker) || disabled} onClick={onClick} fullWidth>
-        {label}{keyHint && <Box component="kbd" sx={{ ml: 1, px: 0.75, borderRadius: 0.5, border: 1, borderColor: 'currentColor', fontSize: 12, fontFamily: 'inherit', opacity: 0.8 }}>{keyHint}</Box>}
+        {label}{keyHint && <Box component="kbd" sx={{ ml: 1, px: 0.75, borderRadius: 0.5, border: 1, borderColor: 'currentColor', typography: 'caption', fontWeight: 700, fontFamily: 'inherit', opacity: 0.8 }}>{keyHint}</Box>}
       </Button>
     </Stack>
   );
@@ -147,7 +147,7 @@ export function Fact({ label, children }) {
   return (
     <Box sx={{ minWidth: 0 }}>
       <Typography variant="caption" color="text.secondary" component="div">{t(label)}</Typography>
-      <Box sx={{ typography: 'body2', fontWeight: 500 }}>{children ?? '–'}</Box>
+      <Box sx={{ typography: 'body2', fontWeight: 600 }}>{children ?? '–'}</Box>
     </Box>
   );
 }
@@ -172,7 +172,7 @@ export function SectionTitle({ children, action }) {
 // A hold always names its body, person, time and reference (Annex 24.5).
 export function HoldRow({ hold, onLift, liftLabel = 'Lift hold' }) {
   return (
-    <Alert severity="error" variant="outlined" sx={{ alignItems: 'flex-start' }} action={onLift && <Button color="error" size="small" onClick={onLift}>{liftLabel}</Button>}>
+    <Alert severity="error" variant="outlined" sx={{ alignItems: 'flex-start' }} action={onLift && <Button color="error" variant="outlined" size="small" onClick={onLift}>{liftLabel}</Button>}>
       <Typography variant="subtitle2">{hold.body === 'BGB' ? 'BGB stop' : `${hold.body} hold`} on {hold.target.label ?? hold.target.id}</Typography>
       <Typography variant="body2">{hold.reason}</Typography>
       <Typography variant="caption" color="text.secondary">{hold.person} · {formatDateTime(hold.at)}{hold.ref ? ` · ${hold.ref}` : ''}{hold.source === 'BNSW' ? ' · Received through BNSW' : ''}</Typography>
@@ -180,11 +180,71 @@ export function HoldRow({ hold, onLift, liftLabel = 'Lift hold' }) {
   );
 }
 
+// A row that opens something is a keyboard stop too: Tab reaches it, Enter or Space opens it, and a chevron
+// shows it leads somewhere (audit M1).
+function openable(onOpen, row) {
+  if (!onOpen) return {};
+  return {
+    tabIndex: 0,
+    role: 'link',
+    onClick: () => onOpen(row),
+    onKeyDown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onOpen(row);
+      }
+    },
+  };
+}
+
+// Read by screen readers, not shown.
+const visuallyHidden = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
+
+const focusRing = (t) => ({ outline: `2px solid ${t.palette.mode === 'light' ? t.palette.primary.dark : t.palette.primary.light}`, outlineOffset: -2 });
+
+// On a phone every table becomes a stack of cards: each column is a label-value line, and columns with no
+// label (row actions) sit at the bottom right. Shared by ResponsiveTable and the admin DataTable.
+export function RowCards({ columns, rows, rowKey, onRowClick }) {
+  const t = useT();
+  const fields = columns.filter((c) => c.priority !== 'low' && c.label);
+  const actions = columns.filter((c) => !c.label);
+  return (
+    <Stack spacing={1} component="ul" sx={{ m: 0, p: 0, listStyle: 'none' }}>
+      {rows.map((r, i) => (
+        <Card
+          component="li"
+          key={rowKey(r, i)}
+          variant="outlined"
+          {...openable(onRowClick, r)}
+          sx={{ p: 1.5, boxShadow: 'none', cursor: onRowClick ? 'pointer' : 'default', '&:focus-visible': focusRing }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
+              {fields.map((c) => (
+                <Stack key={c.label} direction="row" justifyContent="space-between" spacing={2}>
+                  <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>{t(c.label)}</Typography>
+                  <Box sx={{ typography: 'body2', textAlign: 'right', minWidth: 0, overflowWrap: 'anywhere', '& .ibms-label': { whiteSpace: 'normal', height: 'auto', minHeight: 24, py: 0.25, lineHeight: 1.4 } }}>{c.render(r)}</Box>
+                </Stack>
+              ))}
+              {actions.length > 0 && (
+                <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>
+                  {actions.map((c, j) => <Box key={j}>{c.render(r)}</Box>)}
+                </Stack>
+              )}
+            </Stack>
+            {onRowClick && <ChevronRightRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} aria-hidden />}
+          </Stack>
+        </Card>
+      ))}
+    </Stack>
+  );
+}
+
 // Tables never scroll sideways: low-priority columns drop when narrow; on a phone each row becomes a card.
-// Figures never wrap: right-aligned columns, and any column marked `nowrap`, stay on one line, so the
-// description columns take the extra lines instead.
 // Laid out like the administration tables: edge to edge in a card padded 24px, with roomy rows. The negative
 // margins assume that padding; when the table is the card's last child it also runs to the card's bottom edge.
+// Figures never wrap: right-aligned columns, and any column marked `nowrap`, stay on one line, so the
+// description columns take the extra lines instead.
 const noWrap = (column) => column.nowrap ?? column.align === 'right';
 
 export function ResponsiveTable({ columns, rows, rowKey, onRowClick, empty = 'Nothing here yet.' }) {
@@ -194,34 +254,21 @@ export function ResponsiveTable({ columns, rows, rowKey, onRowClick, empty = 'No
   const t = useT();
   const visible = columns.filter((c) => !(narrow && c.priority === 'low'));
   if (!rows.length) return <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>{empty}</Typography>;
-  if (phone) {
-    return (
-      <Stack spacing={1}>
-        {rows.map((r, i) => (
-          <Card key={rowKey(r, i)} variant="outlined" onClick={onRowClick ? () => onRowClick(r) : undefined} sx={{ p: 1.5, cursor: onRowClick ? 'pointer' : 'default' }}>
-            <Stack spacing={0.75}>
-              {columns.filter((c) => c.priority !== 'low').map((c) => (
-                <Stack key={c.label} direction="row" justifyContent="space-between" spacing={2}>
-                  <Typography variant="caption" color="text.secondary">{t(c.label)}</Typography>
-                  <Box sx={{ typography: 'body2', textAlign: 'right' }}>{c.render(r)}</Box>
-                </Stack>
-              ))}
-            </Stack>
-          </Card>
-        ))}
-      </Stack>
-    );
-  }
+  if (phone) return <RowCards columns={columns} rows={rows} rowKey={rowKey} onRowClick={onRowClick} />;
   return (
     <Box sx={{ mx: -3, '&:last-child': { mb: -3 } }}>
     <Table size="small" sx={{ tableLayout: 'auto', '& .MuiTableCell-root': { py: 2 }, '& .MuiTableCell-root:first-of-type': { pl: 3 }, '& .MuiTableCell-root:last-of-type': { pr: 3 } }}>
       <TableHead>
-        <TableRow>{visible.map((c) => <TableCell key={c.label} align={c.align}>{t(c.label)}</TableCell>)}</TableRow>
+        <TableRow>
+          {visible.map((c) => <TableCell key={c.label} align={c.align}>{t(c.label)}</TableCell>)}
+          {onRowClick && <TableCell sx={{ width: 40 }}><Box component="span" sx={visuallyHidden}>Open</Box></TableCell>}
+        </TableRow>
       </TableHead>
       <TableBody>
         {rows.map((r, i) => (
-          <TableRow key={rowKey(r, i)} hover={Boolean(onRowClick)} onClick={onRowClick ? () => onRowClick(r) : undefined} sx={{ cursor: onRowClick ? 'pointer' : 'default' }}>
+          <TableRow key={rowKey(r, i)} hover={Boolean(onRowClick)} {...openable(onRowClick, r)} sx={{ cursor: onRowClick ? 'pointer' : 'default', '&:focus-visible': focusRing }}>
             {visible.map((c) => <TableCell key={c.label} align={c.align} sx={noWrap(c) ? { whiteSpace: 'nowrap' } : undefined}>{c.render(r)}</TableCell>)}
+            {onRowClick && <TableCell align="right"><ChevronRightRoundedIcon fontSize="small" sx={{ color: 'text.secondary', verticalAlign: 'middle' }} aria-hidden /></TableCell>}
           </TableRow>
         ))}
       </TableBody>
@@ -258,7 +305,7 @@ export function LockedValue({ children, onRequestCorrection }) {
     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
       <Box>{children}</Box>
       <StatusPill word="Locked" />
-      {onRequestCorrection && <Button size="small" variant="text" onClick={onRequestCorrection} sx={{ height: 24, px: 0.5 }}>{t('Request a correction')}</Button>}
+      {onRequestCorrection && <Button size="small" variant="outlined" color="inherit" onClick={onRequestCorrection}>{t('Request a correction')}</Button>}
     </Stack>
   );
 }
@@ -319,7 +366,7 @@ export function CameraStill({ lane, read, expected, label = 'Plate read' }) {
         <Typography variant="caption" color="text.secondary">{label}</Typography>
         {read ? <Plate>{read}</Plate> : <Typography variant="body2" color="text.secondary">No read</Typography>}
       </Stack>
-      {match === false && <Typography variant="body2" color="error.main">The read does not match the selected truck.</Typography>}
+      {match === false && <Typography variant="body2" color="error.text">The read does not match the selected truck.</Typography>}
     </Box>
   );
 }
