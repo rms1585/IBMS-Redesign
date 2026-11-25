@@ -8,6 +8,26 @@ import { useT } from '../i18n/LanguageContext';
 
 // M-14: how BNSW, payment providers and links are doing, plus the BNSW simulator (a demo tool, never production).
 
+// A titled block of the simulator; every block has the same spacing under its title.
+function SimSection({ title, empty, children }) {
+  return (
+    <Stack spacing={1.5}>
+      <Typography variant="subtitle2">{title}</Typography>
+      {empty ? <Typography variant="body2" color="text.secondary">{empty}</Typography> : children}
+    </Stack>
+  );
+}
+
+// One item to send: what it is on the left (wrapping if needed), its button on the right, never under it.
+function SimRow({ action, children }) {
+  return (
+    <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+      <Stack direction="row" columnGap={1.5} rowGap={0.25} alignItems="baseline" flexWrap="wrap" sx={{ minWidth: 0 }}>{children}</Stack>
+      <Box sx={{ flexShrink: 0 }}>{action}</Box>
+    </Stack>
+  );
+}
+
 function Simulator({ onDone }) {
   const p = usePort();
   const { state } = p;
@@ -29,48 +49,47 @@ function Simulator({ onDone }) {
         <StatusPill word="For information" />
       </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>Simulated. This demo tool stands in for Customs' system and BNSW so the prototype can be shown end to end. It is not part of the production system.</Typography>
-      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
-        <Stack spacing={1.5}>
-          <Typography variant="subtitle2">Connections</Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Button variant="outlined" color={state.bnswDown ? 'primary' : 'warning'} onClick={() => { p.bnsw.setDown(!state.bnswDown); onDone(state.bnswDown ? 'BNSW back' : 'BNSW down'); }}>{state.bnswDown ? 'Bring BNSW back' : 'Take BNSW down'}</Button>
-            <Button variant="outlined" color={state.exitCheckDown ? 'primary' : 'warning'} onClick={() => { p.bnsw.setExitCheckDown(!state.exitCheckDown); onDone(state.exitCheckDown ? 'Exit check running' : 'Exit check down'); }}>{state.exitCheckDown ? 'Restore the exit check' : 'Take the exit check down'}</Button>
-          </Stack>
-          <Typography variant="subtitle2" sx={{ pt: 1 }}>Send a manifest</Typography>
-          {state.pendingManifests.length === 0 && <Typography variant="body2" color="text.secondary">Every sample manifest has been sent.</Typography>}
-          {state.pendingManifests.map((m) => (
-            <Stack key={m.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
-              <Id>{m.id}</Id>
-              <Typography variant="body2" color="text.secondary">{m.lines[0].goods}</Typography>
-              <Button size="small" variant="contained" disabled={state.bnswDown} onClick={() => { p.bnsw.sendManifest(m.id); onDone(`Manifest ${m.id} sent`); }}>Send manifest</Button>
+      <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
+        <Stack spacing={3}>
+          <SimSection title="Connections">
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button variant="outlined" onClick={() => { p.bnsw.setDown(!state.bnswDown); onDone(state.bnswDown ? 'BNSW back' : 'BNSW down'); }}>{state.bnswDown ? 'Bring BNSW back' : 'Take BNSW down'}</Button>
+              <Button variant="outlined" onClick={() => { p.bnsw.setExitCheckDown(!state.exitCheckDown); onDone(state.exitCheckDown ? 'Exit check running' : 'Exit check down'); }}>{state.exitCheckDown ? 'Restore the exit check' : 'Take the exit check down'}</Button>
             </Stack>
-          ))}
-          <Typography variant="subtitle2" sx={{ pt: 1 }}>Send a release</Typography>
-          {awaitingRelease.length === 0 && <Typography variant="body2" color="text.secondary">No Bill of Entry is waiting for release.</Typography>}
-          {awaitingRelease.map((b) => (
-            <Stack key={b.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
-              <Id>{formatBoe(b)}</Id>
-              <Button size="small" variant="contained" disabled={state.bnswDown || p.holdsOnBoe(b).length > 0} onClick={() => { p.bnsw.sendRelease(b.id); onDone('Release sent'); }}>Send release</Button>
-              {p.holdsOnBoe(b).length > 0 && <Typography variant="caption" color="text.secondary">Under a Customs hold</Typography>}
-            </Stack>
-          ))}
+          </SimSection>
+          <SimSection title="Send a manifest" empty={state.pendingManifests.length === 0 && 'Every sample manifest has been sent.'}>
+            {state.pendingManifests.map((m) => (
+              <SimRow key={m.id} action={<Button size="small" variant="contained" disabled={state.bnswDown} onClick={() => { p.bnsw.sendManifest(m.id); onDone(`Manifest ${m.id} sent`); }}>Send manifest</Button>}>
+                <Id>{m.id}</Id>
+                <Typography variant="body2" color="text.secondary">{m.lines[0].goods}</Typography>
+              </SimRow>
+            ))}
+          </SimSection>
+          <SimSection title="Send a release" empty={awaitingRelease.length === 0 && 'No Bill of Entry is waiting for release.'}>
+            {awaitingRelease.map((b) => (
+              <SimRow key={b.id} action={<Button size="small" variant="contained" disabled={state.bnswDown || p.holdsOnBoe(b).length > 0} onClick={() => { p.bnsw.sendRelease(b.id); onDone('Release sent'); }}>Send release</Button>}>
+                <Id>{formatBoe(b)}</Id>
+                {p.holdsOnBoe(b).length > 0 && <Typography variant="caption" color="text.secondary">Under a Customs hold</Typography>}
+              </SimRow>
+            ))}
+          </SimSection>
         </Stack>
-        <Stack spacing={1.5}>
-          <Typography variant="subtitle2">Send an exit note</Typography>
-          {notesDue.length === 0 && <Typography variant="body2" color="text.secondary">No locked load is waiting for its exit note.</Typography>}
-          {notesDue.map(({ b, plate }) => (
-            <Stack key={plate} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
-              <Plate>{plate}</Plate>
-              <Typography variant="body2" color="text.secondary">{formatBoe(b)}</Typography>
-              <Button size="small" variant="contained" disabled={state.bnswDown} onClick={() => { p.bnsw.sendExitNote(b.id, plate); onDone(`Exit note sent for ${plate}`); }}>Send exit note</Button>
-            </Stack>
-          ))}
-          <Typography variant="subtitle2" sx={{ pt: 1 }}>Send a Customs hold</Typography>
-          <TextField select size="small" label="On" value={holdTarget} onChange={(e) => setHoldTarget(e.target.value)}>
-            {holdTargets.map((x) => <MenuItem key={x.key} value={x.key}>{x.label}</MenuItem>)}
-          </TextField>
-          <TextField size="small" label="Reason from Customs" value={holdReason} onChange={(e) => setHoldReason(e.target.value)} />
-          <Box><Button variant="contained" color="error" disabled={!holdTarget || !holdReason.trim() || state.bnswDown} onClick={() => { p.bnsw.sendHold(holdTargets.find((x) => x.key === holdTarget).target, holdReason.trim()); setHoldTarget(''); setHoldReason(''); onDone('Customs hold sent'); }}>Send hold</Button></Box>
+        <Stack spacing={3}>
+          <SimSection title="Send an exit note" empty={notesDue.length === 0 && 'No locked load is waiting for its exit note.'}>
+            {notesDue.map(({ b, plate }) => (
+              <SimRow key={plate} action={<Button size="small" variant="contained" disabled={state.bnswDown} onClick={() => { p.bnsw.sendExitNote(b.id, plate); onDone(`Exit note sent for ${plate}`); }}>Send exit note</Button>}>
+                <Plate>{plate}</Plate>
+                <Typography variant="body2" color="text.secondary">{formatBoe(b)}</Typography>
+              </SimRow>
+            ))}
+          </SimSection>
+          <SimSection title="Send a Customs hold">
+            <TextField select size="small" label="On" value={holdTarget} onChange={(e) => setHoldTarget(e.target.value)}>
+              {holdTargets.map((x) => <MenuItem key={x.key} value={x.key}>{x.label}</MenuItem>)}
+            </TextField>
+            <TextField size="small" label="Reason from Customs" value={holdReason} onChange={(e) => setHoldReason(e.target.value)} />
+            <Box><Button variant="contained" color="error" disabled={!holdTarget || !holdReason.trim() || state.bnswDown} onClick={() => { p.bnsw.sendHold(holdTargets.find((x) => x.key === holdTarget).target, holdReason.trim()); setHoldTarget(''); setHoldReason(''); onDone('Customs hold sent'); }}>Send hold</Button></Box>
+          </SimSection>
         </Stack>
       </Box>
     </Card>
