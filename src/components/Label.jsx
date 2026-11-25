@@ -17,7 +17,7 @@ export default function Label({ color = 'default', variant = 'soft', startIcon, 
       : { color: p.contrastText, backgroundColor: p.main },
     outlined: isDefault
       ? { color: theme.palette.text.primary, border: `2px solid ${theme.palette.text.primary}` }
-      : { color: p.main, border: `2px solid ${p.main}` },
+      : { color: light ? p.text ?? p.dark : p.light, border: `2px solid ${light ? p.text ?? p.dark : p.light}` },
   };
 
   return (

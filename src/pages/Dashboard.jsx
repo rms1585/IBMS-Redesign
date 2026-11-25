@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Alert, Box, Button, Card, Grid2 as Grid, LinearProgress, Stack, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Alert, Box, Button, Card, Grid2 as Grid, LinearProgress, Skeleton, Stack, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -34,6 +34,9 @@ function lastSevenDays() {
   const now = Date.now() + 6 * 3600 * 1000;
   return Array.from({ length: 7 }, (_, i) => new Date(now - (6 - i) * 86400000).toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }));
 }
+
+// Charts are drawn without animation when the device asks for reduced motion (M2 Annex 24.8).
+const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 const legend = { position: { vertical: 'top', horizontal: 'right' }, itemMarkWidth: 10, itemMarkHeight: 10, markGap: 6, itemGap: 16 };
 
@@ -99,6 +102,7 @@ function Operations({ f }) {
         <SectionCard title="Admissions and departures" subheader="Last seven days" sx={{ height: '100%' }}>
           <Box sx={{ px: 1, pb: 1 }}>
             <BarChart
+              skipAnimation={reduceMotion()}
               height={320}
               borderRadius={6}
               xAxis={[{ scaleType: 'band', data: days, categoryGapRatio: 0.45, barGapRatio: 0.2 }]}
@@ -116,6 +120,7 @@ function Operations({ f }) {
         <SectionCard title="Trucks in the port by stage" subheader="Live" sx={{ height: '100%' }}>
           <Box sx={{ pb: 1 }}>
             <PieChart
+              skipAnimation={reduceMotion()}
               height={220}
               series={[{ data: stages, innerRadius: 60, outerRadius: 96, paddingAngle: 2, cornerRadius: 4, cx: '50%' }]}
               slotProps={{ legend: { hidden: true } }}
@@ -181,6 +186,7 @@ function Performance() {
         <SectionCard title="Time in port" subheader="Median hours, gate in to exit, last 12 months">
           <Box sx={{ px: 1 }}>
             <LineChart
+              skipAnimation={reduceMotion()}
               height={300}
               xAxis={[{ scaleType: 'point', data: MONTHS }]}
               series={[{ data: [31.2, 30.4, 29.8, 28.1, 26.9, 25.5, 24.2, 23.0, 21.8, 20.9, 19.6, 18.7], label: 'Median hours', color: theme.palette.primary.main, area: true, showMark: false, curve: 'natural' }]}
@@ -222,6 +228,7 @@ function Revenue({ f }) {
         <SectionCard title="Billed and counted" subheader="Last 12 months (BDT lakh)">
           <Box sx={{ px: 1 }}>
             <LineChart
+              skipAnimation={reduceMotion()}
               height={340}
               xAxis={[{ scaleType: 'point', data: MONTHS }]}
               series={[
@@ -253,6 +260,7 @@ function Resources({ f }) {
         <SectionCard title="Space by shed and yard" subheader="Tonnes, live">
           <Box sx={{ px: 1, pb: 1 }}>
             <BarChart
+              skipAnimation={reduceMotion()}
               height={300}
               borderRadius={6}
               xAxis={[{ scaleType: 'band', data: f.sheds.map((s) => s.id), categoryGapRatio: 0.5, barGapRatio: 0.2 }]}
@@ -288,22 +296,81 @@ function Control({ f }) {
   );
 }
 
-function Reports() {
+// A preview loads with skeleton rows, and a report that cannot be built shows the system-error state with a
+// help-desk reference (M2 Annex 24.4). The demo always fails "Posting and allocation" once, to show that state.
+const PREVIEW_ROWS = [
+  ['2026-11-25 09:12', 'WB 23 D 1187', '2026/601/08841'],
+  ['2026-11-25 09:40', 'WB 41 B 2240', '2026/601/08874'],
+  ['2026-11-25 10:05', 'WB 25 A 3307', '2026/601/08860'],
+];
+
+function ReportPreview({ report, onClose }) {
+  const [phase, setPhase] = useState('loading');
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    setPhase('loading');
+    const timer = setTimeout(() => setPhase(report.name === 'Posting and allocation' && attempt === 0 ? 'error' : 'ready'), 900);
+    return () => clearTimeout(timer);
+  }, [report, attempt]);
   return (
-    <Card sx={{ p: 3 }}>
-      <ResponsiveTable
-        rowKey={(r) => r.name}
-        rows={REPORTS}
-        columns={[
-          { label: 'Report', nowrap: true, render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
-          { label: 'Contents', priority: 'low', render: (r) => <Box component="span" sx={{ color: 'text.secondary' }}>{r.desc}</Box> },
-          { label: 'Export', align: 'right', render: () => <Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit">Preview</Button><Button size="small" variant="outlined" color="inherit">CSV</Button><Button size="small" variant="outlined" color="inherit">Excel</Button></Stack> },
-        ]}
-      />
-      <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 2 }}>
-        Only reports you are entitled to are listed. Downloads are named by port and date range and recorded in the audit log.
-      </Typography>
+    <Card variant="outlined" sx={{ p: 3, mb: 3, boxShadow: 'none' }} aria-busy={phase === 'loading'}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+        <Typography variant="h6" component="h2">{report.name}: preview</Typography>
+        <Button size="small" variant="outlined" color="inherit" onClick={onClose}>Close preview</Button>
+      </Stack>
+      {phase === 'loading' && (
+        <Stack spacing={1.25} role="status" aria-label="Loading the preview">
+          {[0, 1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={28} />)}
+        </Stack>
+      )}
+      {phase === 'error' && (
+        <Alert severity="error" action={<Button color="inherit" size="small" variant="outlined" onClick={() => setAttempt((a) => a + 1)}>Try again</Button>}>
+          <Typography variant="subtitle2">The report could not be built</Typography>
+          <Typography variant="body2">Nothing was lost. Try again; if it fails again, call the help desk and quote reference HD-2026-11-25-0042.</Typography>
+        </Alert>
+      )}
+      {phase === 'ready' && (
+        <ResponsiveTable
+          rowKey={(r) => r[0]}
+          rows={PREVIEW_ROWS}
+          columns={[{ label: 'Time', render: (r) => r[0] }, { label: 'Plate', render: (r) => r[1] }, { label: 'Manifest', render: (r) => r[2] }]}
+        />
+      )}
     </Card>
+  );
+}
+
+function Reports() {
+  const [preview, setPreview] = useState(null);
+  const [recorded, setRecorded] = useState('');
+  return (
+    <>
+      {preview && <ReportPreview report={preview} onClose={() => setPreview(null)} />}
+      {recorded && <Alert severity="info" sx={{ mb: 3 }} onClose={() => setRecorded('')}>{recorded}</Alert>}
+      <Card sx={{ p: 3 }}>
+        <ResponsiveTable
+          rowKey={(r) => r.name}
+          rows={REPORTS}
+          columns={[
+            { label: 'Report', nowrap: true, render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
+            { label: 'Contents', priority: 'low', render: (r) => <Box component="span" sx={{ color: 'text.secondary' }}>{r.desc}</Box> },
+            {
+              label: 'Export', align: 'right', render: (r) => (
+                <Stack direction="row" spacing={1} justifyContent="flex-end">
+                  <Button size="small" variant="outlined" color="inherit" onClick={() => setPreview(r)}>Preview</Button>
+                  {['CSV', 'Excel'].map((kind) => (
+                    <Button key={kind} size="small" variant="outlined" color="inherit" onClick={() => setRecorded(`${r.name} (${kind}) downloaded as BEN_${r.name.replace(/\W+/g, '-')}_2026-11-25. The download is recorded in the audit log with your name.`)}>{kind}</Button>
+                  ))}
+                </Stack>
+              ),
+            },
+          ]}
+        />
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 2 }}>
+          Only reports you are entitled to are listed. Downloads are named by port and date range and recorded in the audit log.
+        </Typography>
+      </Card>
+    </>
   );
 }
 

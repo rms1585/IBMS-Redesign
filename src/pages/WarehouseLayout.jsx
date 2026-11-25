@@ -58,13 +58,16 @@ const EMPTY_ZONE = { rows: '4', cols: '8', capacityT: '20', categories: ['Any'] 
 const wholeIn = (v, min, max) => /^\d+$/.test(v) && Number(v) >= min && Number(v) <= max;
 
 function FacilityDrawer({ open, onClose, onSave, taken }) {
-  const [f, set] = useFreshForm(open, EMPTY_FACILITY);
+  const [f, set, dirty] = useFreshForm(open, EMPTY_FACILITY);
   const code = f.code.toUpperCase();
   const codeOk = /^[A-Z0-9]{2,4}$/.test(code) && !taken.includes(code);
   const ready = f.name.trim() && codeOk;
+  const why = !f.name.trim() ? 'Enter the facility name.' : !codeOk ? (taken.includes(code) ? 'This short code is already used.' : 'Enter a short code of 2 to 4 letters or digits.') : '';
   return (
     <FormDrawer
       open={open}
+      dirty={dirty}
+      why={why}
       onClose={onClose}
       title={tr("Create facility")}
       subtitle={tr("Add zones once it exists. Sheds and open yards attract storage rent; transshipment yards do not.")}
@@ -80,13 +83,16 @@ function FacilityDrawer({ open, onClose, onSave, taken }) {
 }
 
 function ZoneDrawer({ open, onClose, onSave, facility }) {
-  const [f, set] = useFreshForm(open, EMPTY_ZONE);
+  const [f, set, dirty] = useFreshForm(open, EMPTY_ZONE);
   const ok = { rows: wholeIn(f.rows, 1, 20), cols: wholeIn(f.cols, 1, 20), capacityT: wholeIn(f.capacityT, 1, 200) };
   const ready = ok.rows && ok.cols && ok.capacityT && f.categories.length > 0;
+  const why = !ok.rows || !ok.cols ? 'Rows and bays per row must be 1 to 20.' : !ok.capacityT ? 'Capacity per bay must be 1 to 200 tonnes.' : !f.categories.length ? 'Choose at least one accepted category.' : '';
   const code = `${facility.id}${String.fromCharCode(65 + facility.zones.length)}`;
   return (
     <FormDrawer
       open={open}
+      dirty={dirty}
+      why={why}
       onClose={onClose}
       title={`Add zone to ${facility.name}`}
       subtitle={`The new zone is ${code}. Its bays are numbered ${code}-R1 onwards.`}

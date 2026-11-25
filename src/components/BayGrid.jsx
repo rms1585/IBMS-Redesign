@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Box, Stack, Typography, Tooltip } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { bayState } from '../data/mock';
@@ -38,11 +39,15 @@ export function BayLegend() {
 }
 
 // `isDisallowed(code, state)` lets the caller apply storage-separation rules for the cargo being placed.
+// Every bay can be clicked or reached by keyboard to show what it holds in the line under the grid, so nothing
+// is told only in a tooltip (M2 Annex 24.8).
 export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
   const c = useBayColors();
+  const [inspected, setInspected] = useState(null);
   const rows = Array.from({ length: zone.rows }, (_, r) => r);
   const cols = Array.from({ length: zone.cols }, (_, i) => i);
   return (
+    <Stack spacing={1.5} sx={{ display: 'inline-flex' }}>
     <Box sx={{ display: 'inline-grid', gridTemplateColumns: `24px repeat(${zone.cols}, ${size}px)`, gap: 0.75 }}>
       <Box />
       {cols.map((i) => (
@@ -62,8 +67,14 @@ export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
             return (
               <Tooltip key={code} title={<><b>{code}</b><br />{tip}</>} arrow disableInteractive>
                 <Box
-                  onClick={() => clickable && onSelect(code)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${code}: ${tip}`}
+                  aria-disabled={!clickable}
+                  onClick={() => { setInspected(`${code} · ${tip}`); if (clickable) onSelect(code); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setInspected(`${code} · ${tip}`); if (clickable) onSelect(code); } }}
                   sx={{
+                    '&:focus-visible': { outline: `2px solid ${c.selected.border}`, outlineOffset: 1 },
                     height: size * 0.72, borderRadius: '6px', background: c[state].bg, border: `1px solid ${c[state].border}`,
                     cursor: clickable ? 'pointer' : 'default', transition: 'transform 120ms',
                     ...(clickable && { '&:hover': { transform: 'scale(1.08)', borderColor: c.selected.border } }),
@@ -75,5 +86,7 @@ export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
         </Box>
       ))}
     </Box>
+    <Typography variant="body2" color={inspected ? 'text.primary' : 'text.secondary'} role="status">{inspected ?? 'Select a bay to see what it holds.'}</Typography>
+    </Stack>
   );
 }

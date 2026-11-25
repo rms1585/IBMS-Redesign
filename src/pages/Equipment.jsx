@@ -30,7 +30,7 @@ const initialLabour = [
 const EMPTY_CATEGORY = { code: '', name: '', unit: 'Per hour', count: '1', base: 'Shed 5' };
 
 function CategoryDrawer({ kind, open, onClose, onSave, taken }) {
-  const [f, set] = useFreshForm(open, EMPTY_CATEGORY);
+  const [f, set, dirty] = useFreshForm(open, EMPTY_CATEGORY);
   const code = f.code.trim().toUpperCase();
   const dup = taken.includes(code);
   const codeOk = /^[A-Z]{2}-[A-Z0-9]{2,6}$/.test(code) && !dup;
@@ -40,6 +40,8 @@ function CategoryDrawer({ kind, open, onClose, onSave, taken }) {
   return (
     <FormDrawer
       open={open}
+      dirty={dirty}
+      why={why}
       onClose={onClose}
       title={kind === 'equipment' ? 'Add equipment category' : 'Add labour category'}
       subtitle="Rates are set on the tariff order, not here."
@@ -55,7 +57,6 @@ function CategoryDrawer({ kind, open, onClose, onSave, taken }) {
             <TextField select fullWidth label={tr('Based at')} value={f.base} onChange={set('base')}>{BASES.map((b) => <MenuItem key={b} value={b}>{b}</MenuItem>)}</TextField>
           </Stack>
         )}
-        {!ready && <Typography variant="caption" color="text.secondary" role="status">{tr(why)}</Typography>}
       </Stack>
     </FormDrawer>
   );

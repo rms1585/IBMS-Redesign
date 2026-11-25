@@ -51,6 +51,10 @@ export function createAppTheme(mode = 'light') {
       MuiCssBaseline: {
         styleOverrides: {
           body: { backgroundColor: palette.background.default },
+          // A reduced-motion setting makes every change instant: drawers, tabs, hovers and menus (M2 Annex 24.8).
+          '@media (prefers-reduced-motion: reduce)': {
+            '*, *::before, *::after': { animationDuration: '0.01ms !important', animationIterationCount: '1 !important', transitionDuration: '0.01ms !important', scrollBehavior: 'auto !important' },
+          },
           // Scrollbars stay hidden until their area is scrolled (see useAutoHideScrollbars).
           '*': { scrollbarWidth: 'thin', scrollbarColor: 'transparent transparent' },
           // Side-by-side cards share a height: a card that is the only item in its grid cell fills
@@ -68,7 +72,8 @@ export function createAppTheme(mode = 'light') {
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {
-          root: { borderRadius: 8, whiteSpace: 'nowrap', flexShrink: 0 },
+          // On a phone every button is at least 48px tall (M2 Annex 24.8, 24.11: 44px targets, 48px for controls).
+          root: { borderRadius: 8, whiteSpace: 'nowrap', flexShrink: 0, '@media (max-width:599.95px)': { minHeight: 48 } },
           // CTA sizes from the Figma design system: Large 48 / Medium 40 / Small 36.
           sizeLarge: { height: 48, padding: '0 20px', fontSize: pxToRem(16), lineHeight: 24 / 16 },
           sizeMedium: { height: 40, padding: '0 16px' },
@@ -105,7 +110,10 @@ export function createAppTheme(mode = 'light') {
           root: { '&.Mui-focusVisible': { outline: `2px solid ${palette.primary.main}`, outlineOffset: 2 } },
         },
       },
-      MuiIconButton: { styleOverrides: { root: { borderRadius: 8 } } },
+      // Text on a filled colour keeps 4.5:1 (M2 Annex 24.8): the bell badge, and filled success and error messages.
+      MuiBadge: { styleOverrides: { colorError: { backgroundColor: palette.error.dark } } },
+      MuiAlert: { styleOverrides: { filledSuccess: { backgroundColor: palette.success.dark }, filledError: { backgroundColor: palette.error.dark } } },
+      MuiIconButton: { styleOverrides: { root: { borderRadius: 8, '@media (max-width:599.95px)': { minWidth: 44, minHeight: 44 } } } },
       MuiPaper: {
         defaultProps: { elevation: 0 },
         styleOverrides: { root: { backgroundImage: 'none' }, outlined: { borderColor: alpha(overlay, 0.16) } },
@@ -139,6 +147,8 @@ export function createAppTheme(mode = 'light') {
         styleOverrides: {
           root: {
             borderRadius: 8,
+            // Inputs are 48px tall on a phone (M2 Annex 24.11).
+            '@media (max-width:599.95px)': { minHeight: 48 },
             '& .MuiOutlinedInput-notchedOutline': { borderColor: alpha(overlay, 0.2) },
             '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: light ? grey[800] : '#FFFFFF' },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderWidth: 2, borderColor: light ? grey[800] : '#FFFFFF' },
@@ -161,7 +171,8 @@ export function createAppTheme(mode = 'light') {
           head: {
             fontSize: 14,
             fontWeight: 600,
-            color: palette.text.secondary,
+            // grey 700 on the neutral header: secondary grey there is just under 4.5:1 (M2 Annex 24.8).
+            color: light ? grey[700] : palette.text.secondary,
             backgroundColor: palette.background.neutral,
             borderBottomStyle: 'solid',
           },

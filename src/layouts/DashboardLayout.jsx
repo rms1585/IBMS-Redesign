@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
+  Alert, Box, Button, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
   Menu, MenuItem, ListItemIcon, ListItemText, Collapse, Drawer, Paper, TextField, useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -197,11 +197,22 @@ function Header({ navWidth, onOpenNav }) {
       {onOpenNav && (
         <IconButton onClick={onOpenNav} aria-label="Open navigation" edge="start"><MenuRoundedIcon /></IconButton>
       )}
+      {/* M2 Annex 24.3: the right side follows a fixed order: lookup, port, language, bell, full screen, user. */}
+      <Box sx={{ flex: 1 }} />
       <Lookup />
       {/* The port name must not shrink: a squeezed nowrap label spills past its box. */}
       <Typography variant="subtitle2" sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap', flexShrink: 0 }}>{t('Port')}: Benapole</Typography>
-
-      <Box sx={{ flex: 1 }} />
+      <Button
+        size="small"
+        variant="outlined"
+        color="inherit"
+        onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
+        aria-label={`${t('Language')}: ${lang === 'en' ? 'English' : 'বাংলা'}. ${lang === 'en' ? 'Switch to Bangla' : 'Switch to English'}`}
+        startIcon={<TranslateRoundedIcon fontSize="small" />}
+        sx={{ minWidth: 0, flexShrink: 0, display: { xs: 'none', sm: 'inline-flex' } }}
+      >
+        {lang === 'en' ? 'বাংলা' : 'English'}
+      </Button>
       <Tooltip title="Notifications">
         <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Notifications">
           <Badge badgeContent={items.length} color="error"><NotificationsNoneRoundedIcon /></Badge>

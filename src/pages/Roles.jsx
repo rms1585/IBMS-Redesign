@@ -123,6 +123,8 @@ function CreateRole({ open, onClose, onSave }) {
   return (
     <FormDrawer
       open={open}
+      dirty={Boolean(name.trim()) || mods.length > 0}
+      why={step < 3 && !canNext ? ['Enter the role name.', 'Choose at least one module.', 'Tick at least one action.'][step] : ''}
       onClose={close}
       title={tr("Create role")}
       subtitle={tr("A role combines scope, modules and actions.")}
@@ -260,6 +262,7 @@ export default function Roles() {
       <FormDrawer
         open={Boolean(copy)}
         onClose={() => setCopy(null)}
+        why={!copyName.trim() ? 'Enter a name for the copy.' : ''}
         title={`Copy “${copy?.name ?? ''}”`}
         subtitle={tr("The template stays unchanged. Your copy is independent and can be edited.")}
         actions={(

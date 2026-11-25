@@ -64,6 +64,8 @@ function CreatePort({ open, onClose, onCreate, taken }) {
   return (
     <FormDrawer
       open={open}
+      dirty={f !== EMPTY_PORT}
+      why={!f.code ? 'Enter a three-letter port code.' : !codeOk ? (dup ? 'This code is already used.' : 'The port code is three letters.') : !f.name.trim() ? 'Enter the port name.' : ''}
       onClose={onClose}
       title={tr("Create port")}
       subtitle={tr("The port administrator completes the setup afterwards.")}
@@ -165,7 +167,7 @@ const EMPTIES = Object.fromEntries(Object.entries(REGISTERS).map(([k, r]) => [k,
 
 function RegisterDrawer({ register, open, onClose, onSave }) {
   const spec = REGISTERS[register];
-  const [v, set] = useFreshForm(open, EMPTIES[register]);
+  const [v, set, dirty] = useFreshForm(open, EMPTIES[register]);
   const problems = Object.fromEntries(spec.fields.map((f) => {
     const value = v[f.key];
     const blank = Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim();
@@ -173,6 +175,8 @@ function RegisterDrawer({ register, open, onClose, onSave }) {
     return [f.key, f.check ? f.check(String(value).trim()) : ''];
   }));
   const ready = Object.values(problems).every((x) => !x);
+  const first = spec.fields.find((f) => problems[f.key]);
+  const why = first ? `${first.label}: ${problems[first.key] === 'Required' ? 'required' : problems[first.key]}` : '';
   // A field shows its problem only once something is typed, so an untouched form is not all red.
   const shown = (f) => {
     const value = v[f.key];
@@ -182,6 +186,8 @@ function RegisterDrawer({ register, open, onClose, onSave }) {
   return (
     <FormDrawer
       open={open}
+      dirty={dirty}
+      why={why}
       onClose={onClose}
       title={spec.title}
       subtitle={spec.subtitle}

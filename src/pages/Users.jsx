@@ -28,6 +28,8 @@ function InviteForm({ open, onClose, onInvite }) {
   return (
     <FormDrawer
       open={open}
+      dirty={f !== EMPTY_INVITE}
+      why={!f.name.trim() ? 'Enter the full name.' : !emailOk ? 'Enter a valid email address.' : ''}
       onClose={onClose}
       title={tr("New user")}
       subtitle={tr("They get an email invitation to set up their account.")}

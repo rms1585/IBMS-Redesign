@@ -29,6 +29,8 @@ function RuleDrawer({ open, onClose, onSave }) {
   return (
     <FormDrawer
       open={open}
+      dirty={f !== EMPTY_RULE}
+      why={same ? 'Category A and B must differ.' : !gapOk ? 'The minimum gap is a whole number of at least 1.' : !f.reason.trim() ? 'Give the evidence or reason the approver will read.' : ''}
       onClose={onClose}
       title={tr("New local storage rule")}
       subtitle={tr("Saved as a draft. A port in-charge or head-office approver publishes it.")}

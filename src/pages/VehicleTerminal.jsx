@@ -25,20 +25,23 @@ const COMPACT = '@container record (max-width: 520px)';
 // A fixed pattern, so the demo shows a part-full terminal.
 const seededOccupied = (block, r, c) => (r * 3 + c * 5 + block.code.charCodeAt(0)) % 4 === 0;
 
-function Slot({ code, state, onClick, label }) {
+// Occupied and not-for-this-vehicle slots stay clickable so their status shows in the line under the block:
+// nothing is told only in the tooltip (M2 Annex 24.8). Only a free slot can be chosen.
+function Slot({ code, state, onClick, onInspect, label }) {
   return (
     <Tooltip title={label} arrow disableInteractive>
       <Box component="span" sx={{ display: 'block', minWidth: 0 }}>
         <ButtonBase
           aria-label={`Slot ${code}: ${label}`}
-          disabled={state === 'occupied' || state === 'wrong'}
-          onClick={onClick}
+          aria-disabled={state === 'occupied' || state === 'wrong'}
+          onClick={() => { onInspect(`${code.split('-')[1]} · ${label}`); if (state === 'free' || state === 'selected') onClick(); }}
           sx={(t) => ({
             width: '100%', minWidth: 0, height: 32, borderRadius: '6px', ...t.typography.caption,
             border: `1px solid ${state === 'free' ? alpha(t.palette.grey[500], 0.32) : 'transparent'}`,
             color: state === 'selected' ? t.palette.primary.contrastText : t.palette.text.secondary,
             bgcolor: state === 'selected' ? 'primary.main' : state === 'occupied' ? alpha(t.palette.grey[500], 0.24) : 'background.paper',
             opacity: state === 'wrong' ? 0.4 : 1,
+            cursor: state === 'occupied' || state === 'wrong' ? 'default' : 'pointer',
             '&.Mui-focusVisible': { outline: `2px solid ${t.palette.primary.main}`, outlineOffset: 1 },
             '&:hover': { borderColor: t.palette.primary.main },
           })}
@@ -56,6 +59,7 @@ function BlockView({ block, vehicle, assigned, selected, onSelect }) {
   const fits = !vehicle || vehicle.use === block.use;
   const occupied = (r, c) => seededOccupied(block, r, c) || Boolean(assigned[slotCode(block, r, c)]);
   const free = rows.flatMap((r) => cols.filter((c) => !occupied(r, c))).length;
+  const [inspected, setInspected] = useState(null);
   return (
     <Box>
       <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5, [COMPACT]: { mb: 1 } }}>
@@ -70,9 +74,10 @@ function BlockView({ block, vehicle, assigned, selected, onSelect }) {
             const taken = occupied(r, c);
             const state = code === selected ? 'selected' : taken ? 'occupied' : fits ? 'free' : 'wrong';
             const label = assigned[code] ?? (taken ? 'Occupied' : fits ? 'Free' : `For ${block.use.toLowerCase()} only`);
-            return <Slot key={code} code={code} state={state} label={label} onClick={() => onSelect(code)} />;
+            return <Slot key={code} code={code} state={state} label={label} onClick={() => onSelect(code)} onInspect={setInspected} />;
           }))}
       </Box>
+      {inspected && <Typography variant="caption" color="text.secondary" component="div" role="status" sx={{ mt: 1 }}>{inspected}</Typography>}
     </Box>
   );
 }

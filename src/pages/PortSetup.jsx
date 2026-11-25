@@ -79,13 +79,16 @@ const EMPTY_RESOURCE = { name: '', type: 'Border gate', detail: '' };
 
 // Sheds and yards are added in Warehouse layout, so they are not offered here.
 function ResourceDrawer({ open, onClose, onSave, taken }) {
-  const [f, set] = useFreshForm(open, EMPTY_RESOURCE);
+  const [f, set, dirty] = useFreshForm(open, EMPTY_RESOURCE);
   const kind = RESOURCE_TYPES[f.type];
   const dup = taken.includes(f.name.trim().toLowerCase());
   const ready = f.name.trim() && !dup && f.detail.trim();
+  const why = !f.name.trim() ? 'Enter the resource name.' : dup ? 'A resource with this name already exists.' : !f.detail.trim() ? `Enter the ${kind.label.toLowerCase()}.` : '';
   return (
     <FormDrawer
       open={open}
+      dirty={dirty}
+      why={why}
       onClose={onClose}
       title={tr("Add resource")}
       subtitle={tr("It starts as Setting up and goes live when the port administrator confirms it.")}
