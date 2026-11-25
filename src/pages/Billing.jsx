@@ -18,8 +18,9 @@ function BillTotals({ bill, tot }) {
     ['Paid', formatBDT(tot.paid)],
     ['Balance', formatBDT(tot.total - tot.paid), true],
   ];
+  // The bill table runs edge to edge with 24px inside its last cell, so totals at the card's padding line up with Amount.
   return (
-    <Stack alignItems="flex-end" sx={{ mt: 2, pr: { xs: 1.5, sm: 2 } }}>
+    <Stack alignItems="flex-end" sx={{ mt: 2 }}>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'auto auto', columnGap: 4, rowGap: 0.75, textAlign: 'right' }}>
         {rows.map(([label, value, strong]) => (
           <Box key={label} sx={{ display: 'contents', typography: strong ? 'subtitle2' : 'body2', color: strong ? 'text.primary' : 'text.secondary' }}>
@@ -53,7 +54,7 @@ function BillDetail({ bill, onDone }) {
         rows={bill.lines}
         columns={[
           { label: 'For', render: (l) => l.what },
-          { label: 'Quantity × rate', render: (l) => `${l.qty} ${l.unit} × ${formatBDT(l.rate)}` },
+          { label: 'Quantity × rate', nowrap: true, render: (l) => `${l.qty} ${l.unit} × ${formatBDT(l.rate)}` },
           { label: 'VAT', align: 'right', priority: 'low', render: (l) => formatBDT(l.qty * l.rate * p.tariff.vat) },
           { label: 'Amount', align: 'right', render: (l) => formatBDT(l.qty * l.rate) },
         ]}

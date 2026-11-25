@@ -78,7 +78,7 @@ export default function Labour() {
               rows={CONTRACT}
               columns={[
                 { label: 'For', render: (l) => l.what },
-                { label: 'Quantity × rate', render: (l) => `${l.qty} ${l.unit} × ${formatBDT(l.rate)}` },
+                { label: 'Quantity × rate', nowrap: true, render: (l) => `${l.qty} ${l.unit} × ${formatBDT(l.rate)}` },
                 { label: 'Amount', align: 'right', render: (l) => formatBDT(l.qty * l.rate) },
               ]}
             />

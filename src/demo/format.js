@@ -33,10 +33,11 @@ export function daysSince(iso, toIso = new Date().toISOString()) {
   return Math.max(0, Math.ceil((new Date(toIso) - new Date(iso)) / 86400000));
 }
 
+// A non-breaking space keeps the currency or unit with its number, so an amount never splits across lines.
 export const formatBDT = (n) =>
-  n == null ? '–' : `BDT ${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  n == null ? '–' : `BDT\u00a0${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const formatKg = (n) => (n == null ? '–' : `${Number(n).toLocaleString('en-US')} kg`);
+export const formatKg = (n) => (n == null ? '–' : `${Number(n).toLocaleString('en-US')}\u00a0kg`);
 
 // Billable weight: whole tonnes, always rounded up.
 export const billableTonnes = (kg) => (kg == null ? null : Math.ceil(kg / 1000));

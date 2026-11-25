@@ -181,8 +181,12 @@ export function HoldRow({ hold, onLift, liftLabel = 'Lift hold' }) {
 }
 
 // Tables never scroll sideways: low-priority columns drop when narrow; on a phone each row becomes a card.
+// Figures never wrap: right-aligned columns, and any column marked `nowrap`, stay on one line, so the
+// description columns take the extra lines instead.
 // Laid out like the administration tables: edge to edge in a card padded 24px, with roomy rows. The negative
 // margins assume that padding; when the table is the card's last child it also runs to the card's bottom edge.
+const noWrap = (column) => column.nowrap ?? column.align === 'right';
+
 export function ResponsiveTable({ columns, rows, rowKey, onRowClick, empty = 'Nothing here yet.' }) {
   const theme = useTheme();
   const phone = useMediaQuery(theme.breakpoints.down('sm'));
@@ -217,7 +221,7 @@ export function ResponsiveTable({ columns, rows, rowKey, onRowClick, empty = 'No
       <TableBody>
         {rows.map((r, i) => (
           <TableRow key={rowKey(r, i)} hover={Boolean(onRowClick)} onClick={onRowClick ? () => onRowClick(r) : undefined} sx={{ cursor: onRowClick ? 'pointer' : 'default' }}>
-            {visible.map((c) => <TableCell key={c.label} align={c.align}>{c.render(r)}</TableCell>)}
+            {visible.map((c) => <TableCell key={c.label} align={c.align} sx={noWrap(c) ? { whiteSpace: 'nowrap' } : undefined}>{c.render(r)}</TableCell>)}
           </TableRow>
         ))}
       </TableBody>
