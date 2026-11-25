@@ -1,42 +1,12 @@
-import { Box, Button, Card, CardActionArea, Stack, Typography } from '@mui/material';
+import { useRef, useState } from 'react';
+import { Box, Button, Card, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { navConfig } from '../layouts/navConfig';
 import { useRole } from '../RoleContext';
 import { usePort } from '../demo/PortStore';
-import { dayKey, formatDuration } from '../demo/format';
+import { dayKey } from '../demo/format';
 import { useT } from '../i18n/LanguageContext';
-
-// Home is a grid of module tiles; each tile says in one or two live lines what waits there (Annex 24.3).
-function useTileLines() {
-  const p = usePort();
-  const { state } = p;
-  const oldest = (list, key) => {
-    const times = list.map(key).filter(Boolean).sort();
-    return times[0] ? `${formatDuration(times[0])} oldest` : null;
-  };
-  const atGate = state.visits.filter((v) => v.stage === 'Expected');
-  const toWeigh = state.visits.filter((v) => (v.stage === 'Admitted' || (v.stage === 'Manifest not yet available' && !v.weigh)) && !v.weigh);
-  const toPost = state.visits.filter((v) => v.stage === 'Weighed' && !v.posting);
-  const holding = state.visits.filter((v) => v.holding || (v.weigh && v.late));
-  const atShed = state.visits.filter((v) => (v.posting && v.posting.accepted === null) || (v.stage === 'Posted' && !v.receipt?.locked));
-  const loads = state.deliveryRequests.flatMap((d) => d.slots.filter((s) => s.enteredAt && !s.load));
-  const unpaid = state.bills.filter((b) => b.status === 'Payment due');
-  const passesWaiting = state.passes.filter((x) => p.passStatus(x) === 'Waiting approval');
-  return {
-    '/border-gate': [`${atGate.length} truck${atGate.length === 1 ? '' : 's'} expected`, oldest(atGate, (v) => v.enteredAt)],
-    '/weighbridge': [`${toWeigh.length} to weigh`, oldest(toWeigh, (v) => v.gateIn?.at)],
-    '/posting': [`${toPost.length} to post · ${holding.length} in the holding area`],
-    '/warehousing': [`${atShed.length} at the shed · ${loads.length} load${loads.length === 1 ? '' : 's'} to lock`],
-    '/inland-gate': [`${passesWaiting.length} Exit Pass${passesWaiting.length === 1 ? '' : 'es'} waiting approval`],
-    '/billing': [`${unpaid.length} bill${unpaid.length === 1 ? '' : 's'} with payment due`],
-    '/customs': [`${p.activeHolds.length} hold${p.activeHolds.length === 1 ? '' : 's'} open`, `${state.visits.filter((v) => v.weigh?.overTolerance).length} weight flag`],
-    '/manifests': [`${state.manifests.length} consignments on record`],
-    '/inbox': [`${state.corrections.filter((c) => !c.decision).length + state.truckChanges.filter((t) => !t.done).length} waiting decision`],
-    '/external': [state.bnswDown ? 'BNSW down' : 'BNSW live', state.exitCheckDown ? 'Exit check down' : null],
-    '/cf-portal': [`${state.manifests.length} consignments`],
-  };
-}
 
 // Bangladesh time, like every other time on screen.
 function greeting() {
@@ -88,25 +58,42 @@ function Welcome() {
   );
 }
 
-function Tile({ item, lines }) {
+const twoLineTitle = { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', overflowWrap: 'anywhere', hyphens: 'auto' };
+
+// Icon and name only, as on the earlier Home. A name cut to two lines shows in full in a tooltip.
+function Tile({ item }) {
   const t = useT();
-  const live = (lines[item.path] ?? []).filter(Boolean);
+  const titleRef = useRef(null);
+  const [clipped, setClipped] = useState(false);
+  // Measured on hover and focus because whether a name clips depends on the tile's current width.
+  const checkClipped = () => setClipped(titleRef.current.scrollHeight > titleRef.current.clientHeight);
+  const lifted = { transform: 'translateY(-2px)', boxShadow: (th) => th.customShadows.dialog };
   return (
-    <Card>
-      <CardActionArea component={RouterLink} to={item.path} sx={{ p: 2.5, height: '100%', alignItems: 'flex-start', display: 'flex', flexDirection: 'column' }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: live.length ? 1 : 0, color: 'primary.main' }}>
+    <Tooltip title={clipped ? t(item.title) : ''} arrow disableInteractive describeChild>
+      <Card
+        component={RouterLink}
+        to={item.path}
+        onMouseEnter={checkClipped}
+        onFocus={checkClipped}
+        sx={{
+          width: '100%', height: '100%', py: 2.5, px: { xs: 1.5, sm: 2.5 }, display: 'flex', justifyContent: 'flex-start', gap: { xs: 1.5, sm: 2 }, textAlign: 'left', alignItems: 'center', color: 'text.primary', textDecoration: 'none',
+          transition: (th) => th.transitions.create(['transform', 'box-shadow']),
+          '&:hover': lifted,
+          '&:focus-visible': { ...lifted, outline: (th) => `2px solid ${th.palette.primary.main}`, outlineOffset: 2 },
+          '@media (prefers-reduced-motion: reduce)': { transition: 'none', '&:hover, &:focus-visible': { transform: 'none' } },
+        }}
+      >
+        <Box sx={{ width: 44, height: 44, borderRadius: 1.5, display: 'grid', placeItems: 'center', flexShrink: 0, color: 'primary.main', bgcolor: (th) => alpha(th.palette.primary.main, 0.08) }}>
           {item.icon}
-          <Typography variant="subtitle1" color="text.primary">{t(item.title)}</Typography>
-        </Stack>
-        {live.map((l) => <Typography key={l} variant="body2" color="text.secondary">{l}</Typography>)}
-      </CardActionArea>
-    </Card>
+        </Box>
+        <Typography ref={titleRef} variant="subtitle2" sx={{ ...twoLineTitle, minWidth: 0, flex: 1 }}>{t(item.title)}</Typography>
+      </Card>
+    </Tooltip>
   );
 }
 
 export default function Home() {
   const { canOpen } = useRole();
-  const lines = useTileLines();
   const t = useT();
   // The side navigation's groups, filtered to the current role; empty groups drop out.
   const groups = navConfig
@@ -119,8 +106,8 @@ export default function Home() {
         {groups.map((g, i) => (
           <Box component="section" key={g.title} aria-labelledby={`home-group-${i}`}>
             <Typography id={`home-group-${i}`} variant="h6" component="h2" sx={{ mb: 2 }}>{t(g.title)}</Typography>
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))', md: 'repeat(3, minmax(0,1fr))', xl: 'repeat(4, minmax(0,1fr))' } }}>
-              {g.items.map((item) => <Tile key={item.path} item={item} lines={lines} />)}
+            <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: 'repeat(2, minmax(0,1fr))', md: 'repeat(4, minmax(0,1fr))' } }}>
+              {g.items.map((item) => <Tile key={item.path} item={item} />)}
             </Box>
           </Box>
         ))}
