@@ -103,7 +103,9 @@ function NavGroup({ group, mini }) {
           onClick={() => setOpen((o) => !o)}
           sx={{
             typography: 'overline', letterSpacing: 0.4, cursor: 'pointer',
-            color: 'text.disabled', bgcolor: 'transparent', lineHeight: '36px', pl: 1.5, pt: 1.5,
+            // The overline's own 16px line height, so a heading that wraps stays one block; the padding keeps the
+            // single-line heading at its earlier 48px.
+            color: 'text.disabled', bgcolor: 'transparent', lineHeight: 16 / 12, pl: 1.5, pt: 2.5, pb: 1.5,
             display: 'flex', alignItems: 'center', gap: 0.5, '&:hover': { color: 'text.primary' },
           }}
         >
