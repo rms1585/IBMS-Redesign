@@ -25,9 +25,12 @@ export function SourceMarker({ source, always = false }) {
 }
 
 // Plates in plain bold, as registered; no plate box (Annex 24.6).
+// A hero plate is never wrapped or cut, so it scales with the bench record card: h3 when there is room,
+// down to h5 in a narrow card (recorded exception to the fixed type scale).
 export function Plate({ children, size = 'body', sx }) {
   const variant = size === 'hero' ? 'h3' : size === 'large' ? 'h5' : 'subtitle2';
-  return <Typography component="span" variant={variant} sx={{ fontWeight: 700, whiteSpace: 'nowrap', ...sx }}>{children}</Typography>;
+  const fluid = size === 'hero' ? { fontSize: 'clamp(1.5rem, 7.5cqi, 3rem)' } : null;
+  return <Typography component="span" variant={variant} sx={{ fontWeight: 700, whiteSpace: 'nowrap', ...fluid, ...sx }}>{children}</Typography>;
 }
 
 // Identifiers in the form their issuer prints them: never wrapped or shortened.
@@ -76,6 +79,12 @@ export function ActionFoot({ checks = [], label, onClick, keyHint, disabled, ext
 }
 
 // Bench: context strip, then queue (oldest first, never paginated) | the subject | checks and the action.
+// Columns follow the content area (the `main` container), not the window, so an open navigation counts:
+// three columns from 860px of content, with the side columns giving up width first so the record keeps
+// room for the plate and its facts; below that the checks card moves under queue and record; on a phone
+// everything stacks.
+const BENCH_TWO = '@container main (min-width: 600px)';
+const BENCH_THREE = '@container main (min-width: 860px)';
 export function Bench({ context, queue, center, right }) {
   return (
     <Stack spacing={2}>
@@ -91,10 +100,17 @@ export function Bench({ context, queue, center, right }) {
           </Stack>
         </Card>
       )}
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '260px minmax(0,1fr)', lg: '280px minmax(0,1fr) 340px' }, alignItems: 'start' }}>
+      <Box
+        sx={{
+          display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: 'minmax(0,1fr)',
+          [BENCH_TWO]: { gridTemplateColumns: 'clamp(220px, 30cqi, 260px) minmax(0,1fr)' },
+          [BENCH_THREE]: { gridTemplateColumns: 'clamp(200px, 22cqi, 280px) minmax(0,1fr) clamp(240px, 27cqi, 340px)' },
+        }}
+      >
         <Card sx={{ p: 2, minWidth: 0 }}>{queue}</Card>
-        <Card sx={{ p: 3, minWidth: 0 }}>{center}</Card>
-        <Card sx={{ p: 2.5, minWidth: 0, display: 'flex', flexDirection: 'column', gridColumn: { md: '1 / -1', lg: 'auto' }, minHeight: { lg: 440 } }}>{right}</Card>
+        {/* A size container, so the hero plate can scale to the card. */}
+        <Card sx={{ p: { xs: 2, sm: 3 }, minWidth: 0, containerType: 'inline-size' }}>{center}</Card>
+        <Card sx={{ p: 2.5, minWidth: 0, display: 'flex', flexDirection: 'column', [BENCH_TWO]: { gridColumn: '1 / -1' }, [BENCH_THREE]: { gridColumn: 'auto', minHeight: 440 } }}>{right}</Card>
       </Box>
     </Stack>
   );
@@ -136,8 +152,11 @@ export function Fact({ label, children }) {
   );
 }
 
+// Up to `cols` facts per row, fewer when the card is narrow, so identifiers (never wrapped) always fit.
 export function Facts({ children, cols = 3 }) {
-  return <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr 1fr', sm: `repeat(${cols}, minmax(0,1fr))` } }}>{children}</Box>;
+  const gap = 16;
+  const track = `max(150px, calc((100% - ${(cols - 1) * gap}px) / ${cols}))`;
+  return <Box sx={{ display: 'grid', gap: `${gap}px`, gridTemplateColumns: `repeat(auto-fill, minmax(${track}, 1fr))` }}>{children}</Box>;
 }
 
 export function SectionTitle({ children, action }) {

@@ -153,6 +153,10 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
   respond to the space actually available with the navigation open or collapsed.
 - **Workbenches** (Border gate, Inland gate, Weighbridge, Posting, Warehousing): **queue, record and camera/details
   columns stay side by side down to tablet width.** Never move the third column under the record there.
+- **Benches** (`Bench` in `src/demo/ui.jsx`: Border gate, Inland gate, Weighbridge, Posting, Warehousing) size their
+  columns from the content area (`@container main`), so an open navigation counts: three columns from 860px of
+  content (side columns shrink first), queue + record with the checks card below from 600px, stacked below that.
+  The record card is a size container; its hero plate scales from h3 down to h5 and Facts drop to fewer per row.
   - **Phone exception (user decision 2026-11-25):** when the content area is 600px or narrower the columns stack:
     queue (no longer sticky, list capped at 280px), then record, then camera/details. Three columns cannot fit a phone.
   - Queue column `clamp(200px, 27cqi, 296px)`, right column `clamp(196px, 25cqi, 272px)`, record takes the rest.
