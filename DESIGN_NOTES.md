@@ -147,7 +147,7 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
 - **Navigation:** at 1200px and wider, full sidebar (280px). From 900 to 1199px (iPad landscape), the 88px icon rail by
   default (the arrow expands it). Below 900px (iPad portrait), the sidebar is hidden and a ☰ menu button in the header
   opens it as a drawer, which closes after a page is chosen.
-- **Header:** paddings shrink on small screens; the DEMO DATA label and camera icon hide below 600px; the user's
+- **Header:** paddings shrink on small screens; lookup and port sit at the left, bell, full screen and user at the right; a Beta tag sits beside the logo in the navigation (2026-11-25, replacing the header's environment tag); the full-screen button hides below 600px; the user's
   name hides below 900px (avatar stays).
 - **Content area** is a named size container, `main`. Layout breakpoints use `@container main (…)` queries, so they
   respond to the space actually available with the navigation open or collapsed.

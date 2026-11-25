@@ -163,7 +163,7 @@ function Lookup() {
   );
 }
 
-// Top bar in the standard's fixed order: menu, environment | lookup, port, language, bell, full screen, user.
+// Top bar: menu, lookup and port on the left | bell, full screen and user on the right. The Beta tag sits by the logo.
 function Header({ navWidth, onOpenNav }) {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -193,13 +193,11 @@ function Header({ navWidth, onOpenNav }) {
       {onOpenNav && (
         <IconButton onClick={onOpenNav} aria-label="Open navigation" edge="start"><MenuRoundedIcon /></IconButton>
       )}
-      {/* Fixed-width items must not shrink: a squeezed nowrap label lets its text spill past its background. */}
-      <Label color="warning" sx={{ display: { xs: 'none', sm: 'inline-flex' }, flexShrink: 0 }}>{t('Demonstration system')}</Label>
+      <Lookup />
+      {/* The port name must not shrink: a squeezed nowrap label spills past its box. */}
+      <Typography variant="subtitle2" sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap', flexShrink: 0 }}>{t('Port')}: Benapole</Typography>
 
       <Box sx={{ flex: 1 }} />
-
-      <Lookup />
-      <Typography variant="subtitle2" sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap', flexShrink: 0 }}>{t('Port')}: Benapole</Typography>
       <Tooltip title="Notifications">
         <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Notifications">
           <Badge badgeContent={items.length} color="error"><NotificationsNoneRoundedIcon /></Badge>
@@ -301,7 +299,8 @@ function NavContent({ mini, onToggle }) {
     .filter((g) => g.items.length > 0);
   return (
     <>
-      <Box sx={{ height: HEADER, display: 'flex', alignItems: 'center', px: mini ? 1 : 2.5, justifyContent: mini ? 'center' : 'flex-start' }}>
+      {/* Collapsed, the Beta tag sits under the logo, so the block grows past the header height there. */}
+      <Box sx={{ minHeight: HEADER, display: 'flex', alignItems: 'center', px: mini ? 1 : 2.5, py: mini ? 1.5 : 0, justifyContent: mini ? 'center' : 'flex-start' }}>
         <Logo mini={mini} />
       </Box>
       {onToggle && (

@@ -39,7 +39,7 @@ const bn = {
   'Reset demo': 'ডেমো পুনরায় শুরু',
   'Full screen': 'পূর্ণ পর্দা',
   'Switch role': 'ভূমিকা পরিবর্তন',
-  'Demonstration system': 'প্রদর্শনী সিস্টেম',
+  Beta: 'বেটা',
   'BNSW-down mode': 'বিএনএসডব্লিউ বন্ধ মোড',
   'BNSW is down. The port works in BNSW-down mode: the gate keys manifest lines from the Car Pass, the C&F agency keys the Bill of Entry number and the revenue desk records releases from Customs\' reference. The importer\'s tag and the agency\'s truck entry are still required.':
     'বিএনএসডব্লিউ বন্ধ। বন্দর বিএনএসডব্লিউ বন্ধ মোডে চলছে: গেট কার পাস থেকে ম্যানিফেস্টের লাইন লেখে, সিঅ্যান্ডএফ এজেন্সি বিল অব এন্ট্রি নম্বর লেখে এবং রাজস্ব ডেস্ক কাস্টমসের রেফারেন্স থেকে রিলিজ লেখে। আমদানিকারকের ট্যাগ ও এজেন্সির ট্রাক এন্ট্রি এখনও প্রয়োজন।',
