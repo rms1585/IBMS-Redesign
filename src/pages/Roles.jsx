@@ -139,7 +139,7 @@ export default function Roles() {
     <>
       <PageHeader
         title="Roles"
-        links={[{ name: 'Administration' }, { name: 'Roles' }]}
+        links={[{ name: 'Access and control' }, { name: 'Roles' }]}
         subtitle="A role combines scope, modules and actions. Templates are read-only: copy one to make a local role you can edit."
         action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setOpen(true)}>Create role</Button>}
       />
@@ -153,12 +153,12 @@ export default function Roles() {
         searchKeys={['name', 'scope']}
         searchPlaceholder="Search roles"
         columns={[
-          { key: 'name', label: 'Role', render: (r) => <Stack direction="row" spacing={1} alignItems="center"><Typography variant="subtitle2">{r.name}</Typography>{r.template && <Label>Template</Label>}{r.sensitive && <Label color="error">Sensitive</Label>}</Stack> },
+          { key: 'name', label: 'Role', render: (r) => <Stack direction="row" columnGap={1} rowGap={0.5} alignItems="center" flexWrap="wrap" sx={{ whiteSpace: 'normal', minWidth: 160 }}><Typography variant="subtitle2">{r.name}</Typography>{r.template && <Label>Template</Label>}{r.sensitive && <Label color="error">Sensitive</Label>}</Stack> },
           { key: 'modules', label: 'Modules' },
-          { key: 'scope', label: 'Scope' },
+          { key: 'scope', label: 'Scope', render: (r) => <Box component="span" sx={{ whiteSpace: 'normal' }}>{r.scope}</Box> },
           { key: 'org', label: 'Organisation' },
           { key: 'tasks', label: 'Tasks' },
-          { key: 'act', label: '', render: (r) => <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }}>View access</Button>{r.template ? <Button size="small" variant="outlined" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small" variant="outlined" >Edit</Button>}</Stack> },
+          { key: 'act', label: '', render: (r) => <Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }}>View access</Button>{r.template ? <Button size="small" variant="outlined" onClick={() => { setCopy(r); setCopyName(`${r.name} (BEN)`); }}>Copy</Button> : <Button size="small" variant="outlined" >Edit</Button>}</Stack> },
         ]}
       />
       <CreateRole open={open} onClose={() => setOpen(false)} onSave={(r) => { setList((l) => [...l, r]); setToast(`Role “${r.name}” created.`); }} />
