@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Box, Stack, Typography, Button, Tabs, Tab, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Table, TableHead, TableRow, TableCell, TableBody,
+  Box, Card, Stack, Typography, Button, Tabs, Tab, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Table, TableHead, TableRow, TableCell, TableBody,
 } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader } from '../components/common';
@@ -50,14 +50,16 @@ function FormatDialog({ open, onClose }) {
       <DialogTitle>Import storage rules</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Upload a .csv or .txt file, or paste rows. Up to 500 rows. Imported rules are saved as drafts for approval.</Typography>
-        <Table size="small">
-            <TableHead><TableRow><TableCell>Column</TableCell><TableCell>Meaning / constraint</TableCell></TableRow></TableHead>
+        <Card variant="outlined" sx={{ boxShadow: 'none' }}>
+          <Table size="small">
+            <TableHead><TableRow><TableCell sx={{ pl: 2 }}>Column</TableCell><TableCell sx={{ pr: 2 }}>Meaning / constraint</TableCell></TableRow></TableHead>
             <TableBody>
               {[['category_a', 'Active category name or ID'], ['category_b', 'Active category, different from A'], ['scope', 'bay, zone, adjacent or facility'], ['min_gap', 'Adjacent only; integer of at least 1'], ['reason', 'Evidence or business reason read by the approver']].map(([c, m]) => (
-                <TableRow key={c}><TableCell sx={{ fontWeight: 700 }}>{c}</TableCell><TableCell>{m}</TableCell></TableRow>
+                <TableRow key={c}><TableCell sx={{ pl: 2, fontWeight: 700 }}>{c}</TableCell><TableCell sx={{ pr: 2 }}>{m}</TableCell></TableRow>
               ))}
             </TableBody>
-        </Table>
+          </Table>
+        </Card>
         <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'background.neutral', typography: 'caption', fontWeight: 700 }}>Food,Chemical,adjacent,1,Contamination risk</Box>
       </DialogContent>
       <DialogActions>

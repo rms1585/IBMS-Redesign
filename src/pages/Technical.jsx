@@ -26,7 +26,7 @@ export default function Technical() {
         <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Messages held" value="20" caption="Delivered when the feed recovers" color="error" /></Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Online payments today" value="312" caption="Latest 10:58 · BDT 4.8 L" /></Grid>
       </Grid>
-      <SectionCard title="Ports and stations" contentSx={{ px: { xs: 1.5, sm: 2.5 }, pb: { xs: 1.5, sm: 2.5 } }}>
+      <SectionCard title="Ports and stations">
         <DataTable card={false} rows={nodes} columns={[
           { key: 'port', label: 'Port', render: (r) => <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{r.port}</Typography> },
           { key: 'station', label: 'Station' },

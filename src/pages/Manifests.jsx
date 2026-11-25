@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Alert, Box, Card, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Card, Stack, Typography } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PageHeader } from '../components/common';
+import { PageHeader, SearchField } from '../components/common';
 import { agencyName, importerName, usePort } from '../demo/PortStore';
 import { formatBoe, formatDateTime, formatKg, searchKey } from '../demo/format';
 import { Fact, Facts, HoldRow, Id, Plate, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
@@ -25,8 +25,8 @@ function ManifestList() {
           {lateVisits.map((v) => `${v.plate} was admitted with manifest ${v.carPassManifest} not yet available (EXC-04).`).join(' ')} Nothing on the visit is routed, posted or unloaded until the manifest is matched.
         </Alert>
       )}
-      <Card sx={{ p: { xs: 1.5, sm: 2.5 } }}>
-        <TextField size="small" fullWidth label="Search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="2026/601/08841, WB23D1187, C-48211 or LC 0417-26-0091" sx={{ mb: 2, maxWidth: 520 }} />
+      <Card sx={{ p: { xs: 1.5, sm: 3 } }}>
+        <SearchField value={q} onChange={setQ} placeholder="Search manifest, plate, Bill of Entry or alias" sx={{ width: '100%', mb: 3 }} />
         <ResponsiveTable
           rowKey={(m) => m.id}
           rows={rows}

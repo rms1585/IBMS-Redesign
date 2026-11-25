@@ -57,7 +57,7 @@ export default function CfPortal() {
     <>
       <PageHeader title={t('C&F portal')} subtitle={`${agency.name} · AIN ${agency.ain}`} action={canPick && <AgencyPicker ain={ain} pick={pick} />} />
       <LicenceBanner ain={ain} />
-      <Card sx={{ p: { xs: 1.5, sm: 2 } }}>
+      <Card sx={{ p: { xs: 1.5, sm: 3 } }}>
         <ResponsiveTable
           rowKey={(r) => r.m.id}
           onRowClick={(r) => navigate(`/cf-portal/${encodeURIComponent(r.m.id)}`)}

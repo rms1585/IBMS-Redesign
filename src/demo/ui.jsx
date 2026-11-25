@@ -162,6 +162,8 @@ export function HoldRow({ hold, onLift, liftLabel = 'Lift hold' }) {
 }
 
 // Tables never scroll sideways: low-priority columns drop when narrow; on a phone each row becomes a card.
+// Laid out like the administration tables: edge to edge in a card padded 24px, with roomy rows. The negative
+// margins assume that padding; when the table is the card's last child it also runs to the card's bottom edge.
 export function ResponsiveTable({ columns, rows, rowKey, onRowClick, empty = 'Nothing here yet.' }) {
   const theme = useTheme();
   const phone = useMediaQuery(theme.breakpoints.down('sm'));
@@ -188,7 +190,8 @@ export function ResponsiveTable({ columns, rows, rowKey, onRowClick, empty = 'No
     );
   }
   return (
-    <Table size="small" sx={{ tableLayout: 'auto' }}>
+    <Box sx={{ mx: -3, '&:last-child': { mb: -3 } }}>
+    <Table size="small" sx={{ tableLayout: 'auto', '& .MuiTableCell-root': { py: 2 }, '& .MuiTableCell-root:first-of-type': { pl: 3 }, '& .MuiTableCell-root:last-of-type': { pr: 3 } }}>
       <TableHead>
         <TableRow>{visible.map((c) => <TableCell key={c.label} align={c.align}>{t(c.label)}</TableCell>)}</TableRow>
       </TableHead>
@@ -200,6 +203,7 @@ export function ResponsiveTable({ columns, rows, rowKey, onRowClick, empty = 'No
         ))}
       </TableBody>
     </Table>
+    </Box>
   );
 }
 
