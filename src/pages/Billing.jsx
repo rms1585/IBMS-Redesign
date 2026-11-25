@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Label from '../components/Label';
 import { Alert, Box, Button, Card, Divider, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
@@ -47,7 +48,7 @@ function BillDetail({ bill, onDone }) {
           <Typography variant="subtitle1">Payment ID <Id sx={{ typography: 'subtitle1' }}>{bill.paymentId}</Id></Typography>
           <Typography variant="body2" color="text.secondary">{agencyName(bill.party)} · {bill.for.id} · raised {formatDateTime(bill.raisedAt)} · {p.tariff.version}</Typography>
         </Box>
-        <StatusPill word={bill.status} />
+        <Stack direction="row" spacing={1}>{bill.adjustment && <Label color="warning">Adjustment bill after outage</Label>}<StatusPill word={bill.status} /></Stack>
       </Stack>
       <ResponsiveTable
         rowKey={(l) => l.what}

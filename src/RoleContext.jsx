@@ -15,7 +15,7 @@ export const roles = [
   { id: 'warehouse-manager', ref: 'TR-07', name: 'Warehouse manager', person: 'Selina Parvin', paths: ['/warehousing', '/labour', LOOKUP], landing: '/warehousing' },
   { id: 'billing', ref: 'TR-09', name: 'Billing officer (revenue desk)', person: 'Tanvir Ahmed', paths: ['/billing', LOOKUP], landing: '/billing' },
   { id: 'inland-gate', ref: 'TR-12', name: 'Inland gate operator', person: 'Ruhul Amin', paths: ['/inland-gate', LOOKUP], landing: '/inland-gate' },
-  { id: 'supervisor', ref: 'TR-13', name: 'Supervisor', person: 'Jahangir Alam', paths: ['/', '/inbox', '/dashboard', '/audit', LOOKUP, '/border-gate', '/inland-gate', '/weighbridge', '/posting', '/warehousing'], landing: '/inbox' },
+  { id: 'supervisor', ref: 'TR-13', name: 'Supervisor', person: 'Jahangir Alam', paths: ['/', '/inbox', '/dashboard', '/audit', '/back-entry', LOOKUP, '/border-gate', '/inland-gate', '/weighbridge', '/posting', '/warehousing'], landing: '/inbox' },
   { id: 'port-incharge', ref: 'TR-14', name: 'Port in-charge', person: 'Md. Shafiqul Islam', paths: null, landing: '/inbox' },
   { id: 'management', ref: 'TR-15', name: 'Management (head office)', person: 'Director (Traffic), BLPA HQ', paths: ['/', '/dashboard', LOOKUP], landing: '/dashboard' },
   { id: 'port-admin', ref: 'TR-16', name: 'Port configuration administrator', person: 'Arif Chowdhury', paths: ['/', '/port-setup', '/warehouse-layout', '/storage-rules', '/routing', '/vehicle-classes', '/equipment', '/charges', '/technical', '/exceptions'], landing: '/port-setup' },

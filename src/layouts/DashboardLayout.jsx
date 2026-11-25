@@ -281,10 +281,30 @@ function Header({ navWidth, onOpenNav }) {
 // Any state that changes what a user can do shows as a full-width strip on every screen (Annex 24.10).
 function StatusStrips() {
   const { state } = usePort();
+  const phase = state.outage?.phase ?? 'normal';
   const t = useT();
   const keyed = state.boes.filter((b) => b.source === 'Keyed by the agency').length + state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").length;
   return (
     <Stack spacing={1} sx={{ mb: 2, '&:empty': { display: 'none' } }}>
+      {/* Connection to NDC Agargaon (M2 Annex 24.10): lost in red, reconnecting and recovery in amber. */}
+      {(phase === 'lost' || phase === 'manual') && (
+        <Alert severity="error" variant="filled" icon={<CloudOffRoundedIcon />}>
+          <Typography variant="subtitle2">{t('Connection to NDC Agargaon lost at Benapole')}</Typography>
+          <Typography variant="body2">{phase === 'manual' ? t('The manual procedure is declared: work on the pre-numbered paper forms at each checkpoint. Records are back-entered when the link returns.') : t('IBMS cannot be reached from this port and sign-in fails here. The port in-charge declares the manual procedure; staff take the pre-numbered paper forms.')}</Typography>
+        </Alert>
+      )}
+      {phase === 'reconnecting' && (
+        <Alert severity="warning" icon={<CloudOffRoundedIcon />}>
+          <Typography variant="subtitle2">{t('Reconnecting')}</Typography>
+          <Typography variant="body2">{t('The primary link is down and the port is switching to Starlink. What you have typed stays on screen and is sent when the connection is back.')}</Typography>
+        </Alert>
+      )}
+      {phase === 'recovery' && (
+        <Alert severity="warning" icon={<InfoOutlinedIcon />}>
+          <Typography variant="subtitle2">{t('Benapole is in recovery')}</Typography>
+          <Typography variant="body2">{t('Paper records from the outage are being back-entered, holds first. No new action is taken on a truck until its paper records are entered.')}</Typography>
+        </Alert>
+      )}
       {state.bnswDown && (
         <Alert severity="warning" icon={<CloudOffRoundedIcon />}>
           <Typography variant="subtitle2">{t('BNSW-down mode')}</Typography>

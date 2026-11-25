@@ -34,6 +34,7 @@ import InlandGate from './pages/InlandGate';
 import CustomsWorkspace from './pages/CustomsWorkspace';
 import ExternalStatus from './pages/ExternalStatus';
 import Licences from './pages/Licences';
+import Outage from './pages/Outage';
 
 export default function App() {
   useAutoHideScrollbars();
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="users" element={<Users />} />
         <Route path="inbox" element={<Inbox />} />
         <Route path="audit" element={<AuditLog />} />
+        <Route path="back-entry" element={<Outage />} />
         <Route path="labour" element={<Labour />} />
         {/* The Exit Pass and Part delivery screens are replaced by the inland gate and the Delivery Request (M2 3.4.10). */}
         <Route path="exit-pass" element={<Navigate to="/inland-gate" replace />} />

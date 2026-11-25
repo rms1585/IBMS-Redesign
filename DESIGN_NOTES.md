@@ -420,3 +420,13 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   gets its rates entered and is activated; new bills use the active order, and What this port charges shows the
   rates bills use now. Still local to their screens: vehicle classes, storage rules (enforced in step 4, B5),
   users and roles.
+- **Step 3b, manual procedure and back-entry (B13; Report 4.16, Annex 7.13, 24.10):** Access and control >
+  Outage and back-entry (`src/pages/Outage.jsx`). The BNSW simulator's "Connection to NDC Agargaon" drops the
+  primary link (amber "Reconnecting" strip) or both links (red strip that also says sign-in fails), and restores
+  the link. The port in-charge declares the manual procedure, then recovery (amber strip on every screen), then
+  normal working, which is refused while the three counts (forms used, entered with void, checked) differ or a
+  class D/E case has no owner. Back-entry refuses numbers outside the port's pre-issued range or already entered,
+  orders by the event time on the form, holds first, and needs a second person to confirm. Exceptions are sorted
+  into classes A–E (A duplicate logged, B one match linked, C adjustment bill raised, D hold wins, E security
+  incident referred to Customs and BLPA, never closed as a correction). Missing form numbers and the
+  reconciliation report are their own tabs. The demo has no sign-in page, so the red strip carries that notice.

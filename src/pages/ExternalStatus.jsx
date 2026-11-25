@@ -4,7 +4,7 @@ import { PageHeader } from '../components/common';
 import { usePort } from '../demo/PortStore';
 import { formatBoe, formatDateTime } from '../demo/format';
 import { Confirmation, Id, Plate, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { tr, useT } from '../i18n/LanguageContext';
 
 // M-14: how BNSW, payment providers and links are doing, plus the BNSW simulator (a demo tool, never production).
 
@@ -28,9 +28,12 @@ function SimRow({ action, children }) {
   );
 }
 
+const outagePhaseText = (phase = 'normal') => ({ normal: 'connected', reconnecting: 'reconnecting over Starlink', lost: 'both links down', manual: 'manual procedure declared', recovery: 'in recovery' }[phase]);
+
 function Simulator({ onDone }) {
   const p = usePort();
   const { state } = p;
+  const setOutage = (change) => p.setStored('outage', { phase: 'normal' }, (o) => ({ ...o, ...change }));
   const [holdTarget, setHoldTarget] = useState('');
   const [holdReason, setHoldReason] = useState('');
   const awaitingRelease = state.boes.filter((b) => !b.release);
@@ -51,6 +54,14 @@ function Simulator({ onDone }) {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>Simulated. This demo tool stands in for Customs' system and BNSW so the prototype can be shown end to end. It is not part of the production system.</Typography>
       <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
         <Stack spacing={3}>
+          <SimSection title="Connection to NDC Agargaon">
+            <Typography variant="body2" color="text.secondary">{tr(`Now: ${outagePhaseText(state.outage?.phase)}.`)}</Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button variant="outlined" disabled={(state.outage?.phase ?? 'normal') !== 'normal'} onClick={() => { setOutage({ phase: 'reconnecting' }); onDone('Primary link down: switching to Starlink'); }}>{tr('Drop the primary link')}</Button>
+              <Button variant="outlined" disabled={!['normal', 'reconnecting'].includes(state.outage?.phase ?? 'normal')} onClick={() => { setOutage({ phase: 'lost', lostAt: new Date().toISOString(), declaredAt: null, linkBackAt: null, recoveryAt: null, normalAt: null, signedBy: null }); onDone('Both links down at Benapole'); }}>{tr('Drop both links')}</Button>
+              <Button variant="outlined" disabled={!['reconnecting', 'lost', 'manual'].includes(state.outage?.phase)} onClick={() => { setOutage(state.outage?.phase === 'reconnecting' ? { phase: 'normal' } : { phase: state.outage.phase === 'manual' ? 'manual' : 'normal', linkBackAt: new Date().toISOString() }); onDone('Link restored'); }}>{tr('Restore the link')}</Button>
+            </Stack>
+          </SimSection>
           <SimSection title="Connections">
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <Button variant="outlined" onClick={() => { p.bnsw.setDown(!state.bnswDown); onDone(state.bnswDown ? 'BNSW back' : 'BNSW down'); }}>{state.bnswDown ? 'Bring BNSW back' : 'Take BNSW down'}</Button>

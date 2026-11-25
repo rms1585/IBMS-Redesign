@@ -1,4 +1,4 @@
-import { AdminPanelSettingsRoundedIcon, AltRouteRoundedIcon, BusinessCenterRoundedIcon, DirectionsBusRoundedIcon, GridViewRoundedIcon, HistoryRoundedIcon, HomeRoundedIcon, InboxRoundedIcon, InsightsRoundedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, PeopleAltRoundedIcon, PrecisionManufacturingRoundedIcon, PublicRoundedIcon, ReceiptLongRoundedIcon, RequestQuoteRoundedIcon, RuleRoundedIcon, RvHookupRoundedIcon, ScaleRoundedIcon, SettingsEthernetRoundedIcon, ShieldRoundedIcon, SignpostRoundedIcon, StorefrontRoundedIcon, SyncAltRoundedIcon, TrainRoundedIcon, TuneRoundedIcon, ViewQuiltRoundedIcon, WarehouseRoundedIcon, LockOutlinedIcon } from '../components/icons';
+import { AdminPanelSettingsRoundedIcon, CloudOffRoundedIcon, AltRouteRoundedIcon, BusinessCenterRoundedIcon, DirectionsBusRoundedIcon, GridViewRoundedIcon, HistoryRoundedIcon, HomeRoundedIcon, InboxRoundedIcon, InsightsRoundedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, PeopleAltRoundedIcon, PrecisionManufacturingRoundedIcon, PublicRoundedIcon, ReceiptLongRoundedIcon, RequestQuoteRoundedIcon, RuleRoundedIcon, RvHookupRoundedIcon, ScaleRoundedIcon, SettingsEthernetRoundedIcon, ShieldRoundedIcon, SignpostRoundedIcon, StorefrontRoundedIcon, SyncAltRoundedIcon, TrainRoundedIcon, TuneRoundedIcon, ViewQuiltRoundedIcon, WarehouseRoundedIcon, LockOutlinedIcon } from '../components/icons';
 
 // Modules follow the M2 module list (Annex 7, M-01 to M-20). Home shows the same groups in the same order.
 export const navConfig = [
@@ -53,6 +53,7 @@ export const navConfig = [
       { title: 'Roles', path: '/roles', icon: <AdminPanelSettingsRoundedIcon /> },
       { title: 'Users', path: '/users', icon: <PeopleAltRoundedIcon /> },
       { title: 'Audit log', path: '/audit', icon: <HistoryRoundedIcon /> },
+      { title: 'Outage and back-entry', path: '/back-entry', icon: <CloudOffRoundedIcon /> },
     ],
   },
   {
