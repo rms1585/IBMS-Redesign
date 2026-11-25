@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert, Card, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
+import ExportCargo from './ExportCargo';
 import { PageHeader } from '../components/common';
 import { agencyName, usePort } from '../demo/PortStore';
 import { dayKey, formatBoe, formatDateTime, formatKg, searchKey } from '../demo/format';
@@ -114,7 +116,9 @@ function PassRegister() {
 
 export default function InlandGate() {
   const t = useT();
-  const [tab, setTab] = useState('entry');
+  const [params, setParams] = useSearchParams();
+  const tab = ['exit', 'passes', 'export'].includes(params.get('view')) ? params.get('view') : 'entry';
+  const setTab = (v) => setParams(v === 'entry' ? {} : { view: v }, { replace: true });
   const [msg, setMsg] = useState('');
   return (
     <>
@@ -125,12 +129,14 @@ export default function InlandGate() {
             <ToggleButton value="entry">Entry</ToggleButton>
             <ToggleButton value="exit">Exit lanes</ToggleButton>
             <ToggleButton value="passes">Exit Passes</ToggleButton>
+            <ToggleButton value="export">{t('Export')}</ToggleButton>
           </ToggleButtonGroup>
         }
       />
       {tab === 'entry' && <EntryBench onDone={setMsg} />}
       {tab === 'exit' && <ExitBench onDone={setMsg} />}
       {tab === 'passes' && <PassRegister />}
+      {tab === 'export' && <ExportCargo />}
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );

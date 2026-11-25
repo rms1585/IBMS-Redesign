@@ -381,3 +381,25 @@ The prototype now follows the M2 report and its annexes. Where these notes disag
 - **Settled by M2 against earlier decisions:** the Customs ARO signs the Exit Pass again (C1); paper release is
   BNSW-down mode at the revenue desk (C2); examination is not tracked (C3); release runs per Bill of Entry (C4);
   holds belong to the body that placed them (C5); the tare rule is national (C11).
+
+## 15. M2 compliance (2026-11-25)
+
+The product owner ruled that M2 (report and annexes) is the updated requirement and overrides earlier decisions,
+with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-audit-2026-11-25.md`.
+
+- **Kept against M2 (product owner's decision):** create forms open in a drawer from the right (`FormDrawer`),
+  although Annex 24.4 asks for in-place panels. Edits of existing records stay in place. Treat this as a change
+  request to Annex 24.
+- **D2 / A1, A2:** EXC-12 and EXC-13 are withdrawn. Only perishables go truck to truck; Products & routing refuses
+  Transshipment for anything else. The Exception catalogue is replaced by the read-only Annex 3.5 register
+  (`src/data/exceptions.js`, EXC-01 to EXC-38 without 12 and 13). The Phase 7 notes about non-perishable
+  transshipment and jammed-shed transfers in section 12 no longer apply.
+- **D3 / A3, A4:** every passenger pays; passenger categories record assistance, never an exemption. Phone numbers
+  take a country code.
+- **D4:** Auction and aging is a view of Warehousing ("Aging and auction"), the cargo vehicle terminal a view of
+  Posting, and Export a view of the Inland gate. None is in the module index; old links open the view.
+- **D5:** the "Demo presenter" role is labelled as a demo aid, not a live role.
+- **A6:** Equipment & labour holds categories and how each is charged (no prices, no named gangs), an
+  unavailable/available action with a reason, and an upload with a row-by-row check.
+- **A7–A11:** Customs manifest numbers everywhere; status words beside colours; "Send for approval", never
+  "Submit"; a plain notice instead of a silent redirect; no green background behind text on Home.

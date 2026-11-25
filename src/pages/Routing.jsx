@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Stack, Typography, Button, Grid2 as Grid, Alert, Snackbar, TextField, MenuItem } from '@mui/material';
+import { Box, Stack, Typography, Button, Grid2 as Grid, Alert, Snackbar, TextField, MenuItem } from '@mui/material';
 import { PageHeader, KpiCard } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -11,8 +11,9 @@ const DEFAULT_ROUTES = Object.fromEntries(products.map((p) => [p.code, p.route])
 
 const routeColor = { Warehouse: 'primary', Transshipment: 'info', 'Stone route': 'warning' };
 const enabled = { Warehouse: true, Transshipment: true, 'Stone route': false };
-// Non-perishables go across only with Customs' permission, as an exception (Item 9, Bhomra; EX-03).
-const needsCustoms = (product, route) => route === 'Transshipment' && product.type !== 'Perishable';
+// Only perishables move straight across, truck to truck; everything else is unloaded into a shed (M2 Annex 3.5:
+// EXC-12 and EXC-13 are withdrawn). Routing refuses Transshipment for any other product.
+const allowed = (product, route) => route !== 'Transshipment' || product.type === 'Perishable';
 
 export default function Routing() {
   const [routes, setRoutes] = useStoredState('productRoutes', DEFAULT_ROUTES);
@@ -25,7 +26,7 @@ export default function Routing() {
     <>
       <PageHeader
         title={tr("Products & routing")}
-        links={[{ name: 'Administration' }, { name: 'Products & routing' }]}
+        links={[{ name: 'Administration and configuration' }, { name: 'Products & routing' }]}
         subtitle={tr("Products are national. This port chooses one enabled branch for each product it handles.")}
       />
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -45,18 +46,22 @@ export default function Routing() {
           { key: 'code', label: 'Code' },
           { key: 'name', label: 'Product', render: (r) => <><Typography variant="subtitle2">{r.name}</Typography><Typography variant="caption" color="text.secondary">{r.type} · suggested {r.type === 'Perishable' ? 'straight across' : 'into the port'}</Typography></> },
           { key: 'categories', label: 'Categories', render: (r) => <Stack direction="row" spacing={0.5}>{r.categories.map((c) => <Label key={c}>{c}</Label>)}</Stack> },
-          { key: 'current', label: 'Current route', render: (r) => <Stack direction="row" flexWrap="wrap" useFlexGap gap={1}><Label color={routeColor[r.current]}>{r.current}</Label>{!enabled[r.current] && <Label color="error">Branch off</Label>}{needsCustoms(r, r.current) && <Label color="warning">Customs permission per consignment</Label>}</Stack> },
+          { key: 'current', label: 'Current route', render: (r) => <Stack direction="row" flexWrap="wrap" useFlexGap gap={1}><Label color={routeColor[r.current]}>{r.current}</Label>{!enabled[r.current] && <Label color="error">Branch off</Label>}{!allowed(r, r.current) && <Label color="error">Not allowed: perishables only</Label>}</Stack> },
           {
             key: 'change', label: 'Change to', render: (r) => r.pending ? <Label color="warning">Pending: {r.pending}</Label> : (
-              <TextField select size="small" value="" onChange={(e) => { const to = e.target.value; setPending((p) => ({ ...p, [r.code]: to })); setToast(needsCustoms(r, to) ? `${r.name} is non-perishable: each consignment will need Customs' permission before it goes across. Route change sent for approval.` : `Route change for ${r.name} sent for approval. The current route stays in force until then.`); }} sx={{ width: 170 }} SelectProps={{ displayEmpty: true, renderValue: () => 'Choose…' }}>
-                {Object.keys(enabled).filter((k) => enabled[k] && k !== r.current).map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}
+              <TextField select size="small" value="" onChange={(e) => { const to = e.target.value; setPending((p) => ({ ...p, [r.code]: to })); setToast(`Route change for ${r.name} sent for approval. The current route stays in force until then.`); }} sx={{ width: 170 }} SelectProps={{ displayEmpty: true, renderValue: () => 'Choose…' }}>
+                {Object.keys(enabled).filter((k) => enabled[k] && k !== r.current).map((k) => (
+                  <MenuItem key={k} value={k} disabled={!allowed(r, k)}>
+                    {allowed(r, k) ? k : <Box><Box>{k}</Box><Typography variant="caption" color="text.secondary">{tr('Perishables only (M2 Annex 3.5)')}</Typography></Box>}
+                  </MenuItem>
+                ))}
               </TextField>
             ),
           },
         ]}
       />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity={toast.includes('non-perishable') ? 'warning' : 'info'} variant="filled" onClose={() => setToast('')}>{toast}</Alert>
+        <Alert severity="info" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
       </Snackbar>
     </>
   );

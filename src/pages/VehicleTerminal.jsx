@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, ButtonBase, Card, Stack, Typography, Button, Alert, Snackbar, Tooltip, Divider } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { PageHeader, EmptyState, AssumptionNote, DetailRow } from '../components/common';
+import { EmptyState, AssumptionNote, DetailRow } from '../components/common';
 import { Workbench, QueueCard } from '../components/Workbench';
 import Label from '../components/Label';
 import { useStoredState } from '../demo/PortStore';
@@ -13,9 +13,9 @@ const blocks = [
   { code: 'C', use: 'Local trucks', rows: 2, cols: 10 },
 ];
 const initialVehicles = [
-  { plate: 'WB-23-K-4471', kind: 'Foreign', use: 'Foreign trucks', manifest: 'BEN-IGM-2026-08852', waiting: '12m' },
-  { plate: 'WB-41-B-1207', kind: 'Foreign', use: 'Foreign trucks', manifest: 'BEN-IGM-2026-08871', waiting: '7m' },
-  { plate: 'JESSORE-TA-11-2101', kind: 'Local', use: 'Local trucks', manifest: 'BEN-IGM-2026-08841', waiting: '4m' },
+  { plate: 'WB-23-K-4471', kind: 'Foreign', use: 'Foreign trucks', manifest: '2026/601/08852', waiting: '12m' },
+  { plate: 'WB-41-B-1207', kind: 'Foreign', use: 'Foreign trucks', manifest: '2026/601/08871', waiting: '7m' },
+  { plate: 'JESSORE-TA-11-2101', kind: 'Local', use: 'Local trucks', manifest: '2026/601/08841', waiting: '4m' },
 ];
 const slotCode = (block, r, c) => `${block.code}-${r + 1}${String.fromCharCode(65 + c)}`;
 // Spacing follows the width of the centre column (the Workbench's `record` container), not the screen:
@@ -77,6 +77,7 @@ function BlockView({ block, vehicle, assigned, selected, onSelect }) {
   );
 }
 
+// Shown inside Posting as its "Cargo vehicle terminal" view (M2 Annex 24.12), so it has no page header of its own.
 export default function VehicleTerminal() {
   const [vehicles, setVehicles] = useStoredState('terminalVehicles', initialVehicles);
   const [assigned, setAssigned] = useState({});
@@ -97,7 +98,7 @@ export default function VehicleTerminal() {
 
   return (
     <>
-      <PageHeader title={tr("Cargo vehicle terminal")} links={[{ name: 'Operations' }, { name: 'Cargo vehicle terminal' }]} subtitle={tr("Assign waiting vehicles to a block and see each block's space at a glance.")} />
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{tr("Assign waiting vehicles to a block and see each block's space at a glance.")}</Typography>
       <AssumptionNote code="F23" sx={{ mb: 3 }}>The terminal's position in the flow will be taken from BLPA's master plan.</AssumptionNote>
       <Workbench
         queue={

@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
+import VehicleTerminal from './VehicleTerminal';
 import { PageHeader } from '../components/common';
 import { importerName, usePort } from '../demo/PortStore';
 import { billableTonnes, formatDuration, formatKg } from '../demo/format';
@@ -18,7 +20,7 @@ function useFreeSpace() {
   });
 }
 
-export default function Posting() {
+function PostingBench() {
   const p = usePort();
   const t = useT();
   const [msg, setMsg] = useState('');
@@ -53,7 +55,6 @@ export default function Posting() {
 
   return (
     <>
-      <PageHeader title={t('Posting and holding area')} />
       <Bench
         context={[
           { label: 'Port', value: 'Benapole' },
@@ -124,6 +125,27 @@ export default function Posting() {
         />
       </Card>
       <Confirmation text={msg} onClose={() => setMsg('')} />
+    </>
+  );
+}
+
+// Posting and its cargo vehicle terminal are one module (M2 Annex 24.12): the terminal is a view of Posting.
+export default function Posting() {
+  const t = useT();
+  const [params, setParams] = useSearchParams();
+  const view = params.get('view') === 'terminal' ? 'terminal' : 'posting';
+  return (
+    <>
+      <PageHeader
+        title={t('Posting and holding area')}
+        action={
+          <ToggleButtonGroup exclusive size="small" value={view} onChange={(_, v) => v && setParams(v === 'posting' ? {} : { view: v }, { replace: true })} aria-label="Posting view">
+            <ToggleButton value="posting">{t('Posting')}</ToggleButton>
+            <ToggleButton value="terminal">{t('Cargo vehicle terminal')}</ToggleButton>
+          </ToggleButtonGroup>
+        }
+      />
+      {view === 'posting' ? <PostingBench /> : <VehicleTerminal />}
     </>
   );
 }

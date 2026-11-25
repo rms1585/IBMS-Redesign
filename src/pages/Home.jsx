@@ -25,31 +25,32 @@ function Welcome() {
   const t = useT();
   const expected = state.visits.filter((v) => v.stage === 'Expected').length;
   const decisions = state.corrections.filter((c) => !c.decision).length + state.truckChanges.filter((c) => !c.done).length;
-  const circle = (size, position) => ({ position: 'absolute', ...position, width: size, height: size, borderRadius: '50%', bgcolor: (th) => alpha(th.palette.common.white, 0.06), pointerEvents: 'none' });
+  // Brand green is never a background behind text (M2 Annex 24.5), so the banner is neutral with green accents.
+  const circle = (size, position) => ({ position: 'absolute', ...position, width: size, height: size, borderRadius: '50%', bgcolor: (th) => alpha(th.palette.primary.main, 0.06), pointerEvents: 'none' });
   return (
     <Card
       component="section"
       aria-label={t('Welcome')}
       sx={{
-        position: 'relative', overflow: 'hidden', p: { xs: 3, sm: 5 }, mb: 5, color: 'common.white', boxShadow: 'none',
-        background: (th) => `linear-gradient(120deg, ${th.palette.primary.darker} 0%, ${th.palette.primary.main} 100%)`,
+        position: 'relative', overflow: 'hidden', p: { xs: 3, sm: 5 }, mb: 5, boxShadow: 'none', bgcolor: 'background.neutral',
+        borderLeft: (th) => `6px solid ${th.palette.primary.main}`,
       }}
     >
       <Box sx={circle(280, { right: -60, top: -60 })} />
       <Box sx={circle(200, { right: 120, bottom: -100 })} />
-      <Typography variant="overline" sx={{ opacity: 0.72 }}>Benapole (BEN) · {dayKey()}</Typography>
+      <Typography variant="overline" color="text.secondary">Benapole (BEN) · {dayKey()}</Typography>
       <Typography variant="h3" component="h1" sx={{ mt: 1, mb: 1 }}>{t(greeting())}, {role.person}</Typography>
-      <Typography sx={{ opacity: 0.8, maxWidth: 560 }}>
+      <Typography color="text.secondary" sx={{ maxWidth: 560 }}>
         {plural(expected, 'truck')} expected at the border gate, {plural(state.manifests.length, 'consignment')} on record and {plural(decisions, 'request')} waiting for a decision.
       </Typography>
       <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" sx={{ mt: 3 }}>
         {canOpen('/inbox') && (
-          <Button component={RouterLink} to="/inbox" variant="contained" sx={{ bgcolor: 'common.white', color: 'primary.dark', '&:hover': { bgcolor: (th) => alpha(th.palette.common.white, 0.88) } }}>
+          <Button component={RouterLink} to="/inbox" variant="contained">
             {t('Review inbox')} ({decisions})
           </Button>
         )}
         {canOpen('/dashboard') && (
-          <Button component={RouterLink} to="/dashboard" variant="outlined" sx={{ color: 'common.white', borderColor: (th) => alpha(th.palette.common.white, 0.4), '&:hover': { borderColor: 'common.white', bgcolor: (th) => alpha(th.palette.common.white, 0.08) } }}>
+          <Button component={RouterLink} to="/dashboard" variant="outlined" color="inherit">
             {t('Open dashboard')}
           </Button>
         )}

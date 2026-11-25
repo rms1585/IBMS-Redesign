@@ -1,130 +1,191 @@
 import { useState } from 'react';
-import { Tabs, Tab, Button, Typography, Alert, Snackbar, Stack, TextField, MenuItem } from '@mui/material';
-import { PageHeader } from '../components/common';
+import { Tabs, Tab, Button, Typography, Alert, Snackbar, Stack, TextField, MenuItem, Card, Box, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
+import { PageHeader, ReasonDialog } from '../components/common';
 import FormDrawer, { useFreshForm } from '../components/FormDrawer';
 import { useStoredState } from '../demo/PortStore';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
-import { AddRoundedIcon } from '../components/icons';
+import { AddRoundedIcon, UploadFileRoundedIcon } from '../components/icons';
 import { tr } from '../i18n/LanguageContext';
 
-const equipment = [
-  { id: 'FL-01', name: 'Forklift 3 t', kind: 'Forklift', facility: 'Shed 5', status: 'Available' },
-  { id: 'FL-02', name: 'Forklift 3 t', kind: 'Forklift', facility: 'Shed 5', status: 'In use' },
-  { id: 'MC-01', name: 'Mobile crane 25 t', kind: 'Crane', facility: 'Open yard 1', status: 'Maintenance' },
-];
-const gangs = [
-  { id: 'G-01', name: 'Gang 1', size: 12, leader: 'Abul Kalam', shift: 'Day' },
-  { id: 'G-02', name: 'Gang 2', size: 10, leader: 'Rafiqul Islam', shift: 'Day' },
-  { id: 'G-03', name: 'Gang 3', size: 12, leader: 'Motaleb Mia', shift: 'Night' },
-  { id: 'G-04', name: 'Gang 4', size: 8, leader: 'Nurul Amin', shift: 'Day' },
-];
-const color = { Available: 'success', 'In use': 'info', Maintenance: 'warning' };
-const KINDS = ['Forklift', 'Crane', 'Reach stacker', 'Conveyor', 'Pallet truck'];
-const BASES = ['Shed 5', 'Shed 7', 'Shed 9', 'Shed 12', 'Shed 31', 'Open yard 1', 'Open yard B'];
-const nextId = (list, prefix) => `${prefix}-${String(list.filter((x) => x.id.startsWith(prefix)).length + 1).padStart(2, '0')}`;
+// M2 M-08: equipment and labour are kept as categories with how each is charged; rates live on the tariff
+// order, never here. A machine category can be marked unavailable or available again with a reason. M-19: IBMS
+// never records which labourer did which job, so there are no named gangs here.
+const UNITS = ['Per hour', 'Per shift', 'Per movement', 'Per lift', 'Per tonne'];
+const BASES = ['Shed 5', 'Shed 7', 'Shed 9', 'Shed 12', 'Shed 31', 'Open yard 1', 'Open yard B', 'Port-wide'];
 
-const EMPTY_EQUIPMENT = { kind: 'Forklift', capacity: '', facility: 'Shed 5', status: 'Available' };
+const initialEquipment = [
+  { code: 'EQ-FL3', name: 'Forklift 3 t', unit: 'Per hour', count: 4, base: 'Shed 5', available: true },
+  { code: 'EQ-FL5', name: 'Forklift 5 t', unit: 'Per hour', count: 2, base: 'Shed 12', available: true },
+  { code: 'EQ-MC25', name: 'Mobile crane 25 t', unit: 'Per lift', count: 1, base: 'Open yard 1', available: false, reason: 'Hydraulic leak, repair ordered 2026-11-20' },
+  { code: 'EQ-RS', name: 'Reach stacker', unit: 'Per movement', count: 1, base: 'Open yard B', available: true },
+];
+const initialLabour = [
+  { code: 'LB-UNL', name: 'Manual unloading', unit: 'Per tonne' },
+  { code: 'LB-LDG', name: 'Manual loading', unit: 'Per tonne' },
+  { code: 'LB-STK', name: 'Stacking and restacking', unit: 'Per movement' },
+  { code: 'LB-SHF', name: 'Shed shift crew', unit: 'Per shift' },
+];
 
-function EquipmentDrawer({ open, onClose, onSave }) {
-  const [f, set] = useFreshForm(open, EMPTY_EQUIPMENT);
-  const capOk = /^\d+(\.\d+)?$/.test(f.capacity) && Number(f.capacity) > 0;
+const EMPTY_CATEGORY = { code: '', name: '', unit: 'Per hour', count: '1', base: 'Shed 5' };
+
+function CategoryDrawer({ kind, open, onClose, onSave, taken }) {
+  const [f, set] = useFreshForm(open, EMPTY_CATEGORY);
+  const code = f.code.trim().toUpperCase();
+  const dup = taken.includes(code);
+  const codeOk = /^[A-Z]{2}-[A-Z0-9]{2,6}$/.test(code) && !dup;
+  const countOk = kind === 'labour' || (/^\d+$/.test(f.count) && Number(f.count) >= 1);
+  const ready = codeOk && f.name.trim() && countOk;
+  const why = !f.name.trim() ? 'Enter the category name.' : !codeOk ? (dup ? 'This code is already used.' : 'Enter a code like EQ-FL3.') : !countOk ? 'Enter how many machines, at least 1.' : '';
   return (
     <FormDrawer
       open={open}
       onClose={onClose}
-      title={tr("Add equipment")}
-      subtitle={tr("Machine use on this equipment is billed at the equipment rate.")}
-      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button><Button variant="contained" disabled={!capOk} onClick={() => onSave(f)}>{tr("Add equipment")}</Button></>}
+      title={kind === 'equipment' ? 'Add equipment category' : 'Add labour category'}
+      subtitle="Rates are set on the tariff order, not here."
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>{tr('Cancel')}</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ ...f, code, name: f.name.trim() })}>{tr('Add category')}</Button></>}
     >
       <Stack spacing={2.5}>
-        <TextField select fullWidth label={tr("Kind")} value={f.kind} onChange={set('kind')}>{KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}</TextField>
-        <TextField fullWidth required autoFocus label={tr("Lifting capacity (t)")} inputMode="decimal" value={f.capacity} onChange={set('capacity')} error={Boolean(f.capacity) && !capOk} helperText={f.capacity && !capOk ? 'Enter tonnes as a number, for example 3' : 'Used to name it, for example Forklift 3 t'} />
-        <TextField select fullWidth label={tr("Based at")} value={f.facility} onChange={set('facility')}>{BASES.map((b) => <MenuItem key={b} value={b}>{b}</MenuItem>)}</TextField>
-        <TextField select fullWidth label={tr("Status")} value={f.status} onChange={set('status')}>{Object.keys(color).map((st) => <MenuItem key={st} value={st}>{st}</MenuItem>)}</TextField>
+        <TextField fullWidth required autoFocus label={tr('Category name')} placeholder={kind === 'equipment' ? 'Forklift 3 t' : 'Manual unloading'} value={f.name} onChange={set('name')} />
+        <TextField fullWidth required label={tr('Code')} placeholder={kind === 'equipment' ? 'EQ-FL3' : 'LB-UNL'} value={code} onChange={set('code')} error={Boolean(f.code) && !codeOk} helperText={dup ? tr('This code is already used') : tr('Two letters, a dash, then 2 to 6 letters or digits')} />
+        <TextField select fullWidth label={tr('Charged')} value={f.unit} onChange={set('unit')} helperText={tr('How billing counts its use')}>{UNITS.map((u) => <MenuItem key={u} value={u}>{tr(u)}</MenuItem>)}</TextField>
+        {kind === 'equipment' && (
+          <Stack direction="row" spacing={2}>
+            <TextField required label={tr('Machines')} inputMode="numeric" value={f.count} onChange={set('count')} error={!countOk} sx={{ width: 140 }} />
+            <TextField select fullWidth label={tr('Based at')} value={f.base} onChange={set('base')}>{BASES.map((b) => <MenuItem key={b} value={b}>{b}</MenuItem>)}</TextField>
+          </Stack>
+        )}
+        {!ready && <Typography variant="caption" color="text.secondary" role="status">{tr(why)}</Typography>}
       </Stack>
     </FormDrawer>
   );
 }
 
-const EMPTY_GANG = { size: '', leader: '', shift: 'Day' };
-
-function GangDrawer({ open, onClose, onSave }) {
-  const [f, set] = useFreshForm(open, EMPTY_GANG);
-  const sizeOk = /^\d+$/.test(f.size) && Number(f.size) >= 2 && Number(f.size) <= 30;
-  const ready = sizeOk && f.leader.trim();
+// File upload with a row-by-row check before anything is saved (M-08): bad rows and duplicates are shown, never
+// skipped silently.
+function UploadPanel({ kind, taken, onClose, onImport }) {
+  const sample = kind === 'equipment'
+    ? 'code,name,charged,machines,based at\nEQ-FL7,Forklift 7 t,Per hour,1,Shed 12\nEQ-FL3,Forklift 3 t,Per hour,2,Shed 5\nEQ-SC,Scissor lift,Per day,1,Shed 7'
+    : 'code,name,charged\nLB-SRT,Sorting by hand,Per tonne\nLB-UNL,Manual unloading,Per tonne';
+  const [text, setText] = useState(sample);
+  const rows = text.split('\n').slice(1).filter((l) => l.trim()).map((line) => {
+    const [code = '', name = '', unit = '', count = '1', base = 'Port-wide'] = line.split(',').map((x) => x.trim());
+    const problem = !/^[A-Z]{2}-[A-Z0-9]{2,6}$/.test(code.toUpperCase()) ? 'Code is not in the form EQ-FL3'
+      : taken.includes(code.toUpperCase()) ? 'Already in the list'
+        : !name ? 'Name is missing'
+          : !UNITS.includes(unit) ? `"${unit}" is not a charge unit (${UNITS.join(', ')})`
+            : kind === 'equipment' && !(/^\d+$/.test(count) && Number(count) >= 1) ? 'Machines must be a whole number' : '';
+    return { code: code.toUpperCase(), name, unit, count, base, problem };
+  });
+  const good = rows.filter((r) => !r.problem);
   return (
-    <FormDrawer
-      open={open}
-      onClose={onClose}
-      title={tr("Add gang")}
-      subtitle={tr("Manual handling by this gang is billed at the manual rate.")}
-      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>{tr("Cancel")}</Button><Button variant="contained" disabled={!ready} onClick={() => onSave(f)}>{tr("Add gang")}</Button></>}
-    >
-      <Stack spacing={2.5}>
-        <TextField fullWidth required autoFocus label={tr("Sardar (gang leader)")} value={f.leader} onChange={set('leader')} />
-        <TextField fullWidth required label={tr("Workers")} inputMode="numeric" value={f.size} onChange={set('size')} error={Boolean(f.size) && !sizeOk} helperText={f.size && !sizeOk ? 'Between 2 and 30 workers' : 'Including the sardar'} />
-        <TextField select fullWidth label={tr("Shift")} value={f.shift} onChange={set('shift')}>{['Day', 'Night'].map((x) => <MenuItem key={x} value={x}>{x}</MenuItem>)}</TextField>
+    <Card variant="outlined" sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
+      <Typography variant="h6" component="h2" sx={{ mb: 0.5 }}>{tr(kind === 'equipment' ? 'Upload equipment categories' : 'Upload labour categories')}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr('Paste rows from the BLPA list, or the contents of a .csv file. Each row is checked before anything is saved.')}</Typography>
+      <TextField fullWidth multiline minRows={4} label={tr('Rows')} value={text} onChange={(e) => setText(e.target.value)} sx={{ mb: 2, '& textarea': { fontFamily: 'monospace' } }} />
+      <Table size="small" sx={{ mb: 2 }}>
+        <TableHead><TableRow><TableCell>{tr('Code')}</TableCell><TableCell>{tr('Name')}</TableCell><TableCell>{tr('Charged')}</TableCell><TableCell>{tr('Check')}</TableCell></TableRow></TableHead>
+        <TableBody>
+          {rows.map((r, i) => (
+            <TableRow key={i}>
+              <TableCell>{r.code || '–'}</TableCell>
+              <TableCell>{r.name || '–'}</TableCell>
+              <TableCell>{r.unit || '–'}</TableCell>
+              <TableCell>{r.problem ? <Label color="error">{r.problem}</Label> : <Label color="success">{tr('Ready')}</Label>}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" flexWrap="wrap" useFlexGap>
+        {good.length === 0 && <Typography variant="caption" color="text.secondary">{tr('No row is ready to import.')}</Typography>}
+        <Button variant="outlined" color="inherit" onClick={onClose}>{tr('Cancel')}</Button>
+        <Button variant="contained" disabled={!good.length} onClick={() => onImport(good)}>{`${tr('Import')} ${good.length} ${tr(good.length === 1 ? 'row' : 'rows')}`}</Button>
       </Stack>
-    </FormDrawer>
+    </Card>
   );
 }
 
 export default function Equipment() {
   const [tab, setTab] = useState('equipment');
-  const [machines, setMachines] = useStoredState('equipmentList', equipment);
-  const [gangList, setGangList] = useStoredState('labourGangs', gangs);
-  const [adding, setAdding] = useState(null);
+  const [machines, setMachines] = useStoredState('equipmentCategories', initialEquipment);
+  const [labour, setLabour] = useStoredState('labourCategories', initialLabour);
+  const [adding, setAdding] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [toggling, setToggling] = useState(null);
   const [toast, setToast] = useState('');
+  const list = tab === 'equipment' ? machines : labour;
+  const setList = tab === 'equipment' ? setMachines : setLabour;
+  const taken = list.map((x) => x.code);
+  const switchTab = (v) => { setTab(v); setUploading(false); };
   return (
     <>
       <PageHeader
-        title={tr("Equipment & labour")}
-        links={[{ name: 'Administration' }, { name: 'Equipment & labour' }]}
-        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setAdding(tab)}>{tab === 'equipment' ? 'Add equipment' : 'Add gang'}</Button>}
+        title={tr('Equipment & labour')}
+        links={[{ name: 'Administration and configuration' }, { name: 'Equipment & labour' }]}
+        subtitle={tr('Categories and how each is charged. Rates are on the tariff order.')}
+        action={
+          <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+            <Button variant="outlined" color="inherit" startIcon={<UploadFileRoundedIcon />} onClick={() => setUploading(true)}>{tr('Upload list')}</Button>
+            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setAdding(true)}>{tr('Add category')}</Button>
+          </Stack>
+        }
       />
-      <Alert severity="info" sx={{ mb: 3 }}>Usage is recorded during warehouse and transshipment handling and read by billing: machine use applies the equipment rate, manual gang work applies the manual rate.</Alert>
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
-        <Tab value="equipment" label={tr("Equipment")} />
-        <Tab value="labour" label={tr("Labour gangs")} />
+      <Alert severity="info" sx={{ mb: 3 }}>{tr('Use is recorded on warehouse and transshipment jobs and read by billing: machine use is charged by the equipment category, manual work by the labour category. IBMS does not record which labourer did which job.')}</Alert>
+      <Tabs value={tab} onChange={(e, v) => switchTab(v)} sx={{ mb: 3 }}>
+        <Tab value="equipment" label={tr('Equipment categories')} />
+        <Tab value="labour" label={tr('Labour categories')} />
       </Tabs>
+      {uploading && (
+        <UploadPanel
+          key={tab}
+          kind={tab}
+          taken={taken}
+          onClose={() => setUploading(false)}
+          onImport={(rows) => {
+            setList((l) => [...l, ...rows.map(({ problem, count, base, ...r }) => (tab === 'equipment' ? { ...r, count: Number(count), base, available: true } : r))]);
+            setUploading(false);
+            setToast(`${rows.length} ${rows.length === 1 ? 'category' : 'categories'} imported.`);
+          }}
+        />
+      )}
       {tab === 'equipment' ? (
-        <DataTable rows={machines} searchKeys={['id', 'name']} searchPlaceholder={tr("Search equipment")} columns={[
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Name', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
-          { key: 'kind', label: 'Kind' },
-          { key: 'facility', label: 'Based at' },
-          { key: 'status', label: 'Status', render: (r) => <Label color={color[r.status]}>{r.status}</Label> },
-          { key: 'e', label: '', render: () => <Button size="small" variant="outlined" color="inherit">{tr("Edit")}</Button> },
+        <DataTable rows={machines} rowKey={(r) => r.code} searchKeys={['code', 'name', 'base']} searchPlaceholder={tr('Search equipment')} columns={[
+          { key: 'code', label: 'Code' },
+          { key: 'name', label: 'Category', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
+          { key: 'unit', label: 'Charged', render: (r) => tr(r.unit) },
+          { key: 'count', label: 'Machines' },
+          { key: 'base', label: 'Based at' },
+          { key: 'available', label: 'Availability', render: (r) => (r.available ? <Label color="success">{tr('Available')}</Label> : <Box><Label color="warning">{tr('Unavailable')}</Label><Typography variant="caption" color="text.secondary" component="div" sx={{ whiteSpace: 'normal', maxWidth: 220, mt: 0.5 }}>{r.reason}</Typography></Box>) },
+          { key: 'a', label: '', render: (r) => <Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }} onClick={() => setToggling(r)}>{tr(r.available ? 'Mark unavailable' : 'Mark available')}</Button> },
         ]} />
       ) : (
-        <DataTable rows={gangList} searchKeys={['id', 'name', 'leader']} searchPlaceholder={tr("Search gangs")} columns={[
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Gang', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
-          { key: 'size', label: 'Workers' },
-          { key: 'leader', label: 'Sardar' },
-          { key: 'shift', label: 'Shift' },
-          { key: 'e', label: '', render: () => <Button size="small" variant="outlined" color="inherit">{tr("Edit")}</Button> },
+        <DataTable rows={labour} rowKey={(r) => r.code} searchKeys={['code', 'name']} searchPlaceholder={tr('Search labour categories')} columns={[
+          { key: 'code', label: 'Code' },
+          { key: 'name', label: 'Category', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
+          { key: 'unit', label: 'Charged', render: (r) => tr(r.unit) },
         ]} />
       )}
-      <EquipmentDrawer
-        open={adding === 'equipment'}
-        onClose={() => setAdding(null)}
+      <CategoryDrawer
+        kind={tab}
+        open={adding}
+        taken={taken}
+        onClose={() => setAdding(false)}
         onSave={(f) => {
-          const id = nextId(machines, f.kind === 'Forklift' ? 'FL' : f.kind === 'Crane' ? 'MC' : 'EQ');
-          setMachines((l) => [...l, { id, name: `${f.kind} ${f.capacity} t`, kind: f.kind, facility: f.facility, status: f.status }]);
-          setAdding(null);
-          setToast(`${id} added.`);
+          setList((l) => [...l, tab === 'equipment' ? { code: f.code, name: f.name, unit: f.unit, count: Number(f.count), base: f.base, available: true } : { code: f.code, name: f.name, unit: f.unit }]);
+          setAdding(false);
+          setToast(`${f.name} added.`);
         }}
       />
-      <GangDrawer
-        open={adding === 'labour'}
-        onClose={() => setAdding(null)}
-        onSave={(f) => {
-          const id = nextId(gangList, 'G');
-          setGangList((l) => [...l, { id, name: `Gang ${gangList.length + 1}`, size: Number(f.size), leader: f.leader.trim(), shift: f.shift }]);
-          setAdding(null);
-          setToast(`Gang ${gangList.length + 1} added.`);
+      <ReasonDialog
+        open={Boolean(toggling)}
+        title={toggling ? `${tr(toggling.available ? 'Mark unavailable' : 'Mark available')}: ${toggling.name}` : ''}
+        description={tr('The reason is kept with the change and shown to whoever plans the next job.')}
+        confirmLabel={toggling?.available ? tr('Mark unavailable') : tr('Mark available')}
+        onClose={() => setToggling(null)}
+        onConfirm={(reason) => {
+          setMachines((l) => l.map((x) => (x.code === toggling.code ? { ...x, available: !x.available, reason: x.available ? reason : undefined } : x)));
+          setToast(`${toggling.name} marked ${toggling.available ? 'unavailable' : 'available'}.`);
+          setToggling(null);
         }}
       />
       <Snackbar open={Boolean(toast)} autoHideDuration={3000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>

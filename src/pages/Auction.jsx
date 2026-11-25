@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Grid } from '@mui/material';
-import { PageHeader, KpiCard, AssumptionNote, ReasonDialog, formatKg } from '../components/common';
+import { KpiCard, AssumptionNote, ReasonDialog, formatKg } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { useStoredState } from '../demo/PortStore';
@@ -9,12 +9,12 @@ import { tr } from '../i18n/LanguageContext';
 const ONE_MONTH = 30;
 const TWO_MONTHS = 60;
 const initialLots = [
-  { id: 'LOT-3381', product: 'Cotton fabric', manifest: 'BEN-IGM-2026-07412', location: 'Shed 5 · S5A-R3', kg: 8400, ageDays: 74, stage: 'stock', notice: false },
-  { id: 'LOT-3374', product: 'Truck tyres', manifest: 'BEN-IGM-2026-07655', location: 'Open yard 1 · OY1A-R1', kg: 5200, ageDays: 63, stage: 'stock', notice: true },
-  { id: 'LOT-3402', product: 'Detergent', manifest: 'BEN-IGM-2026-07980', location: 'Shed 5 · S5B-R2', kg: 3100, ageDays: 41, stage: 'stock', notice: false },
-  { id: 'LOT-3410', product: 'Infant cereal', manifest: 'BEN-IGM-2026-08102', location: 'Shed 9 · S9A-R1', kg: 1900, ageDays: 33, stage: 'stock', notice: false },
-  { id: 'LOT-3433', product: 'Rice (non-basmati)', manifest: 'BEN-IGM-2026-08510', location: 'Shed 5 · S5A-R1', kg: 16000, ageDays: 12, stage: 'stock', notice: false },
-  { id: 'LOT-3290', product: 'Onion (spoiled)', manifest: 'BEN-IGM-2026-06988', location: 'Shed 9 · S9A-R4', kg: 2700, ageDays: 96, stage: 'listed', notice: true },
+  { id: 'LOT-3381', product: 'Cotton fabric', manifest: '2026/601/07412', location: 'Shed 5 · S5A-R3', kg: 8400, ageDays: 74, stage: 'stock', notice: false },
+  { id: 'LOT-3374', product: 'Truck tyres', manifest: '2026/601/07655', location: 'Open yard 1 · OY1A-R1', kg: 5200, ageDays: 63, stage: 'stock', notice: true },
+  { id: 'LOT-3402', product: 'Detergent', manifest: '2026/601/07980', location: 'Shed 5 · S5B-R2', kg: 3100, ageDays: 41, stage: 'stock', notice: false },
+  { id: 'LOT-3410', product: 'Infant cereal', manifest: '2026/601/08102', location: 'Shed 9 · S9A-R1', kg: 1900, ageDays: 33, stage: 'stock', notice: false },
+  { id: 'LOT-3433', product: 'Rice (non-basmati)', manifest: '2026/601/08510', location: 'Shed 5 · S5A-R1', kg: 16000, ageDays: 12, stage: 'stock', notice: false },
+  { id: 'LOT-3290', product: 'Onion (spoiled)', manifest: '2026/601/06988', location: 'Shed 9 · S9A-R4', kg: 2700, ageDays: 96, stage: 'listed', notice: true },
 ];
 
 function AgeLabel({ days }) {
@@ -23,6 +23,7 @@ function AgeLabel({ days }) {
   return <Label>{days} days</Label>;
 }
 
+// Shown inside Warehousing as its "Aging and auction" view (M2 Annex 24.12), so it has no page header of its own.
 export default function Auction() {
   const [lots, setLots] = useStoredState('auctionLots', initialLots);
   const [tab, setTab] = useState('ageing');
@@ -42,7 +43,7 @@ export default function Auction() {
 
   return (
     <>
-      <PageHeader title={tr("Auction and destruction")} links={[{ name: 'Operations' }, { name: 'Auction and destruction' }]} subtitle={tr("Uncleared goods turn yellow at one month and red at two months.")} />
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{tr('Uncleared goods turn yellow at one month and red at two months.')}</Typography>
       <AssumptionNote code="F28" sx={{ mb: 3 }}>The minutes don't state the auction-list age. Here the notice is due at two months.</AssumptionNote>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 4 }}><KpiCard title={tr("One month or more")} value={inStock.filter((l) => l.ageDays >= ONE_MONTH && l.ageDays < TWO_MONTHS).length} color="warning" /></Grid>

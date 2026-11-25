@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert, Box, Button, Card, Checkbox, FormControlLabel, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
+import Auction from './Auction';
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
 import { importerName, usePort } from '../demo/PortStore';
@@ -211,7 +213,10 @@ function Custody() {
 
 export default function Warehousing() {
   const t = useT();
-  const [tab, setTab] = useState('unload');
+  // The view sits in the address, so the old Auction link and the Home tile open the right one.
+  const [params, setParams] = useSearchParams();
+  const tab = ['load', 'custody', 'aging'].includes(params.get('view')) ? params.get('view') : 'unload';
+  const setTab = (v) => setParams(v === 'unload' ? {} : { view: v }, { replace: true });
   const [msg, setMsg] = useState('');
   return (
     <>
@@ -222,12 +227,14 @@ export default function Warehousing() {
             <ToggleButton value="unload">Unloading</ToggleButton>
             <ToggleButton value="load">Loading</ToggleButton>
             <ToggleButton value="custody">Custody</ToggleButton>
+            <ToggleButton value="aging">{t('Aging and auction')}</ToggleButton>
           </ToggleButtonGroup>
         }
       />
       {tab === 'unload' && <UnloadingBench onDone={setMsg} />}
       {tab === 'load' && <LoadingBench onDone={setMsg} />}
       {tab === 'custody' && <Custody />}
+      {tab === 'aging' && <Auction />}
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
   );

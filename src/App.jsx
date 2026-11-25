@@ -26,9 +26,6 @@ import Roles from './pages/Roles';
 import Users from './pages/Users';
 import Inbox from './pages/Inbox';
 import Labour from './pages/Labour';
-import VehicleTerminal from './pages/VehicleTerminal';
-import Auction from './pages/Auction';
-import ExportCargo from './pages/ExportCargo';
 import RailCargo from './pages/RailCargo';
 import Passenger from './pages/Passenger';
 import Exceptions from './pages/Exceptions';
@@ -77,9 +74,10 @@ export default function App() {
         {/* The Exit Pass and Part delivery screens are replaced by the inland gate and the Delivery Request (M2 3.4.10). */}
         <Route path="exit-pass" element={<Navigate to="/inland-gate" replace />} />
         <Route path="part-delivery" element={<Navigate to="/cf-portal" replace />} />
-        <Route path="vehicle-terminal" element={<VehicleTerminal />} />
-        <Route path="auction" element={<Auction />} />
-        <Route path="export" element={<ExportCargo />} />
+        {/* Folded into their parent modules (M2 Annex 24.12); old links open the matching view. */}
+        <Route path="vehicle-terminal" element={<Navigate to="/posting?view=terminal" replace />} />
+        <Route path="auction" element={<Navigate to="/warehousing?view=aging" replace />} />
+        <Route path="export" element={<Navigate to="/inland-gate?view=export" replace />} />
         <Route path="rail" element={<RailCargo />} />
         <Route path="passenger" element={<Passenger />} />
         <Route path="exceptions" element={<Exceptions />} />

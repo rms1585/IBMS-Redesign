@@ -285,9 +285,10 @@ export default function PortSetup() {
             value={p.code}
             label={
               <Stack direction="row" spacing={1} alignItems="center">
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: `${stateColor(p.state)}.main` }} />
                 <span>{p.name}</span>
                 <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>{p.code}</Typography>
+                {/* Status in words as well as colour (M2 Annex 24.5: never a coloured dot alone). */}
+                <Label color={stateColor(p.state)}>{tr(p.state)}</Label>
               </Stack>
             }
           />

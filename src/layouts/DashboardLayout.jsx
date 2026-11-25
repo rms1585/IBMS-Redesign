@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert, Box, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
   Menu, MenuItem, ListItemIcon, ListItemText, Collapse, Drawer, Paper, TextField, useMediaQuery,
@@ -340,6 +340,24 @@ function NavContent({ mini, onToggle }) {
   );
 }
 
+// A screen outside the role's modules says so in plain words instead of silently redirecting (M2 Annex 24.3).
+function NotAllowed({ pathname }) {
+  const t = useT();
+  const navigate = useNavigate();
+  const { role } = useRole();
+  const screen = flatNav.filter((i) => pathname === i.path || (i.path !== '/' && pathname.startsWith(`${i.path}/`))).pop();
+  const landing = flatNav.find((i) => i.path === role.landing);
+  return (
+    <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, maxWidth: 640 }} role="alert">
+      <Typography variant="h5" component="h1" sx={{ mb: 1 }}>{t('This screen is not part of your role')}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        {screen ? `${t(screen.title)}: ` : ''}{t('the')} {role.name} {t('role does not include it. Ask your access administrator if your work needs it.')}
+      </Typography>
+      <Button variant="contained" onClick={() => navigate(role.landing)}>{t('Go to')} {t(landing?.title ?? 'Home')}</Button>
+    </Paper>
+  );
+}
+
 export default function DashboardLayout() {
   const theme = useTheme();
   const { pathname } = useLocation();
@@ -417,7 +435,7 @@ export default function DashboardLayout() {
           {/* Screens outside the current role's modules send the user back to Home. */}
           <StatusStrips />
           {/* Keyed by language so screens that use tr() re-read their strings when the language changes. */}
-          {canOpen(pathname) ? <Outlet key={lang} /> : <Navigate to={role.landing} replace />}
+          {canOpen(pathname) ? <Outlet key={lang} /> : <NotAllowed pathname={pathname} />}
         </Box>
       </Box>
     </Box>

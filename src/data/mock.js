@@ -76,22 +76,22 @@ export const truckClassRates = {
 
 export const manifests = [
   {
-    id: 'BEN-IGM-2026-08841', direction: 'Import', agency: 'Rupsha Clearing & Forwarding', trader: 'Delta Agro Foods Ltd.',
+    id: '2026/601/08841', direction: 'Import', agency: 'Rupsha Clearing & Forwarding', trader: 'Delta Agro Foods Ltd.',
     product: 'Rice (non-basmati)', declaredKg: 64000, remainingKg: 32000, status: 'Open', balance: 4295.46,
     foreignTrucks: 2, localTrucks: 3, updated: '10:42',
   },
   {
-    id: 'BEN-IGM-2026-08852', direction: 'Import', agency: 'Meghna Trade Logistics', trader: 'Northern Textiles PLC',
+    id: '2026/601/08852', direction: 'Import', agency: 'Meghna Trade Logistics', trader: 'Northern Textiles PLC',
     product: 'Cotton fabric', declaredKg: 18500, remainingKg: 18500, status: 'Open', balance: 184.7,
     foreignTrucks: 1, localTrucks: 0, updated: '10:15',
   },
   {
-    id: 'BEN-IGM-2026-08860', direction: 'Import', agency: 'Padma Border Agents', trader: 'Coastal Chemicals Ltd.',
+    id: '2026/601/08860', direction: 'Import', agency: 'Padma Border Agents', trader: 'Coastal Chemicals Ltd.',
     product: 'Industrial solvent', declaredKg: 22000, remainingKg: 0, status: 'Open', balance: 6380.12,
     foreignTrucks: 1, localTrucks: 1, updated: '09:58',
   },
   {
-    id: 'BEN-IGM-2026-08799', direction: 'Import', agency: 'Rupsha Clearing & Forwarding', trader: 'Delta Agro Foods Ltd.',
+    id: '2026/601/08799', direction: 'Import', agency: 'Rupsha Clearing & Forwarding', trader: 'Delta Agro Foods Ltd.',
     product: 'Onion', declaredKg: 30000, remainingKg: 0, status: 'Closed', balance: 0,
     foreignTrucks: 2, localTrucks: 4, updated: 'Yesterday',
   },
@@ -101,7 +101,7 @@ export const manifests = [
     foreignTrucks: 0, localTrucks: 1, updated: '08:31',
   },
   {
-    id: 'BEN-IGM-2026-08871', direction: 'Import', agency: 'Padma Border Agents', trader: 'Coastal Chemicals Ltd.',
+    id: '2026/601/08871', direction: 'Import', agency: 'Padma Border Agents', trader: 'Coastal Chemicals Ltd.',
     product: 'Detergent', declaredKg: 26000, remainingKg: 26000, status: 'Open', balance: 0,
     foreignTrucks: 2, localTrucks: 0, updated: '08:05',
   },
@@ -129,7 +129,7 @@ export const facilities = [
 // Deterministic occupancy pattern for demo bay grids.
 export function bayState(zone, r, c) {
   const seed = (zone.charCodeAt(2) * 31 + r * 7 + c * 13) % 23;
-  if (zone === 'S5A' && r === 1 && c >= 2 && c <= 4) return { state: 'same', product: 'Rice (non-basmati)', manifest: 'BEN-IGM-2026-08841' };
+  if (zone === 'S5A' && r === 1 && c >= 2 && c <= 4) return { state: 'same', product: 'Rice (non-basmati)', manifest: '2026/601/08841' };
   if (seed % 11 === 0) return { state: 'blocked', reason: 'Roof leak reported' };
   if (zone === 'S5B' && seed % 5 === 0) return { state: 'occupied', product: 'Industrial solvent', category: 'Chemical' };
   if (seed % 3 === 0) return { state: 'occupied', product: seed % 2 ? 'Cotton fabric' : 'Onion', category: seed % 2 ? 'Textile' : 'Food' };

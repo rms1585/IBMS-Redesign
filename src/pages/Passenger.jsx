@@ -55,15 +55,16 @@ const paymentMethods = [
   { name: 'MASTER-Brac', logo: mastercardLogo },
   { name: 'VISA-Brac', logo: visaLogo },
 ];
-const categories = ['Standard', 'Illiterate (assisted)', 'Disabled', 'Sick', 'Exempt under the Customs Act'];
+// Every passenger pays (M2, M-17): the categories record assistance given, never an exemption.
+const categories = ['Standard', 'Illiterate (assisted)', 'Disabled', 'Sick'];
 const today = () => new Date().toISOString().slice(0, 10);
 // Stored with the record, so it has to stay true later: the clock time, not "Just now".
 const nowLabel = () => `Today, ${new Date().toTimeString().slice(0, 5)}`;
 const initialReceipts = [
   { id: 'PF-BEN-55104', name: 'Anirban Ghosh', phone: '', passport: 'Z4827713', country: 'IND-India', port: ports[0], date: today(), category: 'Standard', method: 'Cash at counter', at: 'Today, 10:48', by: 'Counter 2' },
-  { id: 'PF-BEN-55103', name: 'Rafiqul Islam', phone: '01711234567', passport: 'A09451820', country: 'BGD-Bangladesh', port: ports[0], date: today(), category: 'Standard', method: 'bKash', at: 'Today, 10:42', by: 'Counter 2' },
+  { id: 'PF-BEN-55103', name: 'Rafiqul Islam', phone: '+880 1711234567', passport: 'A09451820', country: 'BGD-Bangladesh', port: ports[0], date: today(), category: 'Standard', method: 'bKash', at: 'Today, 10:42', by: 'Counter 2' },
   { id: 'PF-BEN-55102', name: 'Mita Rani Das', phone: '', passport: 'T6631954', country: 'IND-India', port: ports[0], date: today(), category: 'Disabled', method: 'Cash at counter', at: 'Today, 10:36', by: 'Counter 1' },
-  { id: 'PF-BEN-55101', name: 'Sabina Yasmin', phone: '01819876543', passport: 'B01277364', country: 'BGD-Bangladesh', port: ports[0], date: today(), category: 'Standard', method: 'Nagad', at: 'Today, 10:21', by: 'Counter 2' },
+  { id: 'PF-BEN-55101', name: 'Sabina Yasmin', phone: '+880 1819876543', passport: 'B01277364', country: 'BGD-Bangladesh', port: ports[0], date: today(), category: 'Standard', method: 'Nagad', at: 'Today, 10:21', by: 'Counter 2' },
 ];
 const initialBuses = [
   { id: 'BT-BEN-2210', plate: 'DHAKA-METRO-BA-14-2207', operator: 'Green Line', at: 'Today, 09:50' },
@@ -85,7 +86,8 @@ function amountInWords(amount) {
   return `${wholeInWords(Number(whole))}${digits}`;
 }
 const maskPassport = (p) => `•••• ${p.slice(-4)}`;
-const phoneProblem = (phone) => (phone && !/^01\d{9}$/.test(phone) ? 'Use 11 digits starting with 01' : '');
+// With the country code, so passengers from India and elsewhere can give theirs (M-17).
+const phoneProblem = (phone) => (phone && !/^\+\d{1,3} ?\d{6,12}$/.test(phone) ? 'Start with the country code, for example +880 1711234567 or +91 9830012345' : '');
 
 const emptyPassenger = { name: '', phone: '', port: ports[0], country: null, passport: '', date: today(), category: 'Standard', method: paymentMethods[0].name };
 
@@ -171,7 +173,7 @@ function PassengerForm({ paidToday, onClose, onSave }) {
         <Grid container spacing={2} sx={{ pt: 1 }}>
           <Grid size={{ xs: 12, sm: 4 }}><TextField fullWidth required label={tr("Passenger name")} value={f.name} onChange={set('name')} /></Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField fullWidth label={tr("Phone number")} placeholder={tr("01XXXXXXXXX")} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, '') })} error={Boolean(phone)} helperText={phone || ' '} slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 11 } }} />
+            <TextField fullWidth label={tr("Phone number")} placeholder="+880 1711234567" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/[^\d+ ]/g, '') })} error={Boolean(phone)} helperText={phone || tr('With the country code')} slotProps={{ htmlInput: { inputMode: 'tel', maxLength: 18 } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField select fullWidth required label={tr("Departure/arrival port")} value={f.port} onChange={set('port')}>

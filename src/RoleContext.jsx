@@ -6,7 +6,7 @@ import { createContext, useContext, useMemo, useState } from 'react';
 const LOOKUP = '/manifests';
 
 export const roles = [
-  { id: 'super-admin', ref: 'Demo', name: 'Demo presenter (every screen)', person: 'Demo presenter', paths: null, landing: '/' },
+  { id: 'super-admin', ref: 'Demo', name: 'Demo presenter (demo aid, not a live role)', person: 'Demo presenter', paths: null, landing: '/' },
   { id: 'border-gate', ref: 'TR-01', name: 'Border gate operator', person: 'Abdul Karim', paths: ['/border-gate', LOOKUP], landing: '/border-gate' },
   { id: 'weighbridge', ref: 'TR-02', name: 'Weighbridge operator', person: 'Mizanur Rahman', paths: ['/weighbridge', LOOKUP], landing: '/weighbridge' },
   { id: 'posting', ref: 'TR-04', name: 'Posting officer', person: 'Farhana Yasmin', paths: ['/posting', LOOKUP], landing: '/posting' },

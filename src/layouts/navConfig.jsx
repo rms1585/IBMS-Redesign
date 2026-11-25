@@ -22,8 +22,6 @@ export const navConfig = [
       { title: 'Inland gate', path: '/inland-gate', icon: <SignpostRoundedIcon /> },
       { title: 'Billing and payment', path: '/billing', icon: <PaymentsRoundedIcon /> },
       { title: 'Labour and roster', path: '/labour', icon: <PeopleAltRoundedIcon /> },
-      { title: 'Cargo vehicle terminal', path: '/vehicle-terminal', icon: <RvHookupRoundedIcon /> },
-      { title: 'Auction and disposal', path: '/auction', icon: <HistoryRoundedIcon /> },
     ],
   },
   {
@@ -40,7 +38,7 @@ export const navConfig = [
       { title: 'Port setup', path: '/port-setup', icon: <TuneRoundedIcon /> },
       { title: 'Warehouse layout', path: '/warehouse-layout', icon: <ViewQuiltRoundedIcon /> },
       { title: 'Storage rules', path: '/storage-rules', icon: <RuleRoundedIcon /> },
-      { title: 'Exception catalogue', path: '/exceptions', icon: <RuleRoundedIcon /> },
+      { title: 'Exception register', path: '/exceptions', icon: <RuleRoundedIcon /> },
       { title: 'Products and routing', path: '/routing', icon: <AltRouteRoundedIcon /> },
       { title: 'Vehicle classes', path: '/vehicle-classes', icon: <RvHookupRoundedIcon /> },
       { title: 'Equipment and labour', path: '/equipment', icon: <PrecisionManufacturingRoundedIcon /> },
@@ -67,7 +65,6 @@ export const navConfig = [
   {
     subheader: 'Other flows',
     items: [
-      { title: 'Export', path: '/export', icon: <PublicRoundedIcon /> },
       { title: 'Rail cargo', path: '/rail', icon: <TrainRoundedIcon /> },
       { title: 'Passenger and bus terminal', path: '/passenger', icon: <DirectionsBusRoundedIcon /> },
     ],

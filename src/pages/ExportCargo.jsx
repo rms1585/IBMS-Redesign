@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Alert, Box, Button, Card, Stack, Tab, Tabs, Typography } from '@mui/material';
-import { PageHeader } from '../components/common';
 import { formatBDT, formatDateTime } from '../demo/format';
 import { Confirmation, Plate, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
@@ -34,6 +33,8 @@ const RETURNS = [
   { id: 'RT-601-2026-0007', kind: 'Refused export returning loaded', goods: 'Ceramic tiles', ref: 'Revenue desk approval, refusal noted by the foreign side', state: 'Approved' },
 ];
 
+// Shown inside the Inland gate as its "Export" view (M2 Annex 24.12: export runs through the gates, the C&F
+// portal and Billing, not a module of its own), so it has no page header of its own.
 export default function ExportCargo() {
   const t = useT();
   const [tab, setTab] = useState(0);
@@ -41,7 +42,7 @@ export default function ExportCargo() {
   const [msg, setMsg] = useState('');
   return (
     <>
-      <PageHeader title={t('Export')} subtitle="Export storage is off at Benapole, so export trucks stay loaded until the consignment leaves." />
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{t('Export storage is off at Benapole, so export trucks stay loaded until the consignment leaves.')}</Typography>
       <Card sx={{ px: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
           {['Export consignments', 'Re-export and returns'].map((x) => <Tab key={x} label={x} />)}
