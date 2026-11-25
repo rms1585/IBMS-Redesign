@@ -5,11 +5,13 @@ import Label from './Label';
 import { VideocamRoundedIcon } from './icons';
 
 // Operational workbench: searchable queue on the left, selected record in the centre,
-// contextual rail (camera, movement, progress) on the right. The three columns always stay
-// side by side; on smaller screens the side columns narrow and the record adapts its content.
+// contextual rail (camera, movement, progress) on the right. The three columns stay side by side
+// down to tablet width, where the side columns narrow and the record adapts its content. On a phone
+// they cannot fit, so they stack: queue, then record, then rail.
 // `main` is the page content container (see DashboardLayout); `record` is the centre column.
 const NARROW = '@container main (max-width: 900px)';
 const RECORD_COMPACT = '@container record (max-width: 520px)';
+const PHONE = '@container main (max-width: 600px)';
 
 export function Workbench({ queue, center, rail }) {
   const queueCol = 'clamp(200px, 27cqi, 296px)';
@@ -22,6 +24,7 @@ export function Workbench({ queue, center, rail }) {
         alignItems: 'start',
         gridTemplateColumns: rail ? `${queueCol} minmax(0,1fr) ${railCol}` : `${queueCol} minmax(0,1fr)`,
         [NARROW]: { gap: 2 },
+        [PHONE]: { gridTemplateColumns: 'minmax(0,1fr)' },
       }}
     >
       <Box sx={{ minWidth: 0 }}>{queue}</Box>
@@ -50,7 +53,7 @@ export function Workbench({ queue, center, rail }) {
 export function QueueCard({ title, count, search, onSearch, placeholder, items, selectedKey, onSelect, renderItem, getKey, emptyText, header }) {
   const theme = useTheme();
   return (
-    <Card sx={{ position: 'sticky', top: 88 }}>
+    <Card sx={{ position: 'sticky', top: 88, [PHONE]: { position: 'static' } }}>
       <Box sx={{ p: 2.5, pb: 2, [NARROW]: { p: 2 } }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
           <Typography variant="h6">{title}</Typography>
@@ -60,7 +63,7 @@ export function QueueCard({ title, count, search, onSearch, placeholder, items, 
         <SearchField placeholder={placeholder} value={search} onChange={onSearch} sx={{ minWidth: 0, width: '100%' }} />
       </Box>
       <Divider sx={{ borderStyle: 'dashed' }} />
-      <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', p: 1 }}>
+      <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', p: 1, [PHONE]: { maxHeight: 280 } }}>
         {items.length === 0 ? (
           <EmptyState title={emptyText ?? 'Nothing in the queue'} sx={{ py: 4 }} />
         ) : (

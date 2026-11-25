@@ -152,7 +152,9 @@ Plates, manifest IDs and references use a monospace font: `fontFamily: 'monospac
 - **Content area** is a named size container, `main`. Layout breakpoints use `@container main (…)` queries, so they
   respond to the space actually available with the navigation open or collapsed.
 - **Workbenches** (Border gate, Inland gate, Weighbridge, Posting, Warehousing): **queue, record and camera/details
-  columns ALWAYS stay side by side.** Never move the third column under the record or stack the columns.
+  columns stay side by side down to tablet width.** Never move the third column under the record there.
+  - **Phone exception (user decision 2026-11-25):** when the content area is 600px or narrower the columns stack:
+    queue (no longer sticky, list capped at 280px), then record, then camera/details. Three columns cannot fit a phone.
   - Queue column `clamp(200px, 27cqi, 296px)`, right column `clamp(196px, 25cqi, 272px)`, record takes the rest.
     Gap 24px, 16px when the content area is 900px or narrower.
   - On smaller screens **the middle column adapts its content**. It is a size container named `record`; below 520px:
