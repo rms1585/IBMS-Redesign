@@ -4,20 +4,24 @@ import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { tariffLines, truckClassRates } from '../data/mock';
 import { tr } from '../i18n/LanguageContext';
+import { usePort } from '../demo/PortStore';
 
 const classRows = Object.entries(truckClassRates).map(([cls, rates]) => ({ cls, ...rates }));
 
 export default function Charges() {
+  const { tariff } = usePort();
   const billed = tariffLines.filter((t) => t.billedHere);
+  // The rates bills are raised with now: the order head office activated last (Platform setup > Tariff orders).
+  const inForce = Object.entries(tariff.rates).map(([key, r]) => ({ key, ...r }));
   return (
     <>
       <PageHeader title={tr("What this port charges")} links={[{ name: 'Administration' }, { name: 'What this port charges' }]} subtitle={tr("Read-only. Rates are set centrally on the tariff order; turning a module on adds its charges.")} />
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ p: 3, height: '100%' }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}><Typography variant="h6">TO-2026-03</Typography><Label color="success">In force</Label></Stack>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}><Typography variant="h6">{tariff.ref ?? 'TO-2026-03'}</Typography><Label color="success">{tr('In force')}</Label></Stack>
             <DetailRow label={tr("Reference")}>Invented reference (demo)</DetailRow>
-            <DetailRow label={tr("Effective")}>1 March 2026 · version 2</DetailRow>
+            <DetailRow label={tr("Effective")}>{tariff.effective ?? '1 March 2026 · version 2'}</DetailRow>
             <DetailRow label={tr("Enabled modules")}>Gates, weighing, billing, warehousing, transshipment</DetailRow>
           </Card>
         </Grid>
@@ -33,6 +37,13 @@ export default function Charges() {
       <AssumptionNote code="F40" sx={{ mb: 3 }}>
         Haltage on a shared truck is under review. Today each importer is charged, so one truck can be billed many times. BLPA still has to approve one rule for all ports.
       </AssumptionNote>
+      <Typography variant="h6" component="h2" sx={{ mb: 2 }}>{tr('Rates the bills use now')}</Typography>
+      <DataTable rows={inForce} rowKey={(r) => r.key} pageSize={25} columns={[
+        { key: 'what', label: 'Charge', render: (r) => <Typography variant="subtitle2">{r.what}</Typography> },
+        { key: 'unit', label: 'Per', render: (r) => r.unit },
+        { key: 'rate', label: 'Rate', render: (r) => formatBDT(r.rate) },
+      ]} />
+      <Typography variant="h6" component="h2" sx={{ mt: 4, mb: 2 }}>{tr('Full tariff order')}</Typography>
       <DataTable rows={tariffLines} pageSize={25} columns={[
         { key: 'charge', label: 'Charge', render: (r) => <Typography variant="subtitle2">{r.charge}</Typography> },
         { key: 'basis', label: 'Basis' },

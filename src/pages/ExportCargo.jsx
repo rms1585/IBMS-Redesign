@@ -42,7 +42,7 @@ export default function ExportCargo() {
   const [msg, setMsg] = useState('');
   return (
     <>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{t('Export storage is off at Benapole, so export trucks stay loaded until the consignment leaves.')}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{p.port.modules.exportStorage ? t('Export storage is on at Benapole: export cargo can wait in a shed before it leaves.') : t('Export storage is off at Benapole, so export trucks stay loaded until the consignment leaves.')}</Typography>
       <Card sx={{ px: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
           {['Export consignments', 'Re-export and returns'].map((x) => <Tab key={x} label={x} />)}

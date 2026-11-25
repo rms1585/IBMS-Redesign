@@ -41,7 +41,9 @@ function PostingBench() {
     { label: 'Route', state: 'info', text: `${lines.map((l) => `Line ${l.no}: ${l.goods}`).join('; ')} → ${suggested}` },
     category === 'perishable'
       ? { label: 'Transshipment', state: 'info', text: 'Perishables go truck to truck. The tagged agency raises a transfer request.' }
-      : { label: `Free space in ${chosen}`, state: target && target.freeT >= needT ? 'pass' : 'fail', text: target ? `${target.freeT} t free, this truck needs ${needT} t.` : 'Choose a shed or yard.' },
+      : !p.port.modules.warehousing
+        ? { label: 'Warehousing', state: 'fail', text: 'Warehousing is switched off at this port (Port setup, step 2), so non-perishable cargo has no shed to go to.' }
+        : { label: `Free space in ${chosen}`, state: target && target.freeT >= needT ? 'pass' : 'fail', text: target ? `${target.freeT} t free, this truck needs ${needT} t.` : 'Choose a shed or yard.' },
     ...(p.holdsOnVisit(v).length ? [{ label: 'Holds', state: 'info', text: 'A hold travels with the lines; posting still goes ahead.' }] : []),
   ] : [];
   const propose = useCallback(() => {

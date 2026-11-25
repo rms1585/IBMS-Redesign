@@ -10,7 +10,7 @@ import { UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
 import { roles, useRole } from '../RoleContext';
-import { usePort } from '../demo/PortStore';
+import { MODULE_NAMES, usePort } from '../demo/PortStore';
 import { formatDateTime } from '../demo/format';
 import { useLanguage, useT } from '../i18n/LanguageContext';
 import Logo from '../components/Logo';
@@ -310,8 +310,10 @@ function NavContent({ mini, onToggle }) {
   const theme = useTheme();
   const { state } = usePort();
   const { canOpen } = useRole();
+  const { moduleOff } = usePort();
+  // Screens of a module switched off for the port drop out of the menu (Port setup, step 2).
   const groups = navConfig
-    .map((g) => ({ ...g, items: g.items.filter((item) => canOpen(item.path)) }))
+    .map((g) => ({ ...g, items: g.items.filter((item) => canOpen(item.path) && !moduleOff(item.path)) }))
     .filter((g) => g.items.length > 0);
   return (
     <>
@@ -352,6 +354,20 @@ function NavContent({ mini, onToggle }) {
   );
 }
 
+// A screen of a module the port has switched off says so, and where to switch it on.
+function ModuleOff({ module }) {
+  const t = useT();
+  const navigate = useNavigate();
+  const { canOpen } = useRole();
+  return (
+    <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, maxWidth: 640 }} role="alert">
+      <Typography variant="h5" component="h1" sx={{ mb: 1 }}>{t(MODULE_NAMES[module])}: {t('switched off at Benapole')}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{t('The port administrator turns modules on and off in Port setup, step 2. Nothing here is lost while it is off.')}</Typography>
+      {canOpen('/port-setup') && <Button variant="contained" onClick={() => navigate('/port-setup')}>{t('Open Port setup')}</Button>}
+    </Paper>
+  );
+}
+
 // A screen outside the role's modules says so in plain words instead of silently redirecting (M2 Annex 24.3).
 function NotAllowed({ pathname }) {
   const t = useT();
@@ -373,6 +389,7 @@ function NotAllowed({ pathname }) {
 export default function DashboardLayout() {
   const theme = useTheme();
   const { pathname } = useLocation();
+  const { moduleOff } = usePort();
   const { canOpen, role } = useRole();
   // ≥1200px: full navigation. 900–1199px (iPad landscape): icon rail by default.
   // <900px (iPad portrait): navigation slides in from the menu button.
@@ -447,7 +464,7 @@ export default function DashboardLayout() {
           {/* Screens outside the current role's modules send the user back to Home. */}
           <StatusStrips />
           {/* Keyed by language so screens that use tr() re-read their strings when the language changes. */}
-          {canOpen(pathname) ? <Outlet key={lang} /> : <NotAllowed pathname={pathname} />}
+          {!canOpen(pathname) ? <NotAllowed pathname={pathname} /> : moduleOff(pathname) ? <ModuleOff module={moduleOff(pathname)} /> : <Outlet key={lang} />}
         </Box>
       </Box>
     </Box>

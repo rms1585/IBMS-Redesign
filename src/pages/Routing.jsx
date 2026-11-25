@@ -4,18 +4,20 @@ import { PageHeader, KpiCard } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { products } from '../data/mock';
-import { useStoredState } from '../demo/PortStore';
+import { usePort, useStoredState } from '../demo/PortStore';
 import { tr } from '../i18n/LanguageContext';
 
 const DEFAULT_ROUTES = Object.fromEntries(products.map((p) => [p.code, p.route]));
 
 const routeColor = { Warehouse: 'primary', Transshipment: 'info', 'Stone route': 'warning' };
-const enabled = { Warehouse: true, Transshipment: true, 'Stone route': false };
 // Only perishables move straight across, truck to truck; everything else is unloaded into a shed (M2 Annex 3.5:
 // EXC-12 and EXC-13 are withdrawn). Routing refuses Transshipment for any other product.
 const allowed = (product, route) => route !== 'Transshipment' || product.type === 'Perishable';
 
 export default function Routing() {
+  const { port } = usePort();
+  // Branches follow the port's module switches (Port setup, step 2).
+  const enabled = { Warehouse: port.modules.warehousing, Transshipment: true, 'Stone route': port.modules.outsideYard };
   const [routes, setRoutes] = useStoredState('productRoutes', DEFAULT_ROUTES);
   const [pending, setPending] = useState({});
   const [toast, setToast] = useState('');
@@ -33,7 +35,7 @@ export default function Routing() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("National products")} value={products.length} /></Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("Warehouse")} value={counts('Warehouse')} color="primary" /></Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("Transshipment")} value={counts('Transshipment')} color="info" /></Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("Stone route")} value={counts('Stone route')} color="warning" caption="Branch disabled: turn it on in Port setup, step 2" /></Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title={tr("Stone route")} value={counts('Stone route')} color="warning" caption={enabled['Stone route'] ? 'Branch on (outside yards)' : 'Branch off: turn on outside yards in Port setup, step 2'} /></Grid>
       </Grid>
       <Alert severity="info" sx={{ mb: 3 }}>
         At a live port, a route change stays pending until the port in-charge or head office approves it. Cargo with no route goes to a routing exception and is never sent down a branch by default.

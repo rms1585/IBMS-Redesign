@@ -25,7 +25,7 @@ export const PORT = {
   toleranceVersion: 'Weight tolerance v2 (BLPA and Customs, 2026-10-01)',
   // One tare rule for every port, set by BLPA headquarters (Annex 7.4).
   tareRule: 'Stored tare valid for 3 months',
-  modules: { warehouse: true, outsideYard: false, rail: true, busTerminal: true, truckScanner: false, exportStorage: false },
+  modules: { warehousing: true, outsideYard: false, rail: true, busTerminal: true, truckScanner: false, exportStorage: false },
   otherManifestEntry: true,
   sheds: [
     { id: 'Shed 7', capacityT: 400, usedT: 388, takes: 'general' },

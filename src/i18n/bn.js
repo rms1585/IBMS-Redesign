@@ -396,6 +396,21 @@ const bn = {
   'Enter a name for the copy.': 'কপির একটি নাম লিখুন।',
   'Give the evidence or reason the approver will read.': 'অনুমোদনকারী যে প্রমাণ বা কারণ পড়বেন তা দিন।',
   'Send for approval': 'অনুমোদনের জন্য পাঠান',
+  'switched off at Benapole': 'বেনাপোলে বন্ধ',
+  'The port administrator turns modules on and off in Port setup, step 2. Nothing here is lost while it is off.': 'বন্দর প্রশাসক বন্দর সেটআপের ধাপ ২-এ মডিউল চালু বা বন্ধ করেন। বন্ধ থাকাকালে এখানকার কিছু হারায় না।',
+  'Open Port setup': 'বন্দর সেটআপ খুলুন',
+  'Replaced': 'প্রতিস্থাপিত',
+  'Active': 'সক্রিয়',
+  'Draft': 'খসড়া',
+  'Enter rates and activate': 'হার লিখে সক্রিয় করুন',
+  'Every rate must be a positive amount with up to two decimals.': 'প্রতিটি হার দুই দশমিক পর্যন্ত একটি ধনাত্মক পরিমাণ হতে হবে।',
+  'Activate this order': 'এই আদেশ সক্রিয় করুন',
+  'In force. New bills use these rates.': 'বলবৎ। নতুন বিল এই হার ব্যবহার করে।',
+  'In force': 'বলবৎ',
+  'Rates the bills use now': 'বিলে এখন যে হার ব্যবহৃত হয়',
+  'Full tariff order': 'পূর্ণ ট্যারিফ আদেশ',
+  'Per': 'প্রতি',
+  'Export storage is on at Benapole: export cargo can wait in a shed before it leaves.': 'বেনাপোলে রপ্তানি সংরক্ষণ চালু: রপ্তানি পণ্য যাওয়ার আগে শেডে অপেক্ষা করতে পারে।',
 };
 
 export default bn;

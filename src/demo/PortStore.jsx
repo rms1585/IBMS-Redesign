@@ -51,6 +51,28 @@ export const billTotals = (bill) => {
   return { net, vat, total: net + vat, paid: bill.status === 'Paid' || bill.status === 'Paid, awaiting settlement' ? net + vat : 0 };
 };
 
+// ----- Port settings -----
+
+// The port as configured: Port setup's module switches and weight tolerance override the defaults, so one
+// process runs differently per port and a change in Administration shows on the benches and bills at once
+// (M2 Report 4.6.1). Settings are kept per port code in the record.
+export function effectivePort(s) {
+  const tolerance = Number(s?.portTolerance?.[PORT.code]);
+  return {
+    ...PORT,
+    tolerancePct: Number.isFinite(tolerance) && tolerance > 0 ? tolerance : PORT.tolerancePct,
+    modules: { ...PORT.modules, ...(s?.portModules?.[PORT.code] ?? {}) },
+  };
+}
+
+// The tariff in force: an order head office activated in Platform setup, otherwise the seed order. Bills raised
+// after an activation use its rates; bills already raised keep theirs (M2 Report 4.6.1, M-12).
+export const effectiveTariff = (s) => s?.tariffActive ?? TARIFF;
+
+// Screens that belong to an optional module disappear when it is switched off for the port.
+export const MODULE_OF_PATH = { '/rail': 'rail', '/passenger': 'busTerminal', '/warehousing': 'warehousing' };
+export const MODULE_NAMES = { rail: 'Rail cargo', busTerminal: 'Passenger and bus terminal', warehousing: 'Warehousing', outsideYard: 'Outside yards', exportStorage: 'Export storage', truckScanner: 'Truck scanner' };
+
 // ----- Provider -----
 
 const PortContext = createContext(null);
@@ -316,13 +338,13 @@ export function PortProvider({ children }) {
           const v = n.visits.find((x) => x.manifests.includes(b.manifest));
           const days = Math.max(1, daysSince(v?.receipt?.at));
           const lines = [
-            { what: 'Storage', qty: remainingT * days, unit: 'tonne-day', rate: TARIFF.rates.storage.rate, note: `${remainingT} t remaining, ${days} days` },
-            { what: 'Handling', qty: billableTonnes(kg), unit: 'tonne', rate: TARIFF.rates.handling.rate },
-            { what: 'Entrance fee, local truck', qty: ceiling, unit: 'truck', rate: TARIFF.rates.entrance.rate },
+            { what: 'Storage', qty: remainingT * days, unit: 'tonne-day', rate: effectiveTariff(n).rates.storage.rate, note: `${remainingT} t remaining, ${days} days` },
+            { what: 'Handling', qty: billableTonnes(kg), unit: 'tonne', rate: effectiveTariff(n).rates.handling.rate },
+            { what: 'Entrance fee, local truck', qty: ceiling, unit: 'truck', rate: effectiveTariff(n).rates.entrance.rate },
           ];
           if (firstBill && v) {
             const nights = Math.max(0, daysSince(v.gateIn?.at, v.exitAt) - 1);
-            lines.push({ what: `Truck charges, ${v.plate} (entry gate, weighbridge, ${nights} night${nights === 1 ? '' : 's'})`, qty: 1, unit: 'visit', rate: TARIFF.rates.gateEntry.rate + TARIFF.rates.weighbridge.rate + nights * TARIFF.rates.overnight.rate });
+            lines.push({ what: `Truck charges, ${v.plate} (entry gate, weighbridge, ${nights} night${nights === 1 ? '' : 's'})`, qty: 1, unit: 'visit', rate: effectiveTariff(n).rates.gateEntry.rate + effectiveTariff(n).rates.weighbridge.rate + nights * effectiveTariff(n).rates.overnight.rate });
           }
           const billId = id('BILL');
           n.bills.push({ id: billId, paymentId: `PAY-601-26-${String(n.seq).padStart(4, '0')}`, party: b.agency, for: { kind: 'dr', id: drId }, raisedAt: new Date().toISOString(), lines, status: 'Payment due' });
@@ -380,7 +402,7 @@ export function PortProvider({ children }) {
           const v = n.visits.find((x) => x.id === visitId);
           v.gateIn = { at: new Date().toISOString(), gate: 'Border gate 1', lane: 'Lane 2', by: actor.name, typedReason };
           v.stage = v.late ? 'Manifest not yet available' : 'Admitted';
-          v.charges = [{ what: 'Entry gate, foreign truck', qty: 1, rate: TARIFF.rates.gateEntry.rate }];
+          v.charges = [{ what: 'Entry gate, foreign truck', qty: 1, rate: effectiveTariff(n).rates.gateEntry.rate }];
           log(v.late ? `Truck ${v.plate} admitted on plate and Car Pass ${v.carPass}; manifest not yet available` : `Truck ${v.plate} admitted at Border gate 1, Lane 2`, v.manifests[0] ?? v.carPassManifest, typedReason ? 'Typed by hand' : 'Device');
         }),
 
@@ -425,10 +447,10 @@ export function PortProvider({ children }) {
             return;
           }
           const declaredKg = v.manifests.flatMap((mid) => n.manifests.find((m) => m.id === mid)?.lines ?? []).reduce((sum, l) => sum + l.declaredKg, 0);
-          const overTolerance = !v.late && declaredKg > 0 && Math.abs(kg - declaredKg) / declaredKg > PORT.tolerancePct / 100;
+          const overTolerance = !v.late && declaredKg > 0 && Math.abs(kg - declaredKg) / declaredKg > effectivePort(n).tolerancePct / 100;
           v.weigh = { kg, at: new Date().toISOString(), scale: 'Scale 2', source: typedReason ? 'Typed by hand' : 'Device', typedReason, declaredKg, overTolerance, toleranceVersion: PORT.toleranceVersion };
           v.stage = v.late ? 'Manifest not yet available' : 'Weighed';
-          v.charges = [...(v.charges ?? []), { what: 'Weighbridge', qty: 1, rate: TARIFF.rates.weighbridge.rate }];
+          v.charges = [...(v.charges ?? []), { what: 'Weighbridge', qty: 1, rate: effectiveTariff(n).rates.weighbridge.rate }];
           log(`Weight captured for ${v.plate}: ${kg.toLocaleString('en-US')} kg${overTolerance ? `, Weight over tolerance (declared ${declaredKg.toLocaleString('en-US')} kg)` : ''}`, v.manifests[0] ?? v.carPassManifest, typedReason ? 'Typed by hand' : 'Device');
         }),
 
@@ -612,7 +634,7 @@ export function PortProvider({ children }) {
               if (v.weigh) {
                 const declaredKg = m.lines.reduce((sum, l) => sum + l.declaredKg, 0);
                 v.weigh.declaredKg = declaredKg;
-                v.weigh.overTolerance = Math.abs(v.weigh.kg - declaredKg) / declaredKg > PORT.tolerancePct / 100;
+                v.weigh.overTolerance = Math.abs(v.weigh.kg - declaredKg) / declaredKg > effectivePort(n).tolerancePct / 100;
               }
             }
             log(`Manifest ${mid} received from BNSW (simulated)${v ? `; waiting visit ${v.plate} tied to it` : ''}`, mid, 'BNSW', { name: 'BNSW', role: 'Customs system' });
@@ -644,8 +666,13 @@ export function PortProvider({ children }) {
     return {
       state: s,
       actor,
-      port: PORT,
-      tariff: TARIFF,
+      port: effectivePort(s),
+      // The module a screen belongs to when that module is switched off at this port, else null.
+      moduleOff: (path) => {
+        const key = Object.keys(MODULE_OF_PATH).find((p) => path === p || path.startsWith(`${p}/`));
+        return key && !effectivePort(s).modules[MODULE_OF_PATH[key]] ? MODULE_OF_PATH[key] : null;
+      },
+      tariff: effectiveTariff(s),
       parties: PARTIES,
       manifest,
       lineById,

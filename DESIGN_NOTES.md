@@ -412,3 +412,11 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   Contrast: bell badge and filled error messages use Error Dark, filled success messages Success Dark, table
   headers grey 700, outlined labels the text shade.
 
+- **Step 3a, settings drive operations (B18):** `effectivePort()` and `effectiveTariff()` in `src/demo/PortStore.jsx`
+  read Port setup's per-port module switches and weight tolerance, and the tariff order head office activated.
+  Switching a module off removes its screens from the menu and Home and shows a notice on its address; Products
+  & routing and Posting follow the warehousing and outside-yard switches; the Inland gate's Export view follows
+  export storage. The weighbridge uses the port's tolerance. Platform setup > Tariff orders: a recorded draft
+  gets its rates entered and is activated; new bills use the active order, and What this port charges shows the
+  rates bills use now. Still local to their screens: vehicle classes, storage rules (enforced in step 4, B5),
+  users and roles.

@@ -60,7 +60,7 @@ function StepModules({ modules, setModules }) {
               <Typography variant="subtitle2">{title}</Typography>
               <Typography variant="body2" color="text.secondary">{desc}</Typography>
             </Box>
-            {fixed ? <Label>Always on</Label> : <Switch checked={modules[k]} onChange={(e) => setModules({ ...modules, [k]: e.target.checked })} />}
+            {fixed ? <Label>Always on</Label> : <Switch inputProps={{ 'aria-label': title }} checked={Boolean(modules[k])} onChange={(e) => setModules({ ...modules, [k]: e.target.checked })} />}
           </Stack>
         ))}
       </Stack>

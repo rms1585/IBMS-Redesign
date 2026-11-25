@@ -94,11 +94,12 @@ function Tile({ item }) {
 }
 
 export default function Home() {
+  const { moduleOff } = usePort();
   const { canOpen } = useRole();
   const t = useT();
   // The side navigation's groups, filtered to the current role; empty groups drop out.
   const groups = navConfig
-    .map((g) => ({ title: g.subheader, items: g.items.filter((i) => i.path !== '/' && canOpen(i.path)) }))
+    .map((g) => ({ title: g.subheader, items: g.items.filter((i) => i.path !== '/' && canOpen(i.path) && !moduleOff(i.path)) }))
     .filter((g) => g.items.length);
   return (
     <>

@@ -5,7 +5,7 @@ import {
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader, formatBDT } from '../components/common';
 import FormDrawer, { useFreshForm } from '../components/FormDrawer';
-import { useStoredState } from '../demo/PortStore';
+import { usePort, useStoredState } from '../demo/PortStore';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { ports, products, vehicleTypes, agencies, traders, holidays, tariffLines } from '../data/mock';
@@ -213,6 +213,39 @@ function RegisterDrawer({ register, open, onClose, onSave }) {
   );
 }
 
+// A recorded order is a draft until head office enters its rates and activates it. Activation makes it the
+// tariff in force: bills raised from then on use its rates (M-12; M2 Report 4.6.1).
+function DraftOrder({ order, active, onActivate }) {
+  const { tariff } = usePort();
+  const [editing, setEditing] = useState(false);
+  const [rates, setRates] = useState(() => Object.fromEntries(Object.entries(tariff.rates).map(([k, r]) => [k, String(r.rate)])));
+  const valid = Object.values(rates).every((v) => /^\d+(\.\d{1,2})?$/.test(v) && Number(v) > 0);
+  return (
+    <Card sx={{ p: 3 }}>
+      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">{order.ref}</Typography>{active ? <Label color="success">{tr('Active')}</Label> : <Label color="warning">{tr('Draft')}</Label>}</Stack>
+        {!active && !editing && <Button variant="outlined" color="inherit" onClick={() => setEditing(true)}>{tr('Enter rates and activate')}</Button>}
+      </Stack>
+      <Typography variant="body2" color="text.secondary">Effective {order.effective} · billing at {order.ports.join(', ')} · free days: storage {order.storageFree}, haltage {order.haltageFree}</Typography>
+      {editing && !active && (
+        <Box sx={{ mt: 2 }}>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))' } }}>
+            {Object.entries(tariff.rates).map(([k, r]) => (
+              <TextField key={k} label={`${r.what} (BDT per ${r.unit})`} value={rates[k]} onChange={(e) => setRates((x) => ({ ...x, [k]: e.target.value }))} error={!/^\d+(\.\d{1,2})?$/.test(rates[k])} inputMode="decimal" />
+            ))}
+          </Box>
+          <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }} flexWrap="wrap" useFlexGap>
+            {!valid && <Typography variant="caption" color="text.secondary" role="status">{tr('Every rate must be a positive amount with up to two decimals.')}</Typography>}
+            <Button variant="outlined" color="inherit" onClick={() => setEditing(false)}>{tr('Cancel')}</Button>
+            <Button variant="contained" disabled={!valid} onClick={() => { onActivate(Object.fromEntries(Object.entries(tariff.rates).map(([k, r]) => [k, { ...r, rate: Number(rates[k]) }]))); setEditing(false); }}>{tr('Activate this order')}</Button>
+          </Stack>
+        </Box>
+      )}
+      {active && <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>{tr('In force. New bills use these rates.')}</Typography>}
+    </Card>
+  );
+}
+
 const tabs = [
   ['tariff', 'Tariff orders'], ['products', 'Products'], ['vehicles', 'Vehicle types'], ['agencies', 'C&F agencies'],
   ['traders', 'Importers & exporters'], ['holidays', 'Public holidays'], ['ports', 'Ports'],
@@ -230,6 +263,7 @@ export default function PlatformSetup() {
   const [traderList, setTraderList] = useStoredState('platformTraders', traders);
   const [holidayList, setHolidayList] = useStoredState('platformHolidays', holidays);
   const [orders, setOrders] = useStoredState('tariffOrders', NO_ORDERS);
+  const [activeTariff, setActiveTariff] = useStoredState('tariffActive', null);
   const savers = {
     products: (r) => setProductList((l) => [...l, r]),
     vehicles: (r) => setVehicleList((l) => [...l, r]),
@@ -265,7 +299,7 @@ export default function PlatformSetup() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">TO-2026-03</Typography><Label color="success">Active</Label></Stack>
+                <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">TO-2026-03</Typography>{activeTariff ? <Label>{tr('Replaced')}</Label> : <Label color="success">{tr('Active')}</Label>}</Stack>
                 <Typography variant="body2" color="text.secondary">Invented reference · effective 1 Mar 2026 · billing at BEN, BUR, SON, AKH</Typography>
               </Box>
               <Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">{tr("Edit details")}</Button><Button variant="outlined" color="error">{tr("Deactivate")}</Button></Stack>
@@ -273,11 +307,15 @@ export default function PlatformSetup() {
             <Alert severity="info" sx={{ mt: 2 }}>Demonstration values, not legal rates. Free days: storage 3, haltage 1.</Alert>
           </Card>
           {orders.map((o) => (
-            <Card key={o.ref} sx={{ p: 3 }}>
-              <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">{o.ref}</Typography><Label color="warning">Draft</Label></Stack>
-              <Typography variant="body2" color="text.secondary">Effective {o.effective} · billing at {o.ports.join(', ')} · free days: storage {o.storageFree}, haltage {o.haltageFree}</Typography>
-              <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>Head office activates the order once its rates are entered.</Typography>
-            </Card>
+            <DraftOrder
+              key={o.ref}
+              order={o}
+              active={activeTariff?.ref === o.ref}
+              onActivate={(rates) => {
+                setActiveTariff({ ref: o.ref, version: `Tariff order ${o.ref}`, effective: o.effective, vat: 0.15, rates });
+                setToast(`${o.ref} is now in force. New bills use its rates; bills already raised keep theirs.`);
+              }}
+            />
           ))}
           <DataTable
             rows={tariffLines}
