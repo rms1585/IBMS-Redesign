@@ -84,12 +84,10 @@ export function createAppTheme(mode = 'light') {
           }),
           startIcon: { marginRight: 8 },
           endIcon: { marginLeft: 8 },
-          // Contrast (audit C2, 2026-11-25): white on primary.main or error.main is under 4.5:1, so filled buttons
-          // use the dark shade and coloured labels use the palette's text shade.
-          containedPrimary: { backgroundColor: palette.primary.dark, '&:hover': { backgroundColor: palette.primary.darker } },
+          // Green stays the brand Forest Green (primary.main) everywhere, by the product owner's decision of
+          // 2026-11-25. Red uses the dark shade: white on error.main is under 4.5:1 (audit C2).
+          containedPrimary: { '&:hover': { backgroundColor: palette.primary.dark } },
           containedError: { backgroundColor: palette.error.dark, '&:hover': { backgroundColor: palette.error.darker } },
-          outlinedPrimary: { color: light ? palette.primary.text : palette.primary.light },
-          textPrimary: { color: light ? palette.primary.text : palette.primary.light },
           outlinedError: { color: light ? palette.error.text : palette.error.light },
           textError: { color: light ? palette.error.text : palette.error.light },
           containedInherit: {
@@ -104,11 +102,9 @@ export function createAppTheme(mode = 'light') {
       // One visible keyboard focus ring for every button, link-button, tab and nav item (audit C1).
       MuiButtonBase: {
         styleOverrides: {
-          root: { '&.Mui-focusVisible': { outline: `2px solid ${light ? palette.primary.dark : palette.primary.light}`, outlineOffset: 2 } },
+          root: { '&.Mui-focusVisible': { outline: `2px solid ${palette.primary.main}`, outlineOffset: 2 } },
         },
       },
-      // Links in the brand colour use its readable text shade (audit C2).
-      MuiLink: { defaultProps: { color: 'primary.text' } },
       MuiIconButton: { styleOverrides: { root: { borderRadius: 8 } } },
       MuiPaper: {
         defaultProps: { elevation: 0 },

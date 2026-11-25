@@ -200,7 +200,7 @@ function openable(onOpen, row) {
 // Read by screen readers, not shown.
 const visuallyHidden = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
 
-const focusRing = (t) => ({ outline: `2px solid ${t.palette.mode === 'light' ? t.palette.primary.dark : t.palette.primary.light}`, outlineOffset: -2 });
+const focusRing = (t) => ({ outline: `2px solid ${t.palette.primary.main}`, outlineOffset: -2 });
 
 // On a phone every table becomes a stack of cards: each column is a label-value line, and columns with no
 // label (row actions) sit at the bottom right. Shared by ResponsiveTable and the admin DataTable.

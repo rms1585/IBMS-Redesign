@@ -329,7 +329,7 @@ function NavContent({ mini, onToggle }) {
       {!mini && (
         <Box sx={{ p: 2.5, pt: 0 }}>
           <Box sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
-            <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'primary.light' : 'primary.text' }}>
+            <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>
               Benapole · {state.bnswDown ? 'BNSW-down mode' : 'BNSW live'}
             </Typography>
             <Typography variant="caption" color="text.secondary">Demo data. Reset from the user menu.</Typography>
@@ -396,7 +396,7 @@ export default function DashboardLayout() {
         sx={{
           position: 'fixed', top: 8, left: 8, zIndex: 2000, px: 2, py: 1, borderRadius: 1, typography: 'subtitle2',
           bgcolor: 'background.paper', color: 'text.primary', boxShadow: (t) => t.customShadows.dialog,
-          transform: 'translateY(-200%)', '&:focus': { transform: 'none', outline: (t) => `2px solid ${t.palette.primary.dark}` },
+          transform: 'translateY(-200%)', '&:focus': { transform: 'none', outline: (t) => `2px solid ${t.palette.primary.main}` },
         }}
       >
         {t('Skip to content')}
