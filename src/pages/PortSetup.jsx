@@ -85,22 +85,20 @@ function StepResources({ port, modules }) {
         <Typography variant="body2" color="text.secondary">Border gates face the zero line. Inland gates face the Bangladesh road.</Typography>
         <Button variant="outlined" color="inherit" startIcon={<AddRoundedIcon />}>Add resource</Button>
       </Stack>
-      <Card variant="outlined" sx={{ boxShadow: 'none' }}>
-        <Table size="small">
-          <TableHead><TableRow><TableCell sx={{ pl: 2 }}>Name</TableCell><TableCell>Type</TableCell><TableCell>Details</TableCell><TableCell>Status</TableCell><TableCell sx={{ pr: 2 }} /></TableRow></TableHead>
+      <Table size="small">
+          <TableHead><TableRow><TableCell>Name</TableCell><TableCell>Type</TableCell><TableCell>Details</TableCell><TableCell>Status</TableCell><TableCell /></TableRow></TableHead>
           <TableBody>
             {resources.map(([n, t, d, s]) => (
-              <TableRow key={n} hover>
-                <TableCell sx={{ pl: 2, fontWeight: 600 }}>{n}</TableCell>
+              <TableRow key={n}>
+                <TableCell sx={{ fontWeight: 600 }}>{n}</TableCell>
                 <TableCell>{t}</TableCell>
                 <TableCell sx={{ color: d.includes('due') ? 'warning.text' : 'text.secondary' }}>{d}</TableCell>
                 <TableCell><Label color="success">{s}</Label></TableCell>
-                <TableCell sx={{ pr: 2, whiteSpace: 'nowrap' }}><Button size="small" color="inherit">Edit</Button><Button size="small" color="error">Retire</Button></TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}><Button size="small" color="inherit">Edit</Button><Button size="small" color="error">Retire</Button></TableCell>
               </TableRow>
             ))}
           </TableBody>
-        </Table>
-      </Card>
+      </Table>
       <Box sx={{ mt: 3, p: 2.5, borderRadius: 2, bgcolor: 'background.neutral' }}>
         <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Weighing rules</Typography>
         <Grid container spacing={2}>

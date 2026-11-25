@@ -91,7 +91,7 @@ const emptyPassenger = { name: '', phone: '', port: ports[0], country: null, pas
 function ChargeTable() {
   const rows = [['Passenger Facilities Charge', FACILITY_CHARGE], ['VAT 15%', VAT], ['Convenience Fee', CONVENIENCE_FEE]];
   return (
-    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5, overflow: 'hidden' }}>
+    <Box>
       <Table size="small">
         <TableHead>
           <TableRow><TableCell>Charge</TableCell><TableCell align="right">Per passenger (BDT)</TableCell></TableRow>
@@ -106,7 +106,7 @@ function ChargeTable() {
           </TableRow>
         </TableBody>
       </Table>
-      <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1.25 }}>In words: {amountInWords(PASSENGER_TOTAL)} taka</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ px: 2, pt: 1.25 }}>In words: {amountInWords(PASSENGER_TOTAL)} taka</Typography>
     </Box>
   );
 }

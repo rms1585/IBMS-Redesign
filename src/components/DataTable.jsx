@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Card, Stack, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Box } from '@mui/material';
-import { SearchField, EmptyState } from './common';
+import { Card, Stack, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, TextField, Box } from '@mui/material';
+import { EmptyState } from './common';
 
-// Administration register: search + table. `columns` = [{ key, label, render?, align?, width? }].
-export default function DataTable({ rows, columns, searchKeys = [], searchPlaceholder, toolbar, onRowClick, rowKey = (r, i) => i, dense, pageSize = 10, card = true }) {
+// Administration register: search + table, laid out like the Manifest tracking table (the reference for
+// every table): padded card, labelled search above, compact rows inset from the card edge. `columns` = [{ key, label, render?, align?, width? }].
+export default function DataTable({ rows, columns, searchKeys = [], searchPlaceholder, toolbar, onRowClick, rowKey = (r, i) => i, pageSize = 10, card = true }) {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
   const [rpp, setRpp] = useState(pageSize);
@@ -15,17 +16,20 @@ export default function DataTable({ rows, columns, searchKeys = [], searchPlaceh
   const body = (
     <>
       {(searchKeys.length > 0 || toolbar) && (
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 2.5 }}>
-          {searchKeys.length > 0 && <SearchField placeholder={searchPlaceholder} value={q} onChange={(v) => { setQ(v); setPage(0); }} sx={{ flex: 1 }} />}
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ mb: 2 }}>
+          {searchKeys.length > 0 && (
+            <TextField size="small" fullWidth label="Search" placeholder={searchPlaceholder} value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} sx={{ maxWidth: { sm: 520 } }} />
+          )}
+          <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
           {toolbar}
         </Stack>
       )}
       <Box sx={{ overflowX: 'auto' }}>
-        <Table size={dense ? 'small' : 'medium'}>
+        <Table size="small">
           <TableHead>
             <TableRow>
-              {columns.map((c, i) => (
-                <TableCell key={c.key} align={c.align} sx={{ width: c.width, whiteSpace: 'nowrap', ...(i === 0 && { pl: 3 }), ...(i === columns.length - 1 && { pr: 3 }) }}>
+              {columns.map((c) => (
+                <TableCell key={c.key} align={c.align} sx={{ width: c.width, whiteSpace: 'nowrap' }}>
                   {c.label}
                 </TableCell>
               ))}
@@ -33,9 +37,9 @@ export default function DataTable({ rows, columns, searchKeys = [], searchPlaceh
           </TableHead>
           <TableBody>
             {paged.map((r, ri) => (
-              <TableRow key={rowKey(r, ri)} hover onClick={onRowClick ? () => onRowClick(r) : undefined} sx={{ cursor: onRowClick ? 'pointer' : 'default' }}>
-                {columns.map((c, i) => (
-                  <TableCell key={c.key} align={c.align} sx={{ ...(i === 0 && { pl: 3 }), ...(i === columns.length - 1 && { pr: 3 }) }}>
+              <TableRow key={rowKey(r, ri)} hover={Boolean(onRowClick)} onClick={onRowClick ? () => onRowClick(r) : undefined} sx={{ cursor: onRowClick ? 'pointer' : 'default' }}>
+                {columns.map((c) => (
+                  <TableCell key={c.key} align={c.align}>
                     {c.render ? c.render(r) : r[c.key]}
                   </TableCell>
                 ))}
@@ -59,5 +63,5 @@ export default function DataTable({ rows, columns, searchKeys = [], searchPlaceh
     </>
   );
 
-  return card ? <Card>{body}</Card> : body;
+  return card ? <Card sx={{ p: { xs: 1.5, sm: 2.5 } }}>{body}</Card> : body;
 }
