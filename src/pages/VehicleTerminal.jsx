@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, ButtonBase, Card, Stack, Typography, Button, Alert, Snackbar, Tooltip } from '@mui/material';
+import { Box, ButtonBase, Card, Stack, Typography, Button, Alert, Snackbar, Tooltip, Divider } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { PageHeader, EmptyState, AssumptionNote, DetailRow } from '../components/common';
 import { Workbench, QueueCard } from '../components/Workbench';
@@ -17,19 +17,23 @@ const initialVehicles = [
   { plate: 'JESSORE-TA-11-2101', kind: 'Local', use: 'Local trucks', manifest: 'BEN-IGM-2026-08841', waiting: '4m' },
 ];
 const slotCode = (block, r, c) => `${block.code}-${r + 1}${String.fromCharCode(65 + c)}`;
+// Spacing follows the width of the centre column (the Workbench's `record` container), not the screen:
+// the side columns take more or less room depending on the screen and whether the navigation is open.
+const COMPACT = '@container record (max-width: 520px)';
+
 // A fixed pattern, so the demo shows a part-full terminal.
 const seededOccupied = (block, r, c) => (r * 3 + c * 5 + block.code.charCodeAt(0)) % 4 === 0;
 
 function Slot({ code, state, onClick, label }) {
   return (
     <Tooltip title={label} arrow disableInteractive>
-      <span>
+      <Box component="span" sx={{ display: 'block', minWidth: 0 }}>
         <ButtonBase
           aria-label={`Slot ${code}: ${label}`}
           disabled={state === 'occupied' || state === 'wrong'}
           onClick={onClick}
           sx={(t) => ({
-            width: 44, height: 32, borderRadius: '6px', ...t.typography.caption,
+            width: '100%', minWidth: 0, height: 32, borderRadius: '6px', ...t.typography.caption,
             border: `1px solid ${state === 'free' ? alpha(t.palette.grey[500], 0.32) : 'transparent'}`,
             color: state === 'selected' ? t.palette.primary.contrastText : t.palette.text.secondary,
             bgcolor: state === 'selected' ? 'primary.main' : state === 'occupied' ? alpha(t.palette.grey[500], 0.24) : 'background.paper',
@@ -40,7 +44,7 @@ function Slot({ code, state, onClick, label }) {
         >
           {code.split('-')[1]}
         </ButtonBase>
-      </span>
+      </Box>
     </Tooltip>
   );
 }
@@ -53,13 +57,13 @@ function BlockView({ block, vehicle, assigned, selected, onSelect }) {
   const free = rows.flatMap((r) => cols.filter((c) => !occupied(r, c))).length;
   return (
     <Box>
-      <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
+      <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5, [COMPACT]: { mb: 1 } }}>
         <Typography variant="subtitle1">Block {block.code}</Typography>
         <Typography variant="body2" color="text.secondary">{block.use}</Typography>
         <Label color={free ? 'success' : 'error'}>{free} free</Label>
       </Stack>
-      <Box sx={{ overflowX: 'auto', pb: 1 }}>
-        <Box sx={{ display: 'inline-grid', gridTemplateColumns: `repeat(${block.cols}, 44px)`, gap: 0.75 }}>
+      {/* Slots share the width instead of scrolling sideways: they shrink on narrow screens and stop growing at 56px. */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${block.cols}, minmax(0, 56px))`, gap: 0.75, [COMPACT]: { gap: 0.5 } }}>
           {rows.flatMap((r) => cols.map((c) => {
             const code = slotCode(block, r, c);
             const taken = occupied(r, c);
@@ -67,7 +71,6 @@ function BlockView({ block, vehicle, assigned, selected, onSelect }) {
             const label = assigned[code] ?? (taken ? 'Occupied' : fits ? 'Free' : `For ${block.use.toLowerCase()} only`);
             return <Slot key={code} code={code} state={state} label={label} onClick={() => onSelect(code)} />;
           }))}
-        </Box>
       </Box>
     </Box>
   );
@@ -121,9 +124,9 @@ export default function VehicleTerminal() {
           />
         }
         center={
-          <Card sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3 }}>{current ? `Choose a slot for ${current.plate}` : 'Terminal blocks'}</Typography>
-            <Stack spacing={3}>
+          <Card sx={{ p: 3, [COMPACT]: { p: 2 } }}>
+            <Typography variant="h6" sx={{ mb: 3, [COMPACT]: { mb: 2 } }}>{current ? `Choose a slot for ${current.plate}` : 'Terminal blocks'}</Typography>
+            <Stack spacing={3} sx={{ [COMPACT]: { gap: 2.5 } }} useFlexGap divider={<Divider flexItem sx={{ borderStyle: 'dashed' }} />}>
               {blocks.map((b) => <BlockView key={b.code} block={b} vehicle={current} assigned={assigned} selected={slot} onSelect={setSlot} />)}
             </Stack>
           </Card>
