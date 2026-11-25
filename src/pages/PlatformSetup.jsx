@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  Box, Card, Stack, Typography, Tabs, Tab, Button, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Step, StepLabel, Stepper,
+  Box, Card, Stack, Typography, Tabs, Tab, Button, Grid2 as Grid, TextField, MenuItem, Alert, Snackbar, Step, StepLabel, Stepper, Checkbox, ListItemText,
 } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPlace';
 import { PageHeader, formatBDT } from '../components/common';
-import FormDrawer from '../components/FormDrawer';
+import FormDrawer, { useFreshForm } from '../components/FormDrawer';
+import { useStoredState } from '../demo/PortStore';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { ports, products, vehicleTypes, agencies, traders, holidays, tariffLines } from '../data/mock';
@@ -52,12 +53,12 @@ function BulkImport({ open, onClose, what }) {
 const EMPTY_PORT = { code: '', name: '', station: '', tariff: 'TO-2026-03 (invented reference)' };
 
 // Stays mounted so the drawer slides in and out; the form empties itself each time it opens.
-function CreatePort({ open, onClose, onCreate }) {
+function CreatePort({ open, onClose, onCreate, taken }) {
   const [f, setF] = useState(EMPTY_PORT);
   useEffect(() => {
     if (open) setF(EMPTY_PORT);
   }, [open]);
-  const dup = ports.some((p) => p.code === f.code.toUpperCase());
+  const dup = taken.includes(f.code.toUpperCase());
   const codeOk = /^[A-Za-z]{3}$/.test(f.code) && !dup;
   return (
     <FormDrawer
@@ -90,6 +91,121 @@ function CreatePort({ open, onClose, onCreate }) {
   );
 }
 
+const NO_ORDERS = [];
+const PORT_CODES = ports.map((p) => p.code);
+const CATEGORY_OPTIONS = ['Food', 'Textile', 'Chemical', 'Rubber', 'Baby products', 'Stone'];
+
+// One form per national register. Each field: key, label, kind (text | select | multi | date), options,
+// required, check (returns an error message or ''), help. `toRow` turns the values into a table row.
+const REGISTERS = {
+  products: {
+    title: 'Add product', action: 'Add product', subtitle: 'Every port uses this product list and its default route.',
+    fields: [
+      { key: 'name', label: 'Product name', required: true },
+      { key: 'hs', label: 'HS code', required: true, help: 'Four digits, a dot and two digits, for example 1006.30', check: (v) => (/^\d{4}\.\d{2}$/.test(v) ? '' : 'Use the form 1006.30') },
+      { key: 'type', label: 'Type', kind: 'select', options: ['Non-perishable', 'Perishable', 'Bulk'], initial: 'Non-perishable' },
+      { key: 'categories', label: 'Categories', kind: 'multi', options: CATEGORY_OPTIONS, initial: [], required: true, help: 'Storage rules use these' },
+      { key: 'route', label: 'Default route', kind: 'select', options: ['Warehouse', 'Transshipment', 'Stone route'], initial: 'Warehouse' },
+    ],
+    toRow: (v) => ({ ...v, code: `P-${v.hs.slice(0, 4)}` }),
+  },
+  vehicles: {
+    title: 'Add vehicle type', action: 'Add vehicle type', subtitle: 'Vehicle types set entrance and weighment charges.',
+    fields: [
+      { key: 'name', label: 'Vehicle type', required: true, placeholder: '12-wheel truck' },
+      { key: 'wheels', label: 'Wheels', required: true, check: (v) => (/^\d+$/.test(v) && Number(v) >= 2 && Number(v) <= 30 ? '' : 'A whole number from 2 to 30') },
+      { key: 'mode', label: 'Transport mode', kind: 'select', options: ['Road', 'Rail'], initial: 'Road' },
+    ],
+    toRow: (v) => ({ ...v, wheels: Number(v.wheels), code: `VT-${String(v.wheels).padStart(2, '0')}` }),
+  },
+  agencies: {
+    title: 'Add C&F agency', action: 'Add agency', subtitle: 'An agency can act only at ports it is registered for, with a valid licence.',
+    fields: [
+      { key: 'name', label: 'Agency name', required: true },
+      { key: 'licence', label: 'Licence number', required: true, placeholder: 'CF-0000', check: (v) => (/^CF-\d{4}$/.test(v) ? '' : 'Use the form CF-0412') },
+      { key: 'validTo', label: 'Licence valid to', kind: 'date', required: true },
+      { key: 'ports', label: 'Registered ports', kind: 'multi', options: PORT_CODES, initial: [], required: true },
+    ],
+    toRow: (v) => v,
+  },
+  traders: {
+    title: 'Add importer or exporter', action: 'Add company', subtitle: 'Matched to Customs declarations by BIN.',
+    fields: [
+      { key: 'name', label: 'Company name', required: true },
+      { key: 'bin', label: 'BIN', required: true, placeholder: '000123456-0101', check: (v) => (/^\d{9}-\d{4}$/.test(v) ? '' : 'Nine digits, a dash and four digits') },
+      { key: 'contact', label: 'Contact number', placeholder: '+880 1711 000000' },
+      { key: 'ports', label: 'Trading ports', kind: 'multi', options: PORT_CODES, initial: [], required: true },
+    ],
+    toRow: (v) => ({ ...v, contact: v.contact || '–' }),
+  },
+  holidays: {
+    title: 'Add public holiday', action: 'Add holiday', subtitle: 'Free storage days do not count public holidays.',
+    fields: [
+      { key: 'date', label: 'Date', kind: 'date', required: true },
+      { key: 'name', label: 'Holiday', required: true },
+    ],
+    toRow: (v) => ({ ...v, upcoming: v.date >= new Date().toISOString().slice(0, 10) }),
+  },
+  tariff: {
+    title: 'Record tariff order', action: 'Record tariff order', subtitle: 'Saved as a draft until head office activates it. Rates are entered line by line afterwards.',
+    fields: [
+      { key: 'ref', label: 'Order reference', required: true, placeholder: 'TO-2027-01', check: (v) => (/^TO-\d{4}-\d{2}$/.test(v) ? '' : 'Use the form TO-2027-01') },
+      { key: 'effective', label: 'Effective from', kind: 'date', required: true },
+      { key: 'ports', label: 'Billing at', kind: 'multi', options: PORT_CODES, initial: [], required: true },
+      { key: 'storageFree', label: 'Free storage days', initial: '3', check: (v) => (/^\d+$/.test(v) ? '' : 'A whole number') },
+      { key: 'haltageFree', label: 'Free haltage days', initial: '1', check: (v) => (/^\d+$/.test(v) ? '' : 'A whole number') },
+    ],
+    toRow: (v) => v,
+  },
+};
+
+const emptyOf = (fields) => Object.fromEntries(fields.map((f) => [f.key, f.initial ?? '']));
+const EMPTIES = Object.fromEntries(Object.entries(REGISTERS).map(([k, r]) => [k, emptyOf(r.fields)]));
+
+function RegisterDrawer({ register, open, onClose, onSave }) {
+  const spec = REGISTERS[register];
+  const [v, set] = useFreshForm(open, EMPTIES[register]);
+  const problems = Object.fromEntries(spec.fields.map((f) => {
+    const value = v[f.key];
+    const blank = Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim();
+    if (blank) return [f.key, f.required ? 'Required' : ''];
+    return [f.key, f.check ? f.check(String(value).trim()) : ''];
+  }));
+  const ready = Object.values(problems).every((x) => !x);
+  // A field shows its problem only once something is typed, so an untouched form is not all red.
+  const shown = (f) => {
+    const value = v[f.key];
+    const touched = Array.isArray(value) ? value.length > 0 : String(value ?? '').length > 0;
+    return touched && problems[f.key] && problems[f.key] !== 'Required' ? problems[f.key] : '';
+  };
+  return (
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title={spec.title}
+      subtitle={spec.subtitle}
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!ready} onClick={() => onSave(spec.toRow(Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === 'string' ? x.trim() : x]))))}>{spec.action}</Button></>}
+    >
+      <Stack spacing={2.5}>
+        {spec.fields.map((f, i) => {
+          const error = shown(f);
+          const common = { key: f.key, fullWidth: true, required: f.required, autoFocus: i === 0, label: f.label, value: v[f.key], onChange: set(f.key), error: Boolean(error), helperText: error || f.help || ' ', placeholder: f.placeholder };
+          if (f.kind === 'select') return <TextField select {...common}>{f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}</TextField>;
+          if (f.kind === 'multi') {
+            return (
+              <TextField select {...common} slotProps={{ select: { multiple: true, renderValue: (x) => x.join(', ') } }}>
+                {f.options.map((o) => <MenuItem key={o} value={o}><Checkbox size="small" checked={v[f.key].includes(o)} /><ListItemText primary={o} /></MenuItem>)}
+              </TextField>
+            );
+          }
+          if (f.kind === 'date') return <TextField type="date" {...common} slotProps={{ inputLabel: { shrink: true } }} />;
+          return <TextField {...common} />;
+        })}
+      </Stack>
+    </FormDrawer>
+  );
+}
+
 const tabs = [
   ['tariff', 'Tariff orders'], ['products', 'Products'], ['vehicles', 'Vehicle types'], ['agencies', 'C&F agencies'],
   ['traders', 'Importers & exporters'], ['holidays', 'Public holidays'], ['ports', 'Ports'],
@@ -99,6 +215,22 @@ export default function PlatformSetup() {
   const [tab, setTab] = useState('ports');
   const [importOpen, setImportOpen] = useState(false);
   const [portOpen, setPortOpen] = useState(false);
+  const [adding, setAdding] = useState(null);
+  const [portList, setPortList] = useStoredState('platformPorts', ports);
+  const [productList, setProductList] = useStoredState('platformProducts', products);
+  const [vehicleList, setVehicleList] = useStoredState('platformVehicleTypes', vehicleTypes);
+  const [agencyList, setAgencyList] = useStoredState('platformAgencies', agencies);
+  const [traderList, setTraderList] = useStoredState('platformTraders', traders);
+  const [holidayList, setHolidayList] = useStoredState('platformHolidays', holidays);
+  const [orders, setOrders] = useStoredState('tariffOrders', NO_ORDERS);
+  const savers = {
+    products: (r) => setProductList((l) => [...l, r]),
+    vehicles: (r) => setVehicleList((l) => [...l, r]),
+    agencies: (r) => setAgencyList((l) => [...l, { ...r, id: `AG-${String(l.length + 1).padStart(2, '0')}` }]),
+    traders: (r) => setTraderList((l) => [...l, r]),
+    holidays: (r) => setHolidayList((l) => [...l, r].sort((a, b) => a.date.localeCompare(b.date))),
+    tariff: (r) => setOrders((l) => [...l, r]),
+  };
   const [toast, setToast] = useState('');
   const label = tabs.find((t) => t[0] === tab)[1];
 
@@ -111,7 +243,7 @@ export default function PlatformSetup() {
         action={
           <>
             {tab !== 'tariff' && <Button variant="outlined" color="inherit" startIcon={<UploadFileRoundedIcon />} onClick={() => setImportOpen(true)}>Import {label.toLowerCase()}</Button>}
-            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => (tab === 'ports' ? setPortOpen(true) : setToast(`New ${label.toLowerCase()} form opens here.`))}>
+            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => (tab === 'ports' ? setPortOpen(true) : setAdding(tab))}>
               {tab === 'ports' ? 'Create port' : tab === 'tariff' ? 'Record tariff order' : 'Add'}
             </Button>
           </>
@@ -133,6 +265,13 @@ export default function PlatformSetup() {
             </Stack>
             <Alert severity="info" sx={{ mt: 2 }}>Demonstration values, not legal rates. Free days: storage 3, haltage 1.</Alert>
           </Card>
+          {orders.map((o) => (
+            <Card key={o.ref} sx={{ p: 3 }}>
+              <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">{o.ref}</Typography><Label color="warning">Draft</Label></Stack>
+              <Typography variant="body2" color="text.secondary">Effective {o.effective} · billing at {o.ports.join(', ')} · free days: storage {o.storageFree}, haltage {o.haltageFree}</Typography>
+              <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>Head office activates the order once its rates are entered.</Typography>
+            </Card>
+          ))}
           <DataTable
             rows={tariffLines}
             searchKeys={['charge']}
@@ -148,7 +287,7 @@ export default function PlatformSetup() {
       )}
       {tab === 'products' && (
         <DataTable
-          rows={products}
+          rows={productList}
           searchKeys={['name', 'code', 'hs']}
           searchPlaceholder="Search product, code or HS code"
           columns={[
@@ -163,7 +302,7 @@ export default function PlatformSetup() {
       )}
       {tab === 'vehicles' && (
         <DataTable
-          rows={vehicleTypes}
+          rows={vehicleList}
           searchKeys={['name']}
           searchPlaceholder="Search vehicle type"
           columns={[
@@ -177,7 +316,7 @@ export default function PlatformSetup() {
       )}
       {tab === 'agencies' && (
         <DataTable
-          rows={agencies}
+          rows={agencyList}
           searchKeys={['name', 'licence']}
           searchPlaceholder="Search agency or licence"
           columns={[
@@ -190,7 +329,7 @@ export default function PlatformSetup() {
       )}
       {tab === 'traders' && (
         <DataTable
-          rows={traders}
+          rows={traderList}
           searchKeys={['name', 'bin']}
           searchPlaceholder="Search company or BIN"
           columns={[
@@ -203,7 +342,7 @@ export default function PlatformSetup() {
       )}
       {tab === 'holidays' && (
         <DataTable
-          rows={holidays}
+          rows={holidayList}
           searchKeys={['name', 'date']}
           searchPlaceholder="Search name or date"
           columns={[
@@ -215,7 +354,7 @@ export default function PlatformSetup() {
       )}
       {tab === 'ports' && (
         <DataTable
-          rows={ports}
+          rows={portList}
           searchKeys={['code', 'name']}
           searchPlaceholder="Search code or name"
           columns={[
@@ -228,7 +367,16 @@ export default function PlatformSetup() {
         />
       )}
       <BulkImport open={importOpen} onClose={() => setImportOpen(false)} what={label.toLowerCase()} />
-      <CreatePort open={portOpen} onClose={() => setPortOpen(false)} onCreate={(f) => { setPortOpen(false); setToast(`${f.name} (${f.code}) created. The port administrator can now complete setup.`); }} />
+      <CreatePort open={portOpen} taken={portList.map((p) => p.code)} onClose={() => setPortOpen(false)} onCreate={(f) => { setPortList((l) => [...l, { code: f.code.toUpperCase(), name: f.name.trim(), station: f.station.trim() || '–', tariff: f.tariff, state: 'Setting up', admin: '–', readiness: 0 }]); setPortOpen(false); setToast(`${f.name.trim()} (${f.code.toUpperCase()}) created. The port administrator can now complete setup.`); }} />
+      {Object.keys(REGISTERS).map((k) => (
+        <RegisterDrawer
+          key={k}
+          register={k}
+          open={adding === k}
+          onClose={() => setAdding(null)}
+          onSave={(row) => { savers[k](row); setAdding(null); setToast(`${REGISTERS[k].title.replace(/^(Add|Record) /, '')} saved${k === 'tariff' ? ' as a draft' : ''}.`.replace(/^./, (c) => c.toUpperCase())); }}
+        />
+      ))}
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
       </Snackbar>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Box, Card, Stack, Typography, Button, Grid2 as Grid, TextField, Switch, Divider, Alert, Snackbar,
+  Box, Card, Stack, Typography, Button, Grid2 as Grid, TextField, Switch, Divider, Alert, Snackbar, MenuItem,
   Table, TableHead, TableRow, TableCell, TableBody, ButtonBase,
   LinearProgress, Checkbox, Tabs, Tab,
 } from '@mui/material';
@@ -9,6 +9,7 @@ import { PageHeader, SectionCard, UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { ports, agencies, users } from '../data/mock';
 import { useStoredState } from '../demo/PortStore';
+import FormDrawer, { useFreshForm } from '../components/FormDrawer';
 
 // Module switches and tolerance are kept per port in the shared record.
 const NO_SETTINGS = {};
@@ -66,7 +67,42 @@ function StepModules({ modules, setModules }) {
   );
 }
 
+const RESOURCE_TYPES = {
+  'Border gate': { label: 'Lanes', placeholder: 'B3, B4', help: 'Lane codes, separated by commas', format: (v) => `Lanes ${v}` },
+  'Inland gate': { label: 'Lanes', placeholder: 'I3', help: 'Lane codes, separated by commas', format: (v) => `Lanes ${v}` },
+  Weighbridge: { label: 'Calibrated until', type: 'date', help: 'From the calibration certificate', format: (v) => `Calibrated to ${v}` },
+  'Rail siding': { label: 'Lines', placeholder: '2', help: 'Number of lines', format: (v) => `${v} line${v === '1' ? '' : 's'}` },
+  'Exit check camera': { label: 'Lane', placeholder: 'I1', help: 'The inland lane it watches', format: (v) => `Lane ${v}` },
+};
+const EMPTY_RESOURCE = { name: '', type: 'Border gate', detail: '' };
+
+// Sheds and yards are added in Warehouse layout, so they are not offered here.
+function ResourceDrawer({ open, onClose, onSave, taken }) {
+  const [f, set] = useFreshForm(open, EMPTY_RESOURCE);
+  const kind = RESOURCE_TYPES[f.type];
+  const dup = taken.includes(f.name.trim().toLowerCase());
+  const ready = f.name.trim() && !dup && f.detail.trim();
+  return (
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title="Add resource"
+      subtitle="It starts as Setting up and goes live when the port administrator confirms it."
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!ready} onClick={() => onSave({ name: f.name.trim(), type: f.type, detail: kind.format(f.detail.trim()) })}>Add resource</Button></>}
+    >
+      <Stack spacing={2.5}>
+        <TextField select fullWidth label="Type" value={f.type} onChange={set('type')} helperText="Sheds and yards are added in Warehouse layout">{Object.keys(RESOURCE_TYPES).map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}</TextField>
+        <TextField fullWidth required autoFocus label="Name" placeholder={f.type === 'Weighbridge' ? 'Scale 3' : `${f.type} 2`} value={f.name} onChange={set('name')} error={dup} helperText={dup ? 'A resource with this name already exists' : ' '} />
+        <TextField fullWidth required type={kind.type ?? 'text'} label={kind.label} placeholder={kind.placeholder} value={f.detail} onChange={set('detail')} helperText={kind.help} slotProps={kind.type === 'date' ? { inputLabel: { shrink: true } } : undefined} />
+      </Stack>
+    </FormDrawer>
+  );
+}
+
 function StepResources({ port, modules }) {
+  const [added, setAdded] = useStoredState('portResources', NO_SETTINGS);
+  const [adding, setAdding] = useState(false);
+  const [toast, setToast] = useState('');
   const [tolerances, setTolerances] = useStoredState('portTolerance', NO_SETTINGS);
   const tolerance = tolerances[port.code] ?? '5';
   const setTolerance = (value) => setTolerances((all) => ({ ...all, [port.code]: value }));
@@ -78,12 +114,13 @@ function StepResources({ port, modules }) {
     ['Scale 2', 'Weighbridge', 'Calibration due in 6 days', 'Live'],
     ...(modules.warehousing ? [['Shed 5', 'Shed', '2 zones · 56 bays', 'Live'], ['Shed 9', 'Shed', '1 zone · 24 bays', 'Live']] : []),
     ...(modules.rail ? [['Benapole siding', 'Rail siding', '2 lines', 'Live']] : []),
+    ...(added[port.code] ?? []).map((r) => [r.name, r.type, r.detail, 'Setting up']),
   ];
   return (
     <>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="body2" color="text.secondary">Border gates face the zero line. Inland gates face the Bangladesh road.</Typography>
-        <Button variant="outlined" color="inherit" startIcon={<AddRoundedIcon />}>Add resource</Button>
+        <Button variant="outlined" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setAdding(true)}>Add resource</Button>
       </Stack>
       <Card variant="outlined" sx={{ boxShadow: 'none' }}>
         <Table size="small">
@@ -94,7 +131,7 @@ function StepResources({ port, modules }) {
                 <TableCell sx={{ pl: 2, fontWeight: 600 }}>{n}</TableCell>
                 <TableCell>{t}</TableCell>
                 <TableCell sx={{ color: d.includes('due') ? 'warning.text' : 'text.secondary' }}>{d}</TableCell>
-                <TableCell><Label color="success">{s}</Label></TableCell>
+                <TableCell><Label color={s === 'Live' ? 'success' : 'warning'}>{s}</Label></TableCell>
                 <TableCell sx={{ pr: 2 }}><Stack direction="row" spacing={1} justifyContent="flex-end"><Button size="small" variant="outlined" color="inherit">Edit</Button><Button size="small" variant="outlined" color="error">Retire</Button></Stack></TableCell>
               </TableRow>
             ))}
@@ -120,6 +157,19 @@ function StepResources({ port, modules }) {
           </Grid>
         </Grid>
       </Box>
+      <ResourceDrawer
+        open={adding}
+        taken={resources.map((r) => r[0].toLowerCase())}
+        onClose={() => setAdding(false)}
+        onSave={(r) => {
+          setAdded((all) => ({ ...all, [port.code]: [...(all[port.code] ?? []), r] }));
+          setAdding(false);
+          setToast(`${r.name} added as Setting up.`);
+        }}
+      />
+      <Snackbar open={Boolean(toast)} autoHideDuration={3000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
+      </Snackbar>
     </>
   );
 }

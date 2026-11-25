@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Tabs, Tab, Button, Typography, Alert } from '@mui/material';
+import { Tabs, Tab, Button, Typography, Alert, Snackbar, Stack, TextField, MenuItem } from '@mui/material';
 import { PageHeader } from '../components/common';
+import FormDrawer, { useFreshForm } from '../components/FormDrawer';
+import { useStoredState } from '../demo/PortStore';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { AddRoundedIcon } from '../components/icons';
@@ -17,15 +19,68 @@ const gangs = [
   { id: 'G-04', name: 'Gang 4', size: 8, leader: 'Nurul Amin', shift: 'Day' },
 ];
 const color = { Available: 'success', 'In use': 'info', Maintenance: 'warning' };
+const KINDS = ['Forklift', 'Crane', 'Reach stacker', 'Conveyor', 'Pallet truck'];
+const BASES = ['Shed 5', 'Shed 7', 'Shed 9', 'Shed 12', 'Shed 31', 'Open yard 1', 'Open yard B'];
+const nextId = (list, prefix) => `${prefix}-${String(list.filter((x) => x.id.startsWith(prefix)).length + 1).padStart(2, '0')}`;
+
+const EMPTY_EQUIPMENT = { kind: 'Forklift', capacity: '', facility: 'Shed 5', status: 'Available' };
+
+function EquipmentDrawer({ open, onClose, onSave }) {
+  const [f, set] = useFreshForm(open, EMPTY_EQUIPMENT);
+  const capOk = /^\d+(\.\d+)?$/.test(f.capacity) && Number(f.capacity) > 0;
+  return (
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title="Add equipment"
+      subtitle="Machine use on this equipment is billed at the equipment rate."
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!capOk} onClick={() => onSave(f)}>Add equipment</Button></>}
+    >
+      <Stack spacing={2.5}>
+        <TextField select fullWidth label="Kind" value={f.kind} onChange={set('kind')}>{KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}</TextField>
+        <TextField fullWidth required autoFocus label="Lifting capacity (t)" inputMode="decimal" value={f.capacity} onChange={set('capacity')} error={Boolean(f.capacity) && !capOk} helperText={f.capacity && !capOk ? 'Enter tonnes as a number, for example 3' : 'Used to name it, for example Forklift 3 t'} />
+        <TextField select fullWidth label="Based at" value={f.facility} onChange={set('facility')}>{BASES.map((b) => <MenuItem key={b} value={b}>{b}</MenuItem>)}</TextField>
+        <TextField select fullWidth label="Status" value={f.status} onChange={set('status')}>{Object.keys(color).map((st) => <MenuItem key={st} value={st}>{st}</MenuItem>)}</TextField>
+      </Stack>
+    </FormDrawer>
+  );
+}
+
+const EMPTY_GANG = { size: '', leader: '', shift: 'Day' };
+
+function GangDrawer({ open, onClose, onSave }) {
+  const [f, set] = useFreshForm(open, EMPTY_GANG);
+  const sizeOk = /^\d+$/.test(f.size) && Number(f.size) >= 2 && Number(f.size) <= 30;
+  const ready = sizeOk && f.leader.trim();
+  return (
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title="Add gang"
+      subtitle="Manual handling by this gang is billed at the manual rate."
+      actions={<><Button variant="outlined" color="inherit" onClick={onClose}>Cancel</Button><Button variant="contained" disabled={!ready} onClick={() => onSave(f)}>Add gang</Button></>}
+    >
+      <Stack spacing={2.5}>
+        <TextField fullWidth required autoFocus label="Sardar (gang leader)" value={f.leader} onChange={set('leader')} />
+        <TextField fullWidth required label="Workers" inputMode="numeric" value={f.size} onChange={set('size')} error={Boolean(f.size) && !sizeOk} helperText={f.size && !sizeOk ? 'Between 2 and 30 workers' : 'Including the sardar'} />
+        <TextField select fullWidth label="Shift" value={f.shift} onChange={set('shift')}>{['Day', 'Night'].map((x) => <MenuItem key={x} value={x}>{x}</MenuItem>)}</TextField>
+      </Stack>
+    </FormDrawer>
+  );
+}
 
 export default function Equipment() {
   const [tab, setTab] = useState('equipment');
+  const [machines, setMachines] = useStoredState('equipmentList', equipment);
+  const [gangList, setGangList] = useStoredState('labourGangs', gangs);
+  const [adding, setAdding] = useState(null);
+  const [toast, setToast] = useState('');
   return (
     <>
       <PageHeader
         title="Equipment & labour"
         links={[{ name: 'Administration' }, { name: 'Equipment & labour' }]}
-        action={<Button variant="contained" startIcon={<AddRoundedIcon />}>{tab === 'equipment' ? 'Add equipment' : 'Add gang'}</Button>}
+        action={<Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setAdding(tab)}>{tab === 'equipment' ? 'Add equipment' : 'Add gang'}</Button>}
       />
       <Alert severity="info" sx={{ mb: 3 }}>Usage is recorded during warehouse and transshipment handling and read by billing: machine use applies the equipment rate, manual gang work applies the manual rate.</Alert>
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
@@ -33,7 +88,7 @@ export default function Equipment() {
         <Tab value="labour" label="Labour gangs" />
       </Tabs>
       {tab === 'equipment' ? (
-        <DataTable rows={equipment} searchKeys={['id', 'name']} searchPlaceholder="Search equipment" columns={[
+        <DataTable rows={machines} searchKeys={['id', 'name']} searchPlaceholder="Search equipment" columns={[
           { key: 'id', label: 'ID' },
           { key: 'name', label: 'Name', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
           { key: 'kind', label: 'Kind' },
@@ -42,7 +97,7 @@ export default function Equipment() {
           { key: 'e', label: '', render: () => <Button size="small" variant="outlined" color="inherit">Edit</Button> },
         ]} />
       ) : (
-        <DataTable rows={gangs} searchKeys={['id', 'name', 'leader']} searchPlaceholder="Search gangs" columns={[
+        <DataTable rows={gangList} searchKeys={['id', 'name', 'leader']} searchPlaceholder="Search gangs" columns={[
           { key: 'id', label: 'ID' },
           { key: 'name', label: 'Gang', render: (r) => <Typography variant="subtitle2">{r.name}</Typography> },
           { key: 'size', label: 'Workers' },
@@ -51,6 +106,29 @@ export default function Equipment() {
           { key: 'e', label: '', render: () => <Button size="small" variant="outlined" color="inherit">Edit</Button> },
         ]} />
       )}
+      <EquipmentDrawer
+        open={adding === 'equipment'}
+        onClose={() => setAdding(null)}
+        onSave={(f) => {
+          const id = nextId(machines, f.kind === 'Forklift' ? 'FL' : f.kind === 'Crane' ? 'MC' : 'EQ');
+          setMachines((l) => [...l, { id, name: `${f.kind} ${f.capacity} t`, kind: f.kind, facility: f.facility, status: f.status }]);
+          setAdding(null);
+          setToast(`${id} added.`);
+        }}
+      />
+      <GangDrawer
+        open={adding === 'labour'}
+        onClose={() => setAdding(null)}
+        onSave={(f) => {
+          const id = nextId(gangList, 'G');
+          setGangList((l) => [...l, { id, name: `Gang ${gangList.length + 1}`, size: Number(f.size), leader: f.leader.trim(), shift: f.shift }]);
+          setAdding(null);
+          setToast(`Gang ${gangList.length + 1} added.`);
+        }}
+      />
+      <Snackbar open={Boolean(toast)} autoHideDuration={3000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
+      </Snackbar>
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Box, Divider, Drawer, IconButton, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { CloseRoundedIcon } from './icons';
@@ -32,4 +33,14 @@ export default function FormDrawer({ open, onClose, title, subtitle, actions, wi
       <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ px: 3, py: 2 }}>{actions}</Stack>
     </Drawer>
   );
+}
+
+// Form state for a drawer that stays mounted (so it can slide out): it resets to `empty` each time the
+// drawer opens. `empty` must be a constant. Returns the values and a field setter for onChange.
+export function useFreshForm(open, empty) {
+  const [values, setValues] = useState(empty);
+  useEffect(() => {
+    if (open) setValues(empty);
+  }, [open, empty]);
+  return [values, (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }))];
 }
