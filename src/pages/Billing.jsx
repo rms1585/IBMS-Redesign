@@ -50,7 +50,7 @@ function BillDetail({ bill, onDone }) {
           <Typography variant="subtitle1">{tr("Payment ID")} <Id sx={{ typography: 'subtitle1' }}>{bill.paymentId}</Id></Typography>
           <Typography variant="body2" color="text.secondary">{agencyName(bill.party)} · {bill.for.id} · raised {formatDateTime(bill.raisedAt)} · {p.tariff.version}</Typography>
         </Box>
-        <Stack direction="row" spacing={1}>{bill.adjustment && <Label color="warning">{tr("Adjustment bill after outage")}</Label>}<StatusPill word={bill.status} /></Stack>
+        <Stack direction="row" spacing={1}>{bill.adjustment && <Label color="warning">{tr("Adjustment bill after outage")}</Label>}{notSettled(bill) ? <Label color="info">{tr('Paid, not yet settled')}</Label> : <StatusPill word={bill.status} />}</Stack>
       </Stack>
       <ResponsiveTable
         rowKey={(l) => l.what}
@@ -101,12 +101,16 @@ function ReleaseFromReference({ onDone }) {
 
 function BankCounter({ onDone }) {
   const p = usePort();
+  // BC-4: while the port cannot reach IBMS the bank counter takes no payment; bills raised before the outage can
+  // still be paid online by the agency.
+  const offline = ['lost', 'manual'].includes(p.state.outage?.phase);
   const [q, setQ] = useState('');
   const k = searchKey(q);
   const found = k.length >= 3 ? p.state.bills.filter((b) => searchKey(b.paymentId).includes(k) || searchKey(b.for.id).includes(k)) : [];
   return (
     <Card sx={{ p: 3 }}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("Find a bill by payment ID or Delivery Request. Payment is recorded through the bank interface; the receipt prints once the bank confirms.")}</Typography>
+      {offline && <Box sx={{ mb: 2 }}><Refusal title={tr('The bank counter takes no payment now')} items={[tr('This port cannot reach IBMS, so a payment here could not be confirmed against its bill. Bills raised before the outage can still be paid online by the C&F agency.')]} /></Box>}
       <TextField label={tr("Payment ID or request")} value={q} onChange={(e) => setQ(e.target.value)} sx={{ maxWidth: 420, mb: 2 }} fullWidth />
       {k.length >= 3 && !found.length && <Typography variant="body2" color="text.secondary">{tr("Nothing matches. Check the payment ID on the C&F agent's bill.")}</Typography>}
       <Stack spacing={1.5}>
@@ -115,7 +119,7 @@ function BankCounter({ onDone }) {
             <Id>{b.paymentId}</Id>
             <Typography variant="body2">{formatBDT(billTotals(b).total)}</Typography>
             <StatusPill word={b.status} />
-            {b.status === 'Payment due' && <Button variant="contained" onClick={() => { p.payBill(b.id); onDone('Payment recorded. The bank confirmed it'); }}>{tr("Take payment")}</Button>}
+            {b.status === 'Payment due' && <Button variant="contained" disabled={offline} onClick={() => { p.payBill(b.id); onDone('Payment recorded. The bank confirmed it'); }}>{tr("Take payment")}</Button>}
           </Stack>
         ))}
       </Stack>
@@ -124,6 +128,9 @@ function BankCounter({ onDone }) {
 }
 
 const NO_LIST = [];
+
+// A payment the provider confirmed today settles to BLPA's account on the next settlement run (demo rule).
+const notSettled = (b) => b.status === 'Paid' && b.paidAt && new Date(b.paidAt).toDateString() === new Date().toDateString();
 
 // A reconciliation case that is resolved with money owed either way becomes a supplementary bill or a credit,
 // raised from the case and approved by a second person (Annex 7.9; RC-3). Demo cases.
@@ -242,6 +249,9 @@ const CHANNELS = [
 
 function Finance() {
   const p = usePort();
+  // FN-3: confirmed by the provider but not yet in BLPA's account; never counted as arrears.
+  const unsettled = p.state.bills.filter(notSettled);
+  const arrears = p.state.bills.filter((b) => b.status === 'Payment due');
   const today = p.state.bills.reduce((acc, b) => {
     const tot = billTotals(b);
     return { raised: acc.raised + tot.total, received: acc.received + tot.paid };
@@ -249,6 +259,14 @@ function Finance() {
   const days = [...DAYS, { day: 'Today so far (demo record)', ...today }];
   return (
     <Stack spacing={2}>
+      <Card sx={{ p: 3 }}>
+        <SectionTitle>{tr('Paid, not yet settled')}</SectionTitle>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("The provider confirmed these payments; the money reaches BLPA's account on the next settlement. They are paid, never arrears.")}</Typography>
+        <Stack direction="row" spacing={4} flexWrap="wrap" useFlexGap>
+          <Box><Typography variant="caption" color="text.secondary">{tr('Paid, not yet settled')}</Typography><Typography variant="h6">{unsettled.length} · {formatBDT(unsettled.reduce((n, b) => n + billTotals(b).total, 0))}</Typography></Box>
+          <Box><Typography variant="caption" color="text.secondary">{tr('Arrears (payment due)')}</Typography><Typography variant="h6">{arrears.length} · {formatBDT(arrears.reduce((n, b) => n + billTotals(b).total, 0))}</Typography></Box>
+        </Stack>
+      </Card>
       <Card sx={{ p: 3 }}>
         <SectionTitle>{tr("Collections by channel, this month")}</SectionTitle>
         <ResponsiveTable rowKey={(c) => c.channel} rows={CHANNELS} columns={[

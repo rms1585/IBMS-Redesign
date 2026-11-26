@@ -532,6 +532,39 @@ export function PortProvider({ children }) {
           log(`Posting proposed for ${v.plate}: ${shed}`, v.manifests[0]);
         }),
 
+      // PO-4: an accepted posting changes before unloading; the new shed decides it again, both stay on record.
+      changePosting: (visitId, shed, reason) =>
+        change((n, { log }) => {
+          const v = n.visits.find((x) => x.id === visitId);
+          const before = v.posting;
+          v.postingHistory = [...(v.postingHistory ?? []), { ...before, replacedAt: new Date().toISOString(), replacedBy: actor.name, reason }];
+          v.posting = { shed, accepted: null, proposedBy: actor.name, at: new Date().toISOString(), changedFrom: before.shed, reason };
+          log(`Posting of ${v.plate} changed from ${before.shed} to ${shed} before unloading: ${reason}. ${shed} and the C&F agency are told`, v.manifests[0]);
+        }),
+      // YD-2: yard staff correct a line's route with a reason; the original stays visible on the truck.
+      correctRoute: (visitId, lineId, from, to, reason) =>
+        change((n, { log }) => {
+          const v = n.visits.find((x) => x.id === visitId);
+          v.routeCorrections = [...(v.routeCorrections ?? []), { line: lineId, from, to, reason, by: actor.name, at: new Date().toISOString() }];
+          log(`Route of ${lineId} on ${v.plate} corrected from ${from} to ${to}: ${reason}`, v.manifests[0]);
+        }),
+
+      // TS-4: once the transfers are locked, lines still aboard go through the space check and posting, and the truck
+      // visits each drop point; with nothing left aboard it goes to exit.
+      afterTransfer: (visitId, transferredLineIds, remainingCount) =>
+        change((n, { log }) => {
+          const v = n.visits.find((x) => x.id === visitId);
+          v.transferredLines = [...new Set([...(v.transferredLines ?? []), ...transferredLineIds])];
+          if (remainingCount > 0) {
+            v.stage = 'Weighed';
+            v.posting = null;
+            log(`Transfer locked for ${v.plate}; ${remainingCount} line${remainingCount === 1 ? '' : 's'} still aboard go to posting`, v.manifests[0]);
+          } else {
+            v.stage = 'Unloaded';
+            log(`Transfer locked for ${v.plate}; nothing left aboard, so the truck goes to exit`, v.manifests[0]);
+          }
+        }),
+
       // Warehousing (M-06)
       decidePosting: (visitId, accept, reason) =>
         change((n, { log }) => {

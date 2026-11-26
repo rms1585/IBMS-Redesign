@@ -52,7 +52,8 @@ function PostingBench() {
   const holding = p.state.visits.filter((v) => (v.holding || v.stage === 'Manifest not yet available') && v.stage !== 'Exited');
   const [sel, setSel] = useState(queue[0]?.id);
   const v = p.visit(sel) && queue.some((x) => x.id === sel) ? p.visit(sel) : queue[0];
-  const lines = v ? p.linesOfVisit(v) : [];
+  // Lines already moved truck to truck are no longer aboard (TS-4).
+  const lines = v ? p.linesOfVisit(v).filter((l) => !(v.transferredLines ?? []).includes(l.id)) : [];
   const category = lines[0]?.category ?? 'general';
   const suggested = ROUTE[category];
   const [shed, setShed] = useState('');
@@ -173,6 +174,7 @@ function PostingBench() {
         ) : <Typography variant="body2" color="text.secondary">{tr("Select a truck.")}</Typography>}
         right={v ? (<><Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("Checks")}</Typography><Checklist checks={checks} /><ActionFoot checks={checks} label={tr("Propose posting")} keyHint="P" onClick={propose} /></>) : null}
       />
+      <AcceptedPostings onDone={setMsg} />
       <Card sx={{ p: 3, mt: 3 }}>
         <SectionTitle>Holding area · {holding.length} of {rules.holdingPlaces} places</SectionTitle>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>A called truck has {rules.callMinutes} minutes to move before it loses its turn. Only for a truck with no free space, a manifest not yet available, a transshipment truck waiting for its receiving trucks, or goods being inspected.</Typography>
@@ -196,6 +198,88 @@ function PostingBench() {
       </Card>
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
+  );
+}
+
+// Trucks whose posting was accepted but not yet unloaded (PO-4, YD-2). The posting officer may move a posting before
+// receipt starts (same space and rule checks; the new shed decides again, both stay on record). Yard staff correct a
+// line's route with a reason, offered only the routes the port's modules allow; the original route stays visible.
+const ROUTE_OPTIONS = [['Warehouse', 'warehousing'], ['Transshipment', null], ['Stone route', 'outsideYard']];
+const routeOfLine = (l) => (l.category === 'perishable' ? 'Transshipment' : 'Warehouse');
+
+function AcceptedPostings({ onDone }) {
+  const p = usePort();
+  const space = useFreeSpace();
+  // Accepted postings, and moved ones waiting for the new shed to accept.
+  const trucks = p.state.visits.filter((v) => (v.posting?.accepted || v.posting?.changedFrom) && !v.receipt?.locked && v.stage !== 'Exited');
+  const [open, setOpen] = useState(null);
+  const [shed, setShed] = useState('');
+  const [lineId, setLineId] = useState('');
+  const [route, setRoute] = useState('');
+  const [reason, setReason] = useState('');
+  const reset = () => { setOpen(null); setShed(''); setLineId(''); setRoute(''); setReason(''); };
+  if (!trucks.length) return null;
+  const routes = ROUTE_OPTIONS.filter(([, mod]) => !mod || p.port.modules[mod]).map(([r]) => r);
+  return (
+    <Card sx={{ p: 3, mt: 3 }}>
+      <SectionTitle>{tr('Accepted, not yet unloaded')}</SectionTitle>
+      <Stack spacing={2}>
+        {trucks.map((v) => {
+          const lines = p.linesOfVisit(v);
+          const started = Boolean(v.receipt?.association || v.receipt?.times);
+          const needT = billableTonnes(v.weigh?.kg ?? 0);
+          const target = space.find((x) => x.id === shed);
+          const category = lines[0]?.category ?? 'general';
+          const why = open?.kind === 'move'
+            ? (started ? 'Receipt has started at the shed: the shed must shift it.' : !target ? 'Choose the new place.' : shed === v.posting.shed ? 'Choose a different place.' : target.freeT < needT ? `${shed} has ${target.freeT} t free; this truck needs ${needT} t.` : target.takes !== category && category !== 'perishable' ? `${shed} takes ${target.takes} goods, not ${category}.` : !reason.trim() ? 'Give the reason.' : '')
+            : (!lineId ? 'Choose the line.' : !route ? 'Choose the new route.' : !reason.trim() ? 'Give the reason.' : '');
+          return (
+            <Box key={v.id} sx={{ pb: 2, borderBottom: 1, borderColor: 'divider' }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Plate>{v.plate}</Plate>
+                <Typography variant="body2" sx={{ flex: 1 }}>{v.posting.shed}{v.posting.changedFrom ? ` (moved from ${v.posting.changedFrom})` : ''} · {v.posting.accepted === null ? tr('waiting for the shed to accept') : tr('accepted')}</Typography>
+                {open?.id !== v.id && (
+                  <>
+                    <Button size="small" variant="outlined" color="inherit" onClick={() => { reset(); setOpen({ id: v.id, kind: 'move' }); }}>{tr('Change place')}</Button>
+                    <Button size="small" variant="outlined" color="inherit" onClick={() => { reset(); setOpen({ id: v.id, kind: 'route' }); }}>{tr("Correct a line's route")}</Button>
+                  </>
+                )}
+              </Stack>
+              {(v.postingHistory ?? []).map((h, i) => <Typography key={i} variant="caption" color="text.secondary" component="div">{tr('Earlier place')}: {h.shed}, {h.accepted ? 'accepted' : 'proposed'} · {tr('changed by')} {h.replacedBy}: {h.reason}</Typography>)}
+              {(v.routeCorrections ?? []).map((c, i) => <Typography key={i} variant="caption" color="text.secondary" component="div">{tr('Route corrected')}: {c.line} {c.from} → {c.to} · {c.by}, {formatDuration(c.at)} ago: {c.reason}</Typography>)}
+              {open?.id === v.id && (
+                <Stack spacing={1.5} sx={{ mt: 1.5, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  {open.kind === 'move' ? (
+                    <TextField select size="small" label={tr('New place')} value={shed} onChange={(e) => setShed(e.target.value)} disabled={started} sx={{ maxWidth: 360 }}>
+                      {space.map((x) => <MenuItem key={x.id} value={x.id}>{x.id} · {x.freeT} t free · takes {x.takes}</MenuItem>)}
+                    </TextField>
+                  ) : (
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                      <TextField select size="small" label={tr('Line')} value={lineId} onChange={(e) => setLineId(e.target.value)} sx={{ minWidth: 240 }}>
+                        {lines.map((l) => <MenuItem key={l.id} value={l.id}>Line {l.no}: {l.goods} · {routeOfLine(l)}</MenuItem>)}
+                      </TextField>
+                      <TextField select size="small" label={tr('New route')} value={route} onChange={(e) => setRoute(e.target.value)} sx={{ minWidth: 200 }} helperText={tr('Only routes this port has switched on')}>
+                        {routes.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+                      </TextField>
+                    </Stack>
+                  )}
+                  <ReasonField value={reason} onChange={setReason} />
+                  <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center">
+                    {why && <Typography variant="caption" color={started && open.kind === 'move' ? 'error.text' : 'text.secondary'} role="status" sx={{ flex: 1 }}>{tr(why)}</Typography>}
+                    <Button variant="outlined" color="inherit" onClick={reset}>{tr('Cancel')}</Button>
+                    <Button variant="contained" disabled={Boolean(why)} onClick={() => {
+                      if (open.kind === 'move') { p.changePosting(v.id, shed, reason.trim()); onDone(`Posting moved to ${shed}; the shed and the agency are told`); }
+                      else { const l = lines.find((x) => x.id === lineId); p.correctRoute(v.id, lineId, routeOfLine(l), route, reason.trim()); onDone('Route corrected'); }
+                      reset();
+                    }}>{open.kind === 'move' ? tr('Move the posting') : tr('Correct the route')}</Button>
+                  </Stack>
+                </Stack>
+              )}
+            </Box>
+          );
+        })}
+      </Stack>
+    </Card>
   );
 }
 

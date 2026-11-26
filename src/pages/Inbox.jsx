@@ -5,12 +5,33 @@ import { PageHeader } from '../components/common';
 import Label from '../components/Label';
 import { usePort, useStoredState } from '../demo/PortStore';
 import SignAndConfirm from '../demo/SignaturePad';
+import { useTypedPlates } from '../demo/typedPlates';
+import { escalation, refuseSelfApproval } from '../demo/inbox';
+import { usePortRules } from '../demo/portRules';
 import { MISSING_PAYMENTS } from '../data/finance';
 import { formatBDT, formatDateTime } from '../demo/format';
-import { Confirmation, Plate, ReasonField, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
+import { CameraStill, Confirmation, Plate, ReasonField, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
 import { useT, tr } from '../i18n/LanguageContext';
 
 // M-13: every approval and request in one inbox. The maker never sees Approve or Reject, the super admin included.
+
+// The maker sees why they cannot approve; trying anyway is refused and recorded in the audit trail (AU-2).
+function SelfRefusal({ text, onTry }) {
+  const [tried, setTried] = useState(false);
+  return (
+    <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>{tried ? tr('Refused: you cannot approve your own request. The attempt is recorded in the audit log.') : text}</Typography>
+      {!tried && <Button size="small" variant="outlined" color="inherit" onClick={() => { onTry(); setTried(true); }}>{tr('Approve')}</Button>}
+    </Stack>
+  );
+}
+
+// XC-7: past its time limit, or at night, the item goes to the night delegate set in Port setup.
+function Escalated({ since, rule }) {
+  const e = escalation(since, rule);
+  if (!e) return null;
+  return <Label color="warning">{tr('Escalated to')} {e.delegate} · {tr(e.why)}</Label>;
+}
 
 function CorrectionItem({ c, onDone }) {
   const p = usePort();
@@ -40,7 +61,7 @@ function CorrectionItem({ c, onDone }) {
           <Typography variant="caption" color="text.secondary">Signed on the device · second sign-in factor confirmed · {formatDateTime(signed.at)}</Typography>
         </Stack>
       )}
-      {!c.decision && mine && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{tr("You asked for this change, so someone else decides it. It does not apply until approved.")}</Typography>}
+      {!c.decision && mine && <SelfRefusal text={tr("You asked for this change, so someone else decides it. It does not apply until approved.")} onTry={() => refuseSelfApproval(p, `the correction on ${c.record}`, c.record)} />}
       {!c.decision && !mine && (
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
           <TextField size="small" label={tr("Remarks (required to reject)")} value={remarks} onChange={(e) => setRemarks(e.target.value)} sx={{ flex: 1 }} />
@@ -72,6 +93,48 @@ const NEVER = ["Customs' release or exit note", 'A paid status', 'A locked load'
 
 // Tariff orders waiting for the head-office approver (HO-1, Annex 8.2): every amount, what changes against the
 // order in force, the legal reference and effective date. The person who sent the order cannot approve it.
+// The day's plates typed by hand at the exit lanes (SV-8): camera still, typed plate, reason, operator and time.
+// The supervisor marks each reviewed or a mismatch with a reason; a mismatch is flagged to the port in-charge.
+function TypedPlateReview({ onDone }) {
+  const { list, review } = useTypedPlates();
+  const [mismatchFor, setMismatchFor] = useState(null);
+  const [why, setWhy] = useState('');
+  const today = list.filter((e) => new Date(e.at).toDateString() === new Date().toDateString());
+  if (!today.length) return null;
+  return (
+    <Card sx={{ p: 3 }}>
+      <SectionTitle>{tr('Plates typed by hand at the exit lanes today')}</SectionTitle>
+      <Stack spacing={2}>
+        {today.map((e) => (
+          <Stack key={e.id} direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ pb: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={{ width: { md: 180 }, flexShrink: 0 }}><CameraStill lane={e.lane} read={null} expected={e.plate} label={e.still} /></Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="body2">{tr('Typed')} <Plate>{e.typed}</Plate> · {tr('expected')} <Plate>{e.plate}</Plate></Typography>
+              <Typography variant="body2" color="text.secondary">{e.reason} · {e.operator}, {formatDateTime(e.at)} · {e.still}</Typography>
+              {e.review ? (
+                <Typography variant="body2" sx={{ mt: 1 }}>{e.review.mismatch ? `${tr('Mismatch')}: ${e.review.reason}. ${tr('Flagged to the port in-charge.')}` : tr('Reviewed')} · {e.review.by}</Typography>
+              ) : mismatchFor === e.id ? (
+                <Stack spacing={1.5} sx={{ mt: 1 }}>
+                  <ReasonField value={why} onChange={setWhy} helper="For example: the camera still shows a different last digit." />
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" variant="outlined" color="inherit" onClick={() => setMismatchFor(null)}>{tr('Cancel')}</Button>
+                    <Button size="small" variant="contained" color="error" disabled={!why.trim()} onClick={() => { review(e.id, true, why.trim()); setMismatchFor(null); setWhy(''); onDone('Mismatch flagged to the port in-charge'); }}>{tr('Flag mismatch')}</Button>
+                  </Stack>
+                </Stack>
+              ) : (
+                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                  <Button size="small" variant="outlined" color="inherit" onClick={() => { review(e.id, false); onDone('Marked reviewed'); }}>{tr('Mark reviewed')}</Button>
+                  <Button size="small" variant="outlined" color="error" onClick={() => { setMismatchFor(e.id); setWhy(''); }}>{tr('Mismatch')}</Button>
+                </Stack>
+              )}
+            </Box>
+          </Stack>
+        ))}
+      </Stack>
+    </Card>
+  );
+}
+
 function TariffApprovals({ onDone }) {
   const p = usePort();
   const orders = (p.state.tariffOrders ?? NO_LIST).filter((o) => o.status === 'Waiting for approval');
@@ -104,7 +167,7 @@ function TariffApprovals({ onDone }) {
               </Box>
               <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>{tr('Changed amounts are in bold. Entered by hand from the order; no source document was read.')}</Typography>
               {mine ? (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{tr('You sent this order, so a different head-office approver decides it.')}</Typography>
+                <Box sx={{ mt: 1.5 }}><SelfRefusal text={tr('You sent this order, so a different head-office approver decides it.')} onTry={() => refuseSelfApproval(p, `tariff order ${o.ref}`, o.ref)} /></Box>
               ) : (
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
                   <TextField size="small" label={tr('Remarks (required to reject)')} value={remarks[o.ref] ?? ''} onChange={(e) => setRemarks({ ...remarks, [o.ref]: e.target.value })} sx={{ flex: 1 }} />
@@ -165,7 +228,7 @@ function OverrideRequests({ onDone }) {
                 <Typography variant="caption" color="text.secondary">Asked by {o.by}, {formatDateTime(o.at)}{o.decision ? ` · ${o.decision.approve ? 'approved' : 'rejected'} by ${o.decision.by}` : ''}</Typography>
               </Box>
               {o.decision ? <StatusPill word={o.decision.approve ? 'Approved' : 'Rejected'} />
-                : o.by === p.actor.name ? <Typography variant="caption" color="text.secondary">{tr("You asked, so someone else decides")}</Typography>
+                : o.by === p.actor.name ? <SelfRefusal text={tr("You asked, so someone else decides")} onTry={() => refuseSelfApproval(p, `the override on ${o.record}`, o.record)} />
                   : <Stack direction="row" spacing={1}><Button size="small" variant="contained" onClick={() => decide(o, true)}>{tr("Approve")}</Button><Button size="small" variant="outlined" color="error" onClick={() => decide(o, false)}>{tr("Reject")}</Button></Stack>}
             </Stack>
           ))}
@@ -275,10 +338,12 @@ export default function Inbox() {
   const flags = p.state.visits.filter((v) => v.weigh?.overTolerance && !v.weigh.inspection);
   const late = p.state.visits.filter((v) => v.late && v.gateIn);
   const [alerts] = useStoredState('inboxAlerts', SEED_ALERTS);
+  const typedPlates = useTypedPlates();
+  const [rules] = usePortRules();
   const recCount = (p.state.outageCases ?? NO_LIST).filter((c) => !c.referred && c.cls !== 'A').length + MISSING_PAYMENTS.length;
   const tabs = [
     ['Approvals', open.filter((c) => c.by !== p.actor.name).length + (p.state.overrideRequests ?? NO_LIST).filter((o) => !o.decision && o.by !== p.actor.name).length + (p.state.tariffOrders ?? NO_LIST).filter((o) => o.status === 'Waiting for approval' && o.sentBy !== p.actor.name).length],
-    ['Needs attention', passes.length + changes.length + flags.length + late.length],
+    ['Needs attention', passes.length + changes.length + flags.length + late.length + typedPlates.list.filter((e) => !e.review && new Date(e.at).toDateString() === new Date().toDateString()).length],
     ['Reconciliation', recCount],
     ['Alerts', alerts.filter((a) => !a.read).length],
   ];
@@ -301,6 +366,7 @@ export default function Inbox() {
           </Stack>
         </Card>
         {tab === 0 && <TariffApprovals onDone={setMsg} />}
+        {tab === 1 && <TypedPlateReview onDone={setMsg} />}
         {tab === 0 && <OverrideRequests onDone={setMsg} />}
         <Card sx={{ p: 3, display: tab === 1 ? 'block' : 'none' }}>
           <SectionTitle>{tr("Needs attention")}</SectionTitle>
@@ -310,12 +376,14 @@ export default function Inbox() {
                 <StatusPill word="Waiting approval" />
                 <Typography variant="body2">Exit Pass {x.id} for <Plate>{x.plate}</Plate>: {3 - Object.values(x.approvals).filter(Boolean).length} of 3 approvals missing</Typography>
                 <Button size="small" variant="outlined" component={RouterLink} to="/inland-gate">{tr("Open")}</Button>
+                <Escalated since={x.approvals.shed?.at ?? x.validDay} rule={rules.approvals.find((a) => a.act.startsWith(x.approvals.aro ? 'Exit Pass' : 'Load lock'))} />
               </Stack>
             ))}
             {changes.map((tc) => (
               <Stack key={tc.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
                 <StatusPill word="Waiting approval" />
                 <Typography variant="body2">Truck change {tc.from} to {tc.to} on {tc.pass}: shed in-charge and Customs ARO approve</Typography>
+                <Escalated since={tc.at} rule={rules.approvals.find((a) => a.act.startsWith('Truck change'))} />
               </Stack>
             ))}
             {flags.map((v) => (

@@ -24,6 +24,7 @@ export function useTransferRequests() {
       line: line ? `Line ${line.no}: ${line.goods}` : r.line,
       totalKg: line?.declaredKg ?? 0,
       plates: r.plates,
+      lineId: r.line,
       // A slot holds the plate once the inland gate has admitted that receiving truck.
       slots: r.plates.map((plate) => (r.admitted?.[plate] ? plate : null)),
       admitted: r.admitted ?? {},

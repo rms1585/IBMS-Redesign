@@ -3,7 +3,8 @@ import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from
 import { PageHeader } from '../components/common';
 import { usePort } from '../demo/PortStore';
 import { formatDateTime, searchKey } from '../demo/format';
-import { SourceMarker } from '../demo/ui';
+import { ResponsiveTable, SectionTitle, SourceMarker } from '../demo/ui';
+import { SELF_APPROVAL_PREFIX } from '../demo/inbox';
 import { useT, tr } from '../i18n/LanguageContext';
 
 // M-13: every action as a plain sentence. No screen offers to edit or delete an entry, for any role.
@@ -36,6 +37,8 @@ export default function AuditLog() {
   const [role, setRole] = useState(ALL_ROLES);
   const [period, setPeriod] = useState('Any time');
   const [onlyKeyed, setOnlyKeyed] = useState(false);
+  const [onlyRefused, setOnlyRefused] = useState(false);
+  const [samePerson, setSamePerson] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const events = p.state.events;
   const people = [EVERYONE, ...new Set(events.map((e) => e.by))];
@@ -44,12 +47,23 @@ export default function AuditLog() {
   const since = Date.now() - PERIODS[period] * 3600000;
   const rows = events.filter((e) => (source === 'Every source' || e.source === source)
     && (!onlyKeyed || NOT_FROM_SOURCE.includes(e.source))
+    && (!onlyRefused || e.text.startsWith(SELF_APPROVAL_PREFIX))
     && (person === EVERYONE || e.by === person)
     && (role === ALL_ROLES || e.role === role)
     && new Date(e.at).getTime() >= since
     && (!k || searchKey(`${e.text} ${e.record} ${e.by}`).includes(k)));
-  const filtered = q || source !== 'Every source' || person !== EVERYONE || role !== ALL_ROLES || period !== 'Any time' || onlyKeyed;
-  const clear = () => { setQ(''); setSource('Every source'); setPerson(EVERYONE); setRole(ALL_ROLES); setPeriod('Any time'); setOnlyKeyed(false); };
+  const filtered = q || source !== 'Every source' || person !== EVERYONE || role !== ALL_ROLES || period !== 'Any time' || onlyKeyed || onlyRefused;
+  const clear = () => { setQ(''); setSource('Every source'); setPerson(EVERYONE); setRole(ALL_ROLES); setPeriod('Any time'); setOnlyKeyed(false); setOnlyRefused(false); };
+  // AU-2: every two-person item with who asked and who decided. "Same person did both" is expected to be empty.
+  const s = p.state;
+  const pairs = [
+    ...s.corrections.filter((c) => c.decision).map((c) => ({ id: c.id, what: `Correction on ${c.record}: ${c.field}`, asked: c.by, decided: c.decision.by, outcome: c.decision.approve ? 'Approved' : 'Rejected', at: c.decision.at })),
+    ...(s.overrideRequests ?? []).filter((o) => o.decision).map((o) => ({ id: o.id, what: `Override: ${o.rule} on ${o.record}`, asked: o.by, decided: o.decision.by, outcome: o.decision.approve ? 'Approved' : 'Rejected', at: o.decision.at })),
+    ...(s.tariffOrders ?? []).filter((o) => o.approval).map((o) => ({ id: o.ref, what: `Tariff order ${o.ref}`, asked: o.sentBy, decided: o.approval.by, outcome: o.approval.approve ? 'Approved' : 'Rejected', at: o.approval.at })),
+    ...(s.supplementaryBills ?? []).filter((b) => b.approvedBy).map((b) => ({ id: b.id, what: `${b.amount < 0 ? 'Credit' : 'Supplementary bill'} ${b.id}`, asked: b.by, decided: b.approvedBy, outcome: 'Approved', at: b.at })),
+    ...(s.backEntries ?? []).filter((e) => e.checkedBy).map((e) => ({ id: e.id, what: `Back-entered form ${e.no}`, asked: e.enteredBy, decided: e.checkedBy, outcome: 'Confirmed', at: e.checkedAt })),
+  ].sort((a, b) => (a.at < b.at ? 1 : -1));
+  const pairRows = samePerson ? pairs.filter((x) => x.asked === x.decided) : pairs;
   const exportRows = () => {
     downloadCsv(rows);
     const used = [q && `search "${q}"`, source !== 'Every source' && source, onlyKeyed && 'only keyed, typed or back-entered', person !== EVERYONE && person, role !== ALL_ROLES && role, period !== 'Any time' && period].filter(Boolean);
@@ -95,6 +109,7 @@ export default function AuditLog() {
         </Box>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
           <Button size="small" variant={onlyKeyed ? 'contained' : 'outlined'} color={onlyKeyed ? 'primary' : 'inherit'} aria-pressed={onlyKeyed} onClick={() => setOnlyKeyed((v) => !v)}>{tr("Only keyed, typed or back-entered values")}</Button>
+          <Button size="small" variant={onlyRefused ? 'contained' : 'outlined'} color={onlyRefused ? 'primary' : 'inherit'} aria-pressed={onlyRefused} onClick={() => setOnlyRefused((v) => !v)}>{tr('Refused self-approvals')}</Button>
           {filtered && <Button size="small" color="inherit" onClick={clear}>{tr("Clear filters")}</Button>}
           <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>{rows.length} of {events.length} entries</Typography>
         </Stack>
@@ -110,6 +125,20 @@ export default function AuditLog() {
             </Box>
           ))}
         </Stack>
+      </Card>
+      <Card sx={{ p: { xs: 2, sm: 3 }, mt: 3 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+          <SectionTitle>{tr('Two-person decisions')}</SectionTitle>
+          <Box sx={{ flex: 1 }} />
+          <Button size="small" variant={samePerson ? 'contained' : 'outlined'} color={samePerson ? 'primary' : 'inherit'} aria-pressed={samePerson} onClick={() => setSamePerson((v) => !v)}>{tr('Same person did both')}</Button>
+        </Stack>
+        <ResponsiveTable rowKey={(x) => x.id} rows={pairRows} empty={samePerson ? tr('None. No one decided their own request, as expected.') : tr('No two-person decision yet.')} columns={[
+          { label: 'Item', render: (x) => x.what },
+          { label: 'Asked by', render: (x) => x.asked },
+          { label: 'Decided by', render: (x) => x.decided },
+          { label: 'Outcome', render: (x) => x.outcome },
+          { label: 'When', priority: 'low', render: (x) => formatDateTime(x.at) },
+        ]} />
       </Card>
     </>
   );

@@ -601,3 +601,29 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
       the inland gate admits the truck, only once that bill is paid.
     - "Close for the day" needs a remark for each unused slot (EXC-18). It records slots used against slots paid,
       and closed requests admit no more trucks.
+- **Annex 9 batch B (2026-11-26):**
+  - **SV-8, typed exit plates:**
+    - A plate typed by hand at an exit lane is kept with the camera still, the typed plate, the reason, the
+      operator and the time (`src/demo/typedPlates.js`).
+    - Inbox > Needs attention shows the day's list. The supervisor marks each reviewed, or flags a mismatch with a
+      reason, which goes to the port in-charge.
+  - **BC-4 / FN-3, payments:**
+    - A bill the provider confirmed today shows "Paid, not yet settled". Billing > Finance shows it apart from
+      arrears.
+    - While the port cannot reach IBMS, the bank counter refuses payments. Agencies can still pay older bills
+      online.
+  - **PO-4, change a posting:** "Change place" on Posting > Accepted, not yet unloaded.
+    - The new place gets the same space and storage-rule checks, and the new shed decides it again.
+    - The earlier place stays on the truck's record.
+    - It is refused once receipt has started: the shed must shift the cargo.
+  - **YD-2, route correction:** yard staff correct a line's route with a reason. Only routes the port has switched
+    on are offered, and the original route, the new route, who and why stay on the truck.
+  - **AU-2, two-person audit:**
+    - The audit log lists every two-person decision with who asked and who decided, and has a "Same person did
+      both" filter (expected empty).
+    - When someone tries to approve their own correction, override or tariff order, the attempt is refused and
+      recorded. The audit log has a filter for these.
+  - **XC-7, night delegate:** an Exit Pass, load lock or truck change waiting past its Port setup time limit, or
+    at night (22:00 to 06:00), shows "Escalated to <night delegate>".
+  - **TS-4, after a transfer:** once a request closes, lines still aboard the foreign truck go to posting (the
+    transferred line drops out of its drop points). With nothing left aboard, the truck goes to exit.

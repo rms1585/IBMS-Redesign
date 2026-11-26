@@ -5,6 +5,7 @@ import ExportCargo from './ExportCargo';
 import { PageHeader } from '../components/common';
 import { agencyName, usePort, useStoredState } from '../demo/PortStore';
 import { useTransferRequests } from '../demo/transfers';
+import { useTypedPlates } from '../demo/typedPlates';
 import { dayKey, formatBoe, formatDateTime, formatKg, searchKey } from '../demo/format';
 import { ActionFoot, ApprovalRow, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, Id, Plate, QueueList, Refusal, SectionTitle, StatusPill, useKeyAction } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
@@ -168,6 +169,7 @@ const NO_EXITS = [];
 function OtherExitsBench({ onDone }) {
   const p = usePort();
   const [done, setDone] = useStoredState('otherExitsDone', NO_EXITS);
+  const typedPlates = useTypedPlates();
   const queue = OTHER_EXITS.filter((x) => !done.some((d) => d.id === x.id));
   const [sel, setSel] = useState(queue[0]?.id);
   const x = queue.find((q) => q.id === sel) ?? queue[0];
@@ -185,9 +187,10 @@ function OtherExitsBench({ onDone }) {
   const run = useCallback(() => {
     if (!x || blocked) return;
     setDone((d) => [...d, { id: x.id, at: new Date().toISOString(), keyed: readerFailed ? reason.trim() : null }]);
+    if (readerFailed) typedPlates.record({ plate: x.plate, typed: typed.trim(), lane: 'Inland gate 1 · Lane 4', reason: reason.trim(), still: `IG1-L4-${String(Date.now()).slice(-4)}.jpg` });
     onDone(`${x.plate} left: ${x.title.toLowerCase()}`);
     setReaderFailed(false); setTyped(''); setReason('');
-  }, [x, blocked, setDone, onDone, readerFailed, reason]);
+  }, [x, blocked, setDone, onDone, readerFailed, reason, typed, typedPlates]);
   useKeyAction('e', run, Boolean(x) && !blocked);
   return (
     <Bench

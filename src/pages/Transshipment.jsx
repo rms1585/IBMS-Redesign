@@ -156,6 +156,7 @@ export default function Transshipment() {
             </Stack>
           ) : <Button variant="outlined" color="inherit" disabled={closed} onClick={() => setRaising(true)}>{tr("Raise an exception")}</Button>}
         </Card>
+        <AfterTransfer request={REQUEST} closed={closed} onDone={setMsg} />
       </Stack>
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
@@ -175,5 +176,31 @@ function TransferTimes({ move, canEnter, onEnter }) {
       <TextField size="small" type="datetime-local" label={tr("Transfer ended")} value={end} onChange={(e) => setEnd(e.target.value)} InputLabelProps={{ shrink: true }} error={Boolean(bad)} helperText={bad ? 'The end cannot be earlier than the start.' : ' '} />
       <Button size="small" variant="outlined" color="inherit" disabled={!start || !end || Boolean(bad)} onClick={() => onEnter({ start: fromLocalInput(start), end: fromLocalInput(end) })}>{move.times ? 'Update times' : 'Enter times'}</Button>
     </Stack>
+  );
+}
+
+// TS-4: once the request is closed, lines still aboard the foreign truck go to posting (space check, each drop point
+// in turn); with nothing left aboard the truck goes to exit.
+function AfterTransfer({ request, closed, onDone }) {
+  const p = usePort();
+  const v = p.state.visits.find((x) => x.plate === request.foreign && x.stage !== 'Exited');
+  if (!closed) return null;
+  if (!v || !request.lineId) {
+    return <Alert severity="info">{tr('The foreign truck of this demo request is not in the demo record, so what follows the transfer is not shown here.')}</Alert>;
+  }
+  const done = (v.transferredLines ?? []).includes(request.lineId);
+  const remaining = p.linesOfVisit(v).filter((l) => l.id !== request.lineId && !(v.transferredLines ?? []).includes(l.id));
+  return (
+    <Card sx={{ p: 3 }}>
+      <SectionTitle>{tr('After the transfer')}</SectionTitle>
+      {done ? (
+        <Typography variant="body2">{remaining.length ? `${remaining.length} line${remaining.length === 1 ? '' : 's'} still aboard ${v.plate} went to posting: ${remaining.map((l) => l.goods).join(', ')}.` : `Nothing left aboard ${v.plate}; it went to exit.`}</Typography>
+      ) : (
+        <Stack spacing={1.5}>
+          <Typography variant="body2">{remaining.length ? `Still aboard ${v.plate}: ${remaining.map((l) => `line ${l.no}, ${l.goods}`).join('; ')}. They go through the space check and posting, and the truck visits each drop point in turn.` : `Nothing is left aboard ${v.plate}, so it goes to exit.`}</Typography>
+          <Box><Button variant="contained" onClick={() => { p.afterTransfer(v.id, [request.lineId], remaining.length); onDone(remaining.length ? 'Lines still aboard sent to posting' : 'Truck sent to exit'); }}>{remaining.length ? tr('Send to posting') : tr('Send to exit')}</Button></Box>
+        </Stack>
+      )}
+    </Card>
   );
 }
