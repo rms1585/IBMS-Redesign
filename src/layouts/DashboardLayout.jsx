@@ -288,6 +288,9 @@ function StatusStrips() {
   const phase = state.outage?.phase ?? 'normal';
   const t = useT();
   const keyed = state.boes.filter((b) => b.source === 'Keyed by the agency').length + state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").length;
+  // The keyed-values reminder can be closed for this visit; it returns on refresh, or when the count changes.
+  // The outage and BNSW-down strips cannot be closed: they say how the port must work right now.
+  const [keyedClosedAt, setKeyedClosedAt] = useState(null);
   return (
     <Stack spacing={1} sx={{ mb: 2, '&:empty': { display: 'none' } }}>
       {/* Connection to NDC Agargaon (M2 Annex 24.10): lost in red, reconnecting and recovery in amber. */}
@@ -321,8 +324,8 @@ function StatusStrips() {
           <Typography variant="body2">{t('The exit check is down. Every truck at the exit lanes is held at the barrier until it is repaired or another gate is used.')}</Typography>
         </Alert>
       )}
-      {!state.bnswDown && keyed > 0 && (
-        <Alert severity="warning" icon={<InfoOutlinedIcon />}>
+      {!state.bnswDown && keyed > 0 && keyedClosedAt !== keyed && (
+        <Alert severity="warning" icon={<InfoOutlinedIcon />} onClose={() => setKeyedClosedAt(keyed)} closeText={t('Close')}>
           <Typography variant="body2">{keyed} keyed value{keyed === 1 ? '' : 's'} waiting to be checked against BNSW.</Typography>
         </Alert>
       )}
