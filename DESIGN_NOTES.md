@@ -561,8 +561,9 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   - C6, phone touch targets:
     - Toggle buttons are 44px.
     - The cargo vehicle terminal reflows into 44px slots, each still labelled with its slot code.
-    - Warehouse layout bays are 44px tall. On a phone they are still only about 23px wide, which needs a layout
-      decision.
+    - Warehouse layout bays are 44px squares on a phone. The bay map pans sideways inside its card with a "Swipe"
+      hint, keeping its rows and columns (product owner's choice, 2026-11-26). The page itself never scrolls
+      sideways. The facility buttons above the map wrap.
   - Not changed, because they conflict with later product-owner decisions:
     - The drawers (D1): kept on 2026-11-25, after the M2 ruling.
     - Lookup and port on the left (C1): asked for on 2026-11-25, after the M2 ruling.

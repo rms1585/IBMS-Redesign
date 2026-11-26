@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Stack, Typography, Tooltip } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { bayState } from '../data/mock';
+import { tr } from '../i18n/LanguageContext';
 
 export const bayLegend = [
   ['empty', 'Empty'],
@@ -47,9 +48,11 @@ export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
   const rows = Array.from({ length: zone.rows }, (_, r) => r);
   const cols = Array.from({ length: zone.cols }, (_, i) => i);
   return (
-    <Stack spacing={1.5} sx={{ display: { xs: 'flex', sm: 'inline-flex' } }}>
-    {/* On a phone the grid fills the width and each bay is 44px tall, so it is easier to tap (Annex 24.8). */}
-    <Box sx={{ display: { xs: 'grid', sm: 'inline-grid' }, gridTemplateColumns: { xs: `24px repeat(${zone.cols}, minmax(0, 1fr))`, sm: `24px repeat(${zone.cols}, ${size}px)` }, gap: 0.75 }}>
+    <Stack spacing={1.5} sx={{ display: { xs: 'flex', sm: 'inline-flex' }, maxWidth: '100%', minWidth: 0 }}>
+    {/* On a phone each bay is a 44px square (Annex 24.8) and the map pans sideways inside its card, keeping its rows
+        and columns; the page itself never scrolls sideways (product owner's choice, 2026-11-26). */}
+    <Box sx={{ overflowX: 'auto', maxWidth: '100%', pb: { xs: 0.5, sm: 0 } }}>
+    <Box sx={{ display: 'inline-grid', gridTemplateColumns: { xs: `24px repeat(${zone.cols}, 44px)`, sm: `24px repeat(${zone.cols}, ${size}px)` }, gap: 0.75 }}>
       <Box />
       {cols.map((i) => (
         <Typography key={i} variant="caption" color="text.secondary" align="center">C{String(i + 1).padStart(2, '0')}</Typography>
@@ -87,6 +90,8 @@ export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
         </Box>
       ))}
     </Box>
+    </Box>
+    {zone.cols > 6 && <Typography variant="caption" color="text.secondary" sx={{ display: { sm: 'none' } }}>{tr('Swipe the map sideways to see every bay.')}</Typography>}
     <Typography variant="body2" color={inspected ? 'text.primary' : 'text.secondary'} role="status">{inspected ?? 'Select a bay to see what it holds.'}</Typography>
     </Stack>
   );

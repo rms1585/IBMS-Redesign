@@ -1053,6 +1053,7 @@ const bn = {
   'Reset demo data?': 'ডেমো ডেটা রিসেট করবেন?',
   'Every change made in this browser is removed and the starting demo data comes back. This cannot be undone.': 'এই ব্রাউজারে করা সব পরিবর্তন মুছে যাবে এবং শুরুর ডেমো ডেটা ফিরে আসবে। এটি আর ফেরানো যাবে না।',
   'Reset demo data': 'ডেমো ডেটা রিসেট করুন',
+  'Swipe the map sideways to see every bay.': 'সব বে দেখতে নকশাটি পাশে সরান।',
 };
 
 export default bn;

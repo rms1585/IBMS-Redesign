@@ -166,7 +166,7 @@ export default function WarehouseLayout() {
           <SectionCard
             title={f.name}
             subheader={f.kind}
-            action={<Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">{tr("Change kind")}</Button><Button variant="outlined" color="error">{tr("Retire")}</Button>{f.kind !== 'Transshipment yard' && <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setAdding('zone')}>{tr("Add zone")}</Button>}</Stack>}
+            action={<Stack direction="row" flexWrap="wrap" useFlexGap gap={1}><Button variant="outlined" color="inherit">{tr("Change kind")}</Button><Button variant="outlined" color="error">{tr("Retire")}</Button>{f.kind !== 'Transshipment yard' && <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setAdding('zone')}>{tr("Add zone")}</Button>}</Stack>}
           >
             <Box sx={{ px: 3, pb: 3 }}>
               {f.zones.length ? (
