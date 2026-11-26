@@ -24,7 +24,8 @@ function EntryBench({ onDone }) {
   const [typed, setTyped] = useState('');
   const item = slots.find((x) => x.id === sel) ?? slots[0];
   const typedMatch = typed && slots.find((x) => searchKey(x.sl.plate) === searchKey(typed));
-  const bill = item?.d && p.bill(item.d.bill);
+  // An extra truck above the ceiling enters only on its own paid top-up bill (EXC-16).
+  const bill = item?.d && p.bill(item.sl.extraBill ?? item.d.bill);
   const foreignVisit = item?.r && p.state.visits.find((v) => v.plate === item.r.foreign && v.stage !== 'Exited');
   const foreignHolds = item?.r ? p.holdsOnPlate(item.r.foreign) : [];
   const checks = item?.r ? [
@@ -33,7 +34,8 @@ function EntryBench({ onDone }) {
     { label: 'No hold on the foreign truck', state: foreignHolds.length ? 'fail' : 'pass', text: foreignHolds.length ? `${foreignHolds[0].body} hold: ${foreignHolds[0].reason}` : 'None open.' },
   ] : item ? [
     { label: 'Plate bound to an open slot', state: 'pass', text: `Slot ${item.i + 1} of ${item.d.id}` },
-    { label: 'Delivery Request paid', state: bill.status === 'Paid' ? 'pass' : 'fail', text: bill.status === 'Paid' ? `${bill.paymentId}, provider confirmed` : `Bill ${bill.paymentId} is unpaid. The truck waits until the agency pays.` },
+    { label: item.sl.extraBill ? 'Top-up bill for the extra truck paid' : 'Delivery Request paid', state: bill.status === 'Paid' ? 'pass' : 'fail', text: bill.status === 'Paid' ? `${bill.paymentId}, provider confirmed` : `Bill ${bill.paymentId} is unpaid. The truck waits until the agency pays.` },
+    ...(item.d.closed ? [{ label: 'Delivery Request open', state: 'fail', text: `${item.d.id} was closed for the day.` }] : []),
     { label: 'Delivery day', state: dayKey(item.d.day) === dayKey() ? 'pass' : 'fail', text: dayKey(item.d.day) === dayKey() ? 'Today' : `The request is for ${dayKey(item.d.day)}.` },
   ] : [];
   const admit = useCallback(() => {

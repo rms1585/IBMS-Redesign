@@ -8,9 +8,10 @@ import { alpha } from '@mui/material/styles';
 import { PageHeader, SectionCard, UserAvatar } from '../components/common';
 import Label from '../components/Label';
 import { ports, agencies, users } from '../data/mock';
-import { useStoredState } from '../demo/PortStore';
+import { usePort, useStoredState } from '../demo/PortStore';
 import FormDrawer, { useFreshForm } from '../components/FormDrawer';
 import { SCREEN_FIELDS, usePortRules } from '../demo/portRules';
+import { missingRates } from '../demo/tariff';
 
 // Module switches and tolerance are kept per port in the shared record.
 const NO_SETTINGS = {};
@@ -294,7 +295,11 @@ function StepPeople() {
 }
 
 function StepGoLive({ port, modules, onRequest }) {
+  const { tariff } = usePort();
+  // RC-2: a module whose charge the order in force does not price blocks go-live, naming the charge.
+  const unpriced = missingRates(modules, tariff);
   const checks = [
+    [unpriced.length ? `The tariff order in force has no rate for: ${unpriced.map((c) => c.what).join(', ')}` : 'The tariff order in force prices every charge the switched-on modules create', unpriced.length === 0, true],
     ['Identity and Customs station set, approved tariff assigned', true, true],
     ['Every handled product has an enabled route', true, true],
     ['Posting depends on Warehousing', modules.warehousing, true],

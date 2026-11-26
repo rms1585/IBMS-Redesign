@@ -14,6 +14,9 @@ export const TARIFF = {
     storage: { what: 'Storage', unit: 'tonne-day', rate: 25 },
     handling: { what: 'Handling', unit: 'tonne', rate: 120 },
     entrance: { what: 'Entrance fee, local truck', unit: 'truck', rate: 115 },
+    railHandling: { what: 'Rail wagon handling', unit: 'tonne', rate: 95 },
+    busTerminal: { what: 'Bus terminal', unit: 'bus', rate: 300 },
+    stone: { what: 'Stone route', unit: 'tonne', rate: 140 },
   },
 };
 

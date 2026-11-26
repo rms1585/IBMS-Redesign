@@ -5,9 +5,10 @@ import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
 import { agencyName, billTotals, importerName, usePort, useStoredState } from '../demo/PortStore';
 import { formatBDT, formatBoe, formatDateTime, searchKey } from '../demo/format';
-import { Confirmation, Id, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
+import { Confirmation, Id, Plate, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
 import { useT, tr } from '../i18n/LanguageContext';
 import { MISSING_PAYMENTS } from '../data/finance';
+import { sum, useStoneShipment } from '../demo/stone';
 
 // M-09: bills built from recorded events and the tariff in force. Paid comes only from the provider; paid never means released.
 
@@ -281,6 +282,65 @@ function Finance() {
   );
 }
 
+// Stone route bills (BO-7): the up-front bill for the whole shipment, a top-up per truck after its weigh-back, and the
+// exit lock on each foreign truck. Paid only on the provider's confirmation (simulated here).
+function StoneBills({ onDone }) {
+  const stone = useStoneShipment();
+  const { ship } = stone;
+  const withVat = (net) => net * (1 + stone.vat);
+  return (
+    <Stack spacing={2}>
+      <Alert severity="info">{tr("Preview for Bhomra and Burimari. The stone route stays disabled in IBMS until NBR and BLPA decide its control; Benapole has no outside yard.")}</Alert>
+      <Card sx={{ p: 3 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+          <Typography variant="subtitle1">{tr('Up-front stone bill')} · <Id>{ship.upfront.paymentId}</Id></Typography>
+          <StatusPill word={ship.upfront.paid ? 'Paid' : 'Payment due'} />
+        </Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{ship.manifest} · {ship.importer} · {ship.port} · {tr('raised when the lines were routed to the stone route, with each truck\'s expected charges')}</Typography>
+        <ResponsiveTable rowKey={(l) => `${l.truck}-${l.what}`} rows={stone.upfrontLines} columns={[
+          { label: 'Truck', render: (l) => <Plate>{l.truck}</Plate> },
+          { label: 'For', render: (l) => l.what },
+          { label: 'Amount', align: 'right', nowrap: true, render: (l) => formatBDT(l.amount) },
+        ]} />
+        <Stack alignItems="flex-end" sx={{ mt: 2 }}>
+          <Typography variant="body2" color="text.secondary">Net {formatBDT(stone.upfrontNet)} · VAT {formatBDT(stone.upfrontNet * stone.vat)}</Typography>
+          <Typography variant="subtitle1">{tr('Total')} {formatBDT(withVat(stone.upfrontNet))}</Typography>
+          {!ship.upfront.paid && <Button variant="contained" sx={{ mt: 1 }} onClick={() => { stone.payUpfront(); onDone('Stone bill paid. The loaded trucks may leave the fence'); }}>{tr('Simulate provider payment')}</Button>}
+        </Stack>
+      </Card>
+      <Card sx={{ p: 3 }}>
+        <SectionTitle>{tr('Top-up bills and exit locks')}</SectionTitle>
+        <Stack spacing={2.5}>
+          {stone.trucks.map((t) => (
+            <Box key={t.plate} sx={{ pb: 2, borderBottom: 1, borderColor: 'divider' }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Plate>{t.plate}</Plate>
+                {t.lock.length ? <Label color="error">{tr('Exit lock on')}</Label> : <Label color="success">{tr('Exit lock lifted')}</Label>}
+              </Stack>
+              {t.actualLines ? (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {tr('After the weigh-back')}: {t.actualLines.map((l) => `${l.what} ${formatBDT(l.amount)}`).join(' · ')} = {formatBDT(sum(t.actualLines))}; {tr('prepaid')} {formatBDT(t.prepaid)}.
+                </Typography>
+              ) : <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{tr('Waiting for the empty weigh-back at the weighbridge.')}</Typography>}
+              {t.topUpNet === 0 && <Typography variant="body2" sx={{ mt: 0.5 }}>{tr('Nothing above the prepaid bill, so no top-up bill is raised.')}</Typography>}
+              {t.topUpNet > 0 && !t.topUp && <Button size="small" variant="contained" sx={{ mt: 1 }} onClick={() => onDone(`Top-up bill ${stone.raiseTopUp(t)} raised for ${t.plate}`)}>{tr('Raise top-up bill')} ({formatBDT(withVat(t.topUpNet))})</Button>}
+              {t.topUp && (
+                <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                  <Typography variant="body2">{tr('Top-up bill')} <Id>{t.topUp.paymentId}</Id> · {formatBDT(withVat(t.topUp.net))}</Typography>
+                  <StatusPill word={t.topUp.paid ? 'Paid' : 'Payment due'} />
+                  {!t.topUp.paid && <Button size="small" variant="outlined" color="inherit" onClick={() => { stone.payTopUp(t); onDone('Top-up bill paid'); }}>{tr('Simulate provider payment')}</Button>}
+                </Stack>
+              )}
+              {t.lock.length > 0 && <Typography variant="caption" color="error.text" component="div" sx={{ mt: 1 }}>{tr('Final exit held')}: {t.lock.join('; ')}.</Typography>}
+            </Box>
+          ))}
+        </Stack>
+        {!ship.released && <Button color="inherit" sx={{ mt: 2 }} onClick={() => { stone.release(); onDone("Customs' release received through BNSW (simulated)"); }}>{tr("Simulate Customs' release via BNSW")}</Button>}
+      </Card>
+    </Stack>
+  );
+}
+
 export default function Billing() {
   const p = usePort();
   const t = useT();
@@ -291,7 +351,7 @@ export default function Billing() {
   if (role.id === 'bank') {
     return (<><PageHeader title="Take payment" subtitle={tr("Bank counter, Benapole")} /><BankCounter onDone={setMsg} /><Confirmation text={msg} onClose={() => setMsg('')} /></>);
   }
-  const tabs = ['Bills', 'Lines not priced', 'Supplementary bills and credits', 'Customs decisions by reference', 'Release from Customs\' reference', 'Finance', 'Bank counter'];
+  const tabs = ['Bills', 'Lines not priced', 'Supplementary bills and credits', 'Customs decisions by reference', 'Release from Customs\' reference', 'Finance', 'Bank counter', 'Stone route (preview)'];
   return (
     <>
       <PageHeader title={t('Billing and payment')} subtitle={`${p.tariff.version} · VAT 15% per line. No bill is computed from papers and no one marks a bill paid by hand.`} />
@@ -306,6 +366,7 @@ export default function Billing() {
         {tab === 4 && <Card sx={{ p: 3 }}><ReleaseFromReference onDone={setMsg} />{p.state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").map((b) => <Alert key={b.id} severity="warning" sx={{ mt: 2 }}>{formatBoe(b)}: release {b.release.ref} <SourceMarker source={b.release.source} /></Alert>)}</Card>}
         {tab === 5 && <Finance />}
         {tab === 6 && <BankCounter onDone={setMsg} />}
+        {tab === 7 && <StoneBills onDone={setMsg} />}
       </Box>
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>

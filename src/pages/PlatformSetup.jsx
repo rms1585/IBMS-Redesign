@@ -6,6 +6,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from '../demo/InPla
 import { PageHeader, formatBDT } from '../components/common';
 import FormDrawer, { useFreshForm } from '../components/FormDrawer';
 import { usePort, useStoredState } from '../demo/PortStore';
+import { TARIFF } from '../demo/seed';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
 import { ports, products, vehicleTypes, agencies, traders, holidays, tariffLines } from '../data/mock';
@@ -214,21 +215,51 @@ function RegisterDrawer({ register, open, onClose, onSave }) {
   );
 }
 
-// A recorded order is a draft until head office enters its rates and activates it. Activation makes it the
-// tariff in force: bills raised from then on use its rates (M-12; M2 Report 4.6.1).
-function DraftOrder({ order, active, onActivate }) {
-  const { tariff } = usePort();
+// A recorded order is a draft. Head office enters its rates and sends it for approval; a second person, the
+// head-office approver, approves it in the Inbox and it comes into force on its effective date. The recorder can
+// never approve it, and earlier orders stay readable (HO-1, Annex 8.2; M2 Report 4.6.1).
+const today = () => new Date().toISOString().slice(0, 10);
+export function orderStatus(o, inForceRef) {
+  if (o.status === 'Approved') return o.ref === inForceRef ? 'In force' : o.effective > today() ? `Approved, in force from ${o.effective}` : 'Replaced';
+  return o.status ?? 'Draft';
+}
+const STATUS_TONE = { 'In force': 'success', Draft: 'warning', 'Waiting for approval': 'info', Replaced: 'default', Rejected: 'error' };
+
+function RateList({ rates, against }) {
+  return (
+    <Box sx={{ display: 'grid', gap: 0.75, mt: 1.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))' } }}>
+      {Object.entries(rates).map(([k, r]) => {
+        const before = against?.[k]?.rate;
+        const changed = against && before !== r.rate;
+        return (
+          <Typography key={k} variant="body2" color={changed ? 'text.primary' : 'text.secondary'}>
+            {r.what}: {formatBDT(r.rate)} per {r.unit}{changed ? ` (now ${before == null ? 'no rate' : formatBDT(before)})` : ''}
+          </Typography>
+        );
+      })}
+    </Box>
+  );
+}
+
+function DraftOrder({ order, onSend }) {
+  const p = usePort();
+  const { tariff } = p;
+  const status = orderStatus(order, tariff.ref);
   const [editing, setEditing] = useState(false);
   const [rates, setRates] = useState(() => Object.fromEntries(Object.entries(tariff.rates).map(([k, r]) => [k, String(r.rate)])));
   const valid = Object.values(rates).every((v) => /^\d+(\.\d{1,2})?$/.test(v) && Number(v) > 0);
+  const editable = status === 'Draft' || status === 'Rejected';
   return (
     <Card sx={{ p: 3 }}>
       <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
-        <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">{order.ref}</Typography>{active ? <Label color="success">{tr('Active')}</Label> : <Label color="warning">{tr('Draft')}</Label>}</Stack>
-        {!active && !editing && <Button variant="outlined" color="inherit" onClick={() => setEditing(true)}>{tr('Enter rates and activate')}</Button>}
+        <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">{order.ref}</Typography><Label color={STATUS_TONE[status] ?? 'info'}>{tr(status)}</Label></Stack>
+        {editable && !editing && <Button variant="outlined" color="inherit" onClick={() => setEditing(true)}>{tr('Enter rates')}</Button>}
       </Stack>
       <Typography variant="body2" color="text.secondary">{order.legalRef ? `${order.legalRef} · ` : ''}Effective {order.effective} · billing at {order.ports.join(', ')} · free days: storage {order.storageFree}, haltage {order.haltageFree}</Typography>
-      {editing && !active && (
+      {order.status === 'Rejected' && order.approval && <Alert severity="error" sx={{ mt: 1.5 }}>Rejected by {order.approval.by}: {order.approval.remarks}</Alert>}
+      {order.sentBy && <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>Sent for approval by {order.sentBy}{order.approval?.approve ? ` · approved by ${order.approval.by}` : ''}</Typography>}
+      {order.rates && !editing && <RateList rates={order.rates} />}
+      {editing && (
         <Box sx={{ mt: 2 }}>
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))' } }}>
             {Object.entries(tariff.rates).map(([k, r]) => (
@@ -238,11 +269,11 @@ function DraftOrder({ order, active, onActivate }) {
           <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }} flexWrap="wrap" useFlexGap>
             {!valid && <Typography variant="caption" color="text.secondary" role="status">{tr('Every rate must be a positive amount with up to two decimals.')}</Typography>}
             <Button variant="outlined" color="inherit" onClick={() => setEditing(false)}>{tr('Cancel')}</Button>
-            <Button variant="contained" disabled={!valid} onClick={() => { onActivate(Object.fromEntries(Object.entries(tariff.rates).map(([k, r]) => [k, { ...r, rate: Number(rates[k]) }]))); setEditing(false); }}>{tr('Activate this order')}</Button>
+            <Button variant="contained" disabled={!valid} onClick={() => { onSend(Object.fromEntries(Object.entries(tariff.rates).map(([k, r]) => [k, { ...r, rate: Number(rates[k]) }]))); setEditing(false); }}>{tr('Send for approval')}</Button>
           </Stack>
         </Box>
       )}
-      {active && <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>{tr('In force. New bills use these rates.')}</Typography>}
+      {status === 'Waiting for approval' && <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>{tr('A head-office approver decides it in the Inbox. The person who sent it cannot approve it.')}</Typography>}
     </Card>
   );
 }
@@ -264,7 +295,7 @@ export default function PlatformSetup() {
   const [traderList, setTraderList] = useStoredState('platformTraders', traders);
   const [holidayList, setHolidayList] = useStoredState('platformHolidays', holidays);
   const [orders, setOrders] = useStoredState('tariffOrders', NO_ORDERS);
-  const [activeTariff, setActiveTariff] = useStoredState('tariffActive', null);
+  const port = usePort();
   const savers = {
     products: (r) => setProductList((l) => [...l, r]),
     vehicles: (r) => setVehicleList((l) => [...l, r]),
@@ -300,21 +331,22 @@ export default function PlatformSetup() {
           <Card sx={{ p: 3 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">TO-2026-03</Typography>{activeTariff ? <Label>{tr('Replaced')}</Label> : <Label color="success">{tr('Active')}</Label>}</Stack>
+                <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">TO-2026-03</Typography>{port.tariff.ref ? <Label>{tr('Replaced')}</Label> : <Label color="success">{tr('In force')}</Label>}</Stack>
                 <Typography variant="body2" color="text.secondary">Legal reference: invented for the demo · effective 1 Mar 2026 · billing at BEN, BUR, SON, AKH</Typography>
               </Box>
               <Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">{tr("Edit details")}</Button><Button variant="outlined" color="error">{tr("Deactivate")}</Button></Stack>
             </Stack>
             <Alert severity="info" sx={{ mt: 2 }}>Demonstration values, not legal rates. Free days: storage 3, haltage 1.</Alert>
+            <RateList rates={TARIFF.rates} />
           </Card>
           {orders.map((o) => (
             <DraftOrder
               key={o.ref}
               order={o}
-              active={activeTariff?.ref === o.ref}
-              onActivate={(rates) => {
-                setActiveTariff({ ref: o.ref, version: `Tariff order ${o.ref}`, effective: o.effective, vat: 0.15, rates });
-                setToast(`${o.ref} is now in force. New bills use its rates; bills already raised keep theirs.`);
+              onSend={(rates) => {
+                setOrders((l) => l.map((x) => (x.ref === o.ref ? { ...x, rates, status: 'Waiting for approval', sentBy: port.actor.name, sentAt: new Date().toISOString(), approval: null } : x)));
+                port.logEvent(`Tariff order ${o.ref} sent for approval with its rates`, o.ref);
+                setToast(`${o.ref} sent for approval. A head-office approver decides it in the Inbox.`);
               }}
             />
           ))}

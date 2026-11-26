@@ -5,11 +5,15 @@ import Label from '../components/Label';
 import { tariffLines, truckClassRates } from '../data/mock';
 import { tr } from '../i18n/LanguageContext';
 import { usePort } from '../demo/PortStore';
+import { chargesFor } from '../demo/tariff';
 
 const classRows = Object.entries(truckClassRates).map(([cls, rates]) => ({ cls, ...rates }));
 
 export default function Charges() {
-  const { tariff } = usePort();
+  const { tariff, port } = usePort();
+  // RC-2: every charge the port's switched-on modules can create, and whether the order in force prices it.
+  const moduleCharges = chargesFor(port.modules, tariff);
+  const unpriced = moduleCharges.filter((c) => c.rate == null);
   const billed = tariffLines.filter((t) => t.billedHere);
   // The rates bills are raised with now: the order head office activated last (Platform setup > Tariff orders).
   const inForce = Object.entries(tariff.rates).map(([key, r]) => ({ key, ...r }));
@@ -22,7 +26,7 @@ export default function Charges() {
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}><Typography variant="h6">{tariff.ref ?? 'TO-2026-03'}</Typography><Label color="success">{tr('In force')}</Label></Stack>
             <DetailRow label={tr("Reference")}>Invented reference (demo)</DetailRow>
             <DetailRow label={tr("Effective")}>{tariff.effective ?? '1 March 2026 · version 2'}</DetailRow>
-            <DetailRow label={tr("Enabled modules")}>Gates, weighing, billing, warehousing, transshipment</DetailRow>
+            <DetailRow label={tr("Enabled modules")}>{[...new Set(moduleCharges.map((c) => c.module))].join(', ')}</DetailRow>
           </Card>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -37,7 +41,14 @@ export default function Charges() {
       <AssumptionNote code="F40" sx={{ mb: 3 }}>
         Haltage on a shared truck is under review. Today each importer is charged, so one truck can be billed many times. BLPA still has to approve one rule for all ports.
       </AssumptionNote>
-      <Typography variant="h6" component="h2" sx={{ mb: 2 }}>{tr('Rates the bills use now')}</Typography>
+      <Typography variant="h6" component="h2" sx={{ mb: 2 }}>{tr('Charges the switched-on modules can create')}</Typography>
+      {unpriced.length > 0 && <Alert severity="error" sx={{ mb: 2 }}>{unpriced.map((c) => c.what).join(', ')}: {tr('the order in force has no rate. Go-live is refused until head office adds one.')}</Alert>}
+      <DataTable rows={moduleCharges} rowKey={(r) => r.key} pageSize={25} columns={[
+        { key: 'what', label: 'Charge', render: (r) => <Typography variant="subtitle2">{r.what}</Typography> },
+        { key: 'module', label: 'Module' },
+        { key: 'rate', label: 'Rate in the order in force', render: (r) => (r.rate == null ? <Label color="error">{tr('No rate')}</Label> : `${formatBDT(r.rate)} per ${r.unit}`) },
+      ]} />
+      <Typography variant="h6" component="h2" sx={{ mt: 4, mb: 2 }}>{tr('Rates the bills use now')}</Typography>
       <DataTable rows={inForce} rowKey={(r) => r.key} pageSize={25} columns={[
         { key: 'what', label: 'Charge', render: (r) => <Typography variant="subtitle2">{r.what}</Typography> },
         { key: 'unit', label: 'Per', render: (r) => r.unit },

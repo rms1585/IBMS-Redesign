@@ -6,7 +6,7 @@ import Label from '../components/Label';
 import { usePort, useStoredState } from '../demo/PortStore';
 import SignAndConfirm from '../demo/SignaturePad';
 import { MISSING_PAYMENTS } from '../data/finance';
-import { formatDateTime } from '../demo/format';
+import { formatBDT, formatDateTime } from '../demo/format';
 import { Confirmation, Plate, ReasonField, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
 import { useT, tr } from '../i18n/LanguageContext';
 
@@ -69,6 +69,56 @@ const NO_LIST = [];
 // Rules that allow an override with a reason, and acts that never do (M-13, Table 59).
 const OVERRIDABLE = ['Storage rule for a place', 'Holding-area call time', 'Aging limit for a lot', 'Weighbridge queue order'];
 const NEVER = ["Customs' release or exit note", 'A paid status', 'A locked load', 'An Exit Pass', 'An active hold', 'An approved correction'];
+
+// Tariff orders waiting for the head-office approver (HO-1, Annex 8.2): every amount, what changes against the
+// order in force, the legal reference and effective date. The person who sent the order cannot approve it.
+function TariffApprovals({ onDone }) {
+  const p = usePort();
+  const orders = (p.state.tariffOrders ?? NO_LIST).filter((o) => o.status === 'Waiting for approval');
+  const [remarks, setRemarks] = useState({});
+  if (!orders.length) return null;
+  const decide = (o, approve) => {
+    p.setStored('tariffOrders', NO_LIST, (l) => l.map((x) => (x.ref === o.ref ? { ...x, status: approve ? 'Approved' : 'Rejected', approval: { approve, by: p.actor.name, at: new Date().toISOString(), remarks: remarks[o.ref]?.trim() ?? '' } } : x)));
+    p.logEvent(`Tariff order ${o.ref} ${approve ? `approved, in force from ${o.effective}` : `rejected: ${remarks[o.ref]?.trim()}`}. Sent by ${o.sentBy}.`, o.ref);
+    onDone(approve ? `${o.ref} approved. It comes into force on ${o.effective}` : `${o.ref} rejected and sent back`);
+  };
+  return (
+    <Card sx={{ p: 3 }}>
+      <SectionTitle>{tr('Tariff orders to approve')}</SectionTitle>
+      <Stack spacing={3}>
+        {orders.map((o) => {
+          const mine = o.sentBy === p.actor.name;
+          return (
+            <Box key={o.ref}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Typography variant="subtitle1">{o.ref}</Typography>
+                <StatusPill word="Waiting approval" />
+              </Stack>
+              <Typography variant="body2" color="text.secondary">{o.legalRef} · effective {o.effective} · billing at {o.ports.join(', ')} · sent by {o.sentBy}</Typography>
+              <Box sx={{ display: 'grid', gap: 0.75, mt: 1.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))' } }}>
+                {Object.entries(o.rates).map(([k, r]) => {
+                  const before = p.tariff.rates[k]?.rate;
+                  const changed = before !== r.rate;
+                  return <Typography key={k} variant="body2" fontWeight={changed ? 600 : 400}>{r.what}: {formatBDT(r.rate)} per {r.unit}{changed ? ` (in force: ${before == null ? 'no rate' : formatBDT(before)})` : ''}</Typography>;
+                })}
+              </Box>
+              <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>{tr('Changed amounts are in bold. Entered by hand from the order; no source document was read.')}</Typography>
+              {mine ? (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{tr('You sent this order, so a different head-office approver decides it.')}</Typography>
+              ) : (
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
+                  <TextField size="small" label={tr('Remarks (required to reject)')} value={remarks[o.ref] ?? ''} onChange={(e) => setRemarks({ ...remarks, [o.ref]: e.target.value })} sx={{ flex: 1 }} />
+                  <Button variant="contained" onClick={() => decide(o, true)}>{tr('Approve order')}</Button>
+                  <Button variant="outlined" color="error" disabled={!remarks[o.ref]?.trim()} onClick={() => decide(o, false)}>{tr('Reject order')}</Button>
+                </Stack>
+              )}
+            </Box>
+          );
+        })}
+      </Stack>
+    </Card>
+  );
+}
 
 function OverrideRequests({ onDone }) {
   const p = usePort();
@@ -227,7 +277,7 @@ export default function Inbox() {
   const [alerts] = useStoredState('inboxAlerts', SEED_ALERTS);
   const recCount = (p.state.outageCases ?? NO_LIST).filter((c) => !c.referred && c.cls !== 'A').length + MISSING_PAYMENTS.length;
   const tabs = [
-    ['Approvals', open.filter((c) => c.by !== p.actor.name).length + (p.state.overrideRequests ?? NO_LIST).filter((o) => !o.decision && o.by !== p.actor.name).length],
+    ['Approvals', open.filter((c) => c.by !== p.actor.name).length + (p.state.overrideRequests ?? NO_LIST).filter((o) => !o.decision && o.by !== p.actor.name).length + (p.state.tariffOrders ?? NO_LIST).filter((o) => o.status === 'Waiting for approval' && o.sentBy !== p.actor.name).length],
     ['Needs attention', passes.length + changes.length + flags.length + late.length],
     ['Reconciliation', recCount],
     ['Alerts', alerts.filter((a) => !a.read).length],
@@ -250,6 +300,7 @@ export default function Inbox() {
             {open.map((c) => <CorrectionItem key={c.id} c={c} onDone={setMsg} />)}
           </Stack>
         </Card>
+        {tab === 0 && <TariffApprovals onDone={setMsg} />}
         {tab === 0 && <OverrideRequests onDone={setMsg} />}
         <Card sx={{ p: 3, display: tab === 1 ? 'block' : 'none' }}>
           <SectionTitle>{tr("Needs attention")}</SectionTitle>

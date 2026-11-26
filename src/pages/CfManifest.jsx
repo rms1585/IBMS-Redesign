@@ -149,12 +149,16 @@ function BillCard({ bill, onPay }) {
 function Slot({ d, slot, idx, onDone }) {
   const p = usePort();
   const [plate, setPlate] = useState('');
-  const bill = p.bill(d.bill);
+  // An extra slot above the ceiling opens on its own top-up bill (EXC-16).
+  const bill = p.bill(slot.extraBill ?? d.bill);
+  if (slot.closedRemark && !slot.plate) {
+    return <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>Slot {idx + 1}{slot.extraBill ? ' (extra)' : ''}: {tr('closed unused')} · {slot.closedRemark}</Typography>;
+  }
   if (slot.plate) {
     const ps = slot.pass && p.pass(slot.pass);
     return (
       <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ py: 1 }}>
-        <Typography variant="body2" color="text.secondary">Slot {idx + 1}</Typography>
+        <Typography variant="body2" color="text.secondary">Slot {idx + 1}{slot.extraBill ? ' (extra)' : ''}</Typography>
         <Plate>{slot.plate}</Plate>
         <SourceMarker source="Keyed by the agency" />
         {slot.enteredAt ? <StatusPill word="Admitted" /> : <StatusPill word="Expected" />}
@@ -164,10 +168,60 @@ function Slot({ d, slot, idx, onDone }) {
   }
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ py: 1 }}>
-      <Typography variant="body2" color="text.secondary">Slot {idx + 1}</Typography>
-      <TextField size="small" label={tr("Plate of the local truck")} value={plate} onChange={(e) => setPlate(e.target.value)} disabled={bill.status !== 'Paid'} helperText={bill.status !== 'Paid' ? 'Pay the bill first; slots open once it is paid' : 'Key it up to the moment the truck enters'} />
-      <Button variant="outlined" disabled={!plate.trim() || bill.status !== 'Paid'} onClick={() => { p.bindPlate(d.id, idx, plate.trim()); onDone(`Plate ${plate.trim()} keyed`); setPlate(''); }}>{tr("Key plate")}</Button>
+      <Typography variant="body2" color="text.secondary">Slot {idx + 1}{slot.extraBill ? ' (extra)' : ''}</Typography>
+      <TextField size="small" label={tr("Plate of the local truck")} value={plate} onChange={(e) => setPlate(e.target.value)} disabled={bill.status !== 'Paid' || d.closed} helperText={bill.status !== 'Paid' ? (slot.extraBill ? 'Pay the top-up bill first; the extra truck enters only once it is paid' : 'Pay the bill first; slots open once it is paid') : 'Key it up to the moment the truck enters'} />
+      <Button variant="outlined" disabled={!plate.trim() || bill.status !== 'Paid' || d.closed} onClick={() => { p.bindPlate(d.id, idx, plate.trim()); onDone(`Plate ${plate.trim()} keyed`); setPlate(''); }}>{tr("Key plate")}</Button>
+      {slot.extraBill && bill.status !== 'Paid' && <Button size="small" variant="contained" onClick={() => { p.payBill(slot.extraBill); onDone('Top-up bill paid. The extra slot is open'); }}>{tr('Pay top-up')} {formatBDT(billTotals(bill).total)}</Button>}
     </Stack>
+  );
+}
+
+// EXC-16 and EXC-18: an extra truck above the ceiling, and closing the request at day end with a remark for each
+// unused slot (CF-9).
+function RequestExtras({ d, onDone }) {
+  const p = usePort();
+  const [mode, setMode] = useState(null);
+  const [reason, setReason] = useState('');
+  const [remarks, setRemarks] = useState({});
+  if (d.closed) {
+    return d.closure ? <Alert severity="info" sx={{ mt: 2 }}>{tr('Closed for the day')} {formatDateTime(d.closure.at)} {tr('by')} {d.closure.by}: {d.closure.used} {tr('of')} {d.closure.paid} {tr('paid slots used')}; {d.closure.unused} {tr('unused, each closed with a remark. Their fee is credited or forfeited under BLPA\'s rule.')}</Alert> : null;
+  }
+  const unused = d.slots.map((sl, i) => ({ sl, i })).filter(({ sl }) => !sl.enteredAt);
+  const close = () => { p.closeDeliveryRequest(d.id, remarks); setMode(null); onDone(`${d.id} closed for the day`); };
+  return (
+    <Box sx={{ mt: 2 }}>
+      {!mode && (
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Button size="small" variant="outlined" color="inherit" onClick={() => setMode('extra')}>{tr('Add an extra truck')}</Button>
+          <Button size="small" variant="outlined" color="inherit" onClick={() => setMode('close')}>{tr('Close for the day')}</Button>
+        </Stack>
+      )}
+      {mode === 'extra' && (
+        <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <Typography variant="subtitle2">{tr('Extra truck above the ceiling of')} {d.ceiling}</Typography>
+          <Typography variant="body2" color="text.secondary">{tr('An extra line and a top-up bill are raised. The extra truck enters only once that bill is paid.')}</Typography>
+          <ReasonField value={reason} onChange={setReason} helper="For example: the goods need one more truck than planned." />
+          <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+            <Button variant="outlined" color="inherit" onClick={() => setMode(null)}>{tr('Cancel')}</Button>
+            <Button variant="contained" disabled={!reason.trim()} onClick={() => { p.addExtraTruck(d.id, reason.trim()); setMode(null); setReason(''); onDone('Extra truck added; top-up bill raised'); }}>{tr('Add extra truck')}</Button>
+          </Stack>
+        </Stack>
+      )}
+      {mode === 'close' && (
+        <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <Typography variant="subtitle2">{tr('Close for the day')}: {d.slots.length - unused.length} {tr('of')} {d.slots.length} {tr('slots used')}</Typography>
+          {unused.length === 0 && <Typography variant="body2" color="text.secondary">{tr('Every slot was used.')}</Typography>}
+          {unused.map(({ sl, i }) => (
+            <TextField key={i} size="small" label={`${tr('Remark for unused slot')} ${i + 1}${sl.extraBill ? ' (extra)' : ''}`} value={remarks[i] ?? ''} onChange={(e) => setRemarks({ ...remarks, [i]: e.target.value })} placeholder="Truck did not come" />
+          ))}
+          <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center">
+            {unused.some(({ i }) => !remarks[i]?.trim()) && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{tr('Give a remark for each unused slot.')}</Typography>}
+            <Button variant="outlined" color="inherit" onClick={() => setMode(null)}>{tr('Cancel')}</Button>
+            <Button variant="contained" disabled={unused.some(({ i }) => !remarks[i]?.trim())} onClick={close}>{tr('Close the request')}</Button>
+          </Stack>
+        </Stack>
+      )}
+    </Box>
   );
 }
 
@@ -323,6 +377,7 @@ export default function CfManifest() {
                         <Stack spacing={1.5} sx={{ mt: 2 }}>
                           {d.slots.filter((sl) => sl.pass).map((sl) => <PassSigning key={sl.pass} pass={p.pass(sl.pass)} ain={ain} onDone={setMsg} />)}
                         </Stack>
+                        <RequestExtras d={d} onDone={setMsg} />
                       </Box>
                     ))}
                   </Stack>

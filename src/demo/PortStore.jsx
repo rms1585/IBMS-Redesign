@@ -65,9 +65,16 @@ export function effectivePort(s) {
   };
 }
 
-// The tariff in force: an order head office activated in Platform setup, otherwise the seed order. Bills raised
-// after an activation use its rates; bills already raised keep theirs (M2 Report 4.6.1, M-12).
-export const effectiveTariff = (s) => s?.tariffActive ?? TARIFF;
+// The tariff in force: the latest order a head-office approver approved whose effective date has come (HO-1,
+// Annex 8.2), otherwise an order activated before approvals existed, otherwise the seed order. Bills raised after
+// it comes into force use its rates; bills already raised keep theirs (M2 Report 4.6.1, M-12).
+export const effectiveTariff = (s) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const inForce = (s?.tariffOrders ?? []).filter((o) => o.status === 'Approved' && o.effective <= today)
+    .sort((a, b) => a.effective.localeCompare(b.effective)).pop();
+  if (inForce) return { ref: inForce.ref, version: `Tariff order ${inForce.ref}`, legalRef: inForce.legalRef, effective: inForce.effective, vat: TARIFF.vat, rates: inForce.rates };
+  return s?.tariffActive ?? TARIFF;
+};
 
 // Screens that belong to an optional module disappear when it is switched off for the port.
 export const MODULE_OF_PATH = { '/rail': 'rail', '/passenger': 'busTerminal', '/warehousing': 'warehousing' };
@@ -377,6 +384,29 @@ export function PortProvider({ children }) {
           n.bills.push({ id: billId, paymentId: `PAY-601-26-${String(n.seq).padStart(4, '0')}`, party: b.agency, for: { kind: 'dr', id: drId }, raisedAt: new Date().toISOString(), lines, status: 'Payment due' });
           n.deliveryRequests.unshift({ id: drId, boe: boeId, day: new Date().toISOString(), kg, ceiling, agency: b.agency, raisedAt: new Date().toISOString(), bill: billId, slots: Array.from({ length: ceiling }, () => ({ plate: null, entryPass: null, enteredAt: null, load: null, pass: null })), closed: false });
           log(`Delivery Request ${drId} raised on ${formatBoe(b)}: ${kg.toLocaleString('en-US')} kg today, up to ${ceiling} truck${ceiling === 1 ? '' : 's'}; bill raised`, b.manifest, 'Keyed by the agency');
+        }),
+
+      // EXC-16: an extra truck above the ceiling gets its own line and top-up bill; it enters only once that is paid.
+      addExtraTruck: (drId, reason) =>
+        change((n, { log, id }) => {
+          const d = n.deliveryRequests.find((x) => x.id === drId);
+          const b = n.boes.find((x) => x.id === d.boe);
+          n.seq += 1;
+          const billId = id('BILL');
+          n.bills.push({ id: billId, paymentId: `PAY-601-26-${String(n.seq).padStart(4, '0')}`, party: d.agency, for: { kind: 'dr', id: drId, extra: true }, raisedAt: new Date().toISOString(), lines: [{ what: 'Entrance fee, extra local truck above the ceiling', qty: 1, unit: 'truck', rate: effectiveTariff(n).rates.entrance.rate, note: reason }], status: 'Payment due' });
+          d.slots.push({ plate: null, entryPass: null, enteredAt: null, load: null, pass: null, extraBill: billId, reason });
+          log(`Extra truck added to ${drId} above its ceiling of ${d.ceiling}: ${reason}. Top-up bill raised`, b.manifest, 'Keyed by the agency');
+        }),
+      // EXC-18: at day end the agency closes the request; each unused slot is closed with a remark.
+      closeDeliveryRequest: (drId, remarks) =>
+        change((n, { log }) => {
+          const d = n.deliveryRequests.find((x) => x.id === drId);
+          const b = n.boes.find((x) => x.id === d.boe);
+          const unused = d.slots.map((sl, i) => ({ sl, i })).filter(({ sl }) => !sl.enteredAt);
+          unused.forEach(({ sl, i }) => { sl.closedRemark = remarks[i]; });
+          d.closed = true;
+          d.closure = { at: new Date().toISOString(), by: actor.name, used: d.slots.length - unused.length, paid: d.slots.filter((sl) => !sl.extraBill || n.bills.find((x) => x.id === sl.extraBill)?.status === 'Paid').length, unused: unused.length };
+          log(`Delivery Request ${drId} closed for the day: ${d.closure.used} of ${d.closure.paid} paid slots used; ${unused.length} unused, each with a remark`, b.manifest, 'Keyed by the agency');
         }),
 
       payBill: (billId) =>

@@ -575,3 +575,29 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
     24.4 allows a pop-up for an action that cannot be undone.
   - FormDrawer's panel has `role="dialog"` and `aria-modal="true"`, so screen readers announce it as a dialog with
     its title.
+- **Annex 9 batch A (2026-11-26, from `~/IBMS Audits/M2-annex9-stories-2026-11-26.md`):**
+  - **HO-1, tariff approval:**
+    - A recorded tariff order gets its rates entered and is then sent for approval. It no longer activates at once.
+    - A head-office approver decides it in Inbox > Approvals. The card shows the legal reference, the effective
+      date, every rate, and each change against the order in force. The sender sees no Approve button, and a
+      rejection needs remarks.
+    - `effectiveTariff()` puts in force the latest approved order whose effective date has come.
+    - Earlier orders stay listed with their rates, marked Replaced.
+    - Reading the source document is not built, and the card says so.
+  - **RC-2, rate coverage:**
+    - `src/demo/tariff.js` maps each module to the charges it can create. The seed order now prices rail wagon
+      handling, the bus terminal and the stone route.
+    - What this port charges lists every charge the switched-on modules can create, with the rate or "No rate".
+    - The go-live check refuses when a rate is missing, naming the charge. Example: switch export storage on.
+  - **BO-7, stone bills:** one shared shipment record (`src/demo/stone.js`) drives the Weighbridge weigh-back and
+    Billing > Stone route (preview).
+    - The up-front bill covers stone on the declared weight plus each truck's expected charges.
+    - After the weigh-back, a top-up is raised only for what is owed above the prepaid share.
+    - Each truck's exit lock lists what still holds it, and lifts when the bills are paid and Customs' release is
+      in.
+    - The route stays disabled at the pilot ports, so this is a Bhomra preview.
+  - **CF-9, Delivery Request extras and closing:**
+    - "Add an extra truck" adds a slot above the ceiling with its own top-up bill (EXC-16). The slot opens, and
+      the inland gate admits the truck, only once that bill is paid.
+    - "Close for the day" needs a remark for each unused slot (EXC-18). It records slots used against slots paid,
+      and closed requests admit no more trucks.

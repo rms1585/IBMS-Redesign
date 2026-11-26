@@ -4,7 +4,8 @@ import { PageHeader } from '../components/common';
 import { tareValid, usePort, useStoredState } from '../demo/PortStore';
 import Label from '../components/Label';
 import { usePortRules } from '../demo/portRules';
-import { billableTonnes, formatDateTime, formatDuration, formatKg, formatTonnes } from '../demo/format';
+import { useStoneShipment } from '../demo/stone';
+import { billableTonnes, formatBDT, formatDateTime, formatDuration, formatKg, formatTonnes } from '../demo/format';
 import { ActionFoot, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
 import { useT, tr } from '../i18n/LanguageContext';
 
@@ -202,43 +203,21 @@ function UnmatchedReadings({ visits, onDone }) {
   );
 }
 
-// Stone route (Bhomra and Burimari, where the port has an outside yard): the shipment is billed up front, so the
-// truck back from the unloading zone is weighed empty first and only a charge above the prepaid bill goes on a
-// top-up bill, paid before the final exit (I5.8, N-I8.3). The route stays disabled until NBR and BLPA decide its
-// control (Section 3.4.5), so this is shown as a preview with demo trucks.
-const STONE_RATE_PER_T = 140;
-const SEED_STONE = [
-  { id: 'ST-BHO-0091', plate: 'WB 51 K 2208', port: 'Bhomra', loadedKg: 24300, prepaidT: 13, prepaidTk: 13 * STONE_RATE_PER_T + 300, nights: 1 },
-  { id: 'ST-BHO-0094', plate: 'WB 49 H 7715', port: 'Bhomra', loadedKg: 21900, prepaidT: 15, prepaidTk: 15 * STONE_RATE_PER_T + 300, nights: 0 },
-];
+// Stone route weigh-back (BO-7): the empty truck back from the unloading zone is weighed; the difference against the
+// prepaid share goes on a top-up bill in Billing (src/demo/stone.js). Preview: the route stays disabled.
+const DEMO_EMPTY_KG = { 'WB 51 K 2208': 7460, 'WB 49 H 7715': 7360 };
 
 function StoneWeighBack({ onDone }) {
-  const [trucks, setTrucks] = useStoredState('stoneWeighBack', SEED_STONE);
-  const weigh = (t) => setTrucks((all) => all.map((x) => (x.id === t.id ? { ...x, emptyKg: 7400 + (x.id.endsWith('1') ? 60 : -40) } : x)));
-  const topUpOf = (t) => {
-    const netT = Math.ceil((t.loadedKg - t.emptyKg) / 1000);
-    const due = netT * STONE_RATE_PER_T + 300 + t.nights * 250;
-    return { netT, due, topUp: Math.max(0, due - t.prepaidTk) };
-  };
-  const raise = (t) => {
-    const { topUp } = topUpOf(t);
-    setTrucks((all) => all.map((x) => (x.id === t.id ? { ...x, topUpRaised: topUp } : x)));
-    onDone(topUp ? `Top-up bill of Tk ${topUp.toLocaleString('en-US')} raised for ${t.plate}` : `No top-up due for ${t.plate}; the exit lock waits only on Customs' release`);
-  };
+  const stone = useStoneShipment();
   return (
     <Card sx={{ p: 3, mt: 3 }}>
       <SectionTitle>{tr("Stone trucks back from the unloading zone")}</SectionTitle>
       <Alert severity="info" sx={{ mb: 2 }}>{tr("Preview for Bhomra and Burimari. The stone route stays disabled in IBMS until NBR and BLPA decide its control; Benapole has no outside yard.")}</Alert>
-      <ResponsiveTable rowKey={(t) => t.id} rows={trucks} columns={[
-        { label: 'Truck', render: (t) => <><Plate>{t.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{t.port} · prepaid {t.prepaidT} t, Tk {t.prepaidTk.toLocaleString('en-US')}</Typography></> },
+      <ResponsiveTable rowKey={(t) => t.plate} rows={stone.trucks} columns={[
+        { label: 'Truck', render: (t) => <><Plate>{t.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{stone.ship.port} · prepaid {formatBDT(t.prepaid)}</Typography></> },
         { label: 'Loaded weight', align: 'right', priority: 'low', render: (t) => formatKg(t.loadedKg) },
-        { label: 'Empty weight', align: 'right', render: (t) => (t.emptyKg ? formatKg(t.emptyKg) : '–') },
-        { label: 'Top-up', align: 'right', render: (t) => {
-          if (!t.emptyKg) return <Button size="small" variant="outlined" color="inherit" onClick={() => weigh(t)}>{tr("Weigh empty")}</Button>;
-          const { netT, topUp } = topUpOf(t);
-          if (t.topUpRaised !== undefined) return <Label color={t.topUpRaised ? 'warning' : 'success'}>{t.topUpRaised ? `Top-up Tk ${t.topUpRaised.toLocaleString('en-US')} raised` : 'Nothing above the prepaid bill'}</Label>;
-          return <Stack alignItems="flex-end" spacing={0.5}><Typography variant="caption" color="text.secondary">{netT} t net{t.nights ? `, ${t.nights} night` : ''}: Tk {topUp.toLocaleString('en-US')} above prepaid</Typography><Button size="small" variant="contained" onClick={() => raise(t)}>{topUp ? 'Raise top-up bill' : 'Confirm no top-up'}</Button></Stack>;
-        } },
+        { label: 'Empty weight', align: 'right', render: (t) => (t.emptyKg ? formatKg(t.emptyKg) : <Button size="small" variant="outlined" color="inherit" onClick={() => { stone.weighEmpty(t.plate, DEMO_EMPTY_KG[t.plate]); onDone(`${t.plate} weighed empty`); }}>{tr("Weigh empty")}</Button>) },
+        { label: 'Top-up', align: 'right', render: (t) => (t.topUpNet == null ? '–' : t.topUpNet === 0 ? <Label color="success">{tr('Nothing above the prepaid bill')}</Label> : <Typography variant="body2">{formatBDT(t.topUpNet)} {tr('above prepaid; bill in Billing')}</Typography>) },
       ]} />
     </Card>
   );
