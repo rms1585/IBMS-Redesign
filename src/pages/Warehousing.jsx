@@ -3,6 +3,7 @@ import { Alert, Box, Button, Card, Checkbox, FormControlLabel, MenuItem, Stack, 
 import { useSearchParams } from 'react-router-dom';
 import Auction from './Auction';
 import { initialEquipment } from './Equipment';
+import { usePortRules } from '../demo/portRules';
 import Label from '../components/Label';
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
@@ -25,9 +26,6 @@ const PLACES = [
   { id: 'Shed 31 · Bay 2', takes: 'chemicals' },
   { id: 'Open yard B · Row 4', takes: 'heavy' },
 ];
-// Aging limits for this port (BLPA sets them per port): flagged at one month, referred to the port in-charge at two.
-const AGING_FLAG_DAYS = 30;
-const AGING_REFER_DAYS = 60;
 
 const ASSOCIATIONS = ['Benapole Port Labour Association No. 1', 'Benapole Port Labour Association No. 2', 'Benapole Port Labour Association No. 3'];
 
@@ -221,12 +219,16 @@ function Custody({ onDone }) {
   const [shifts, setShifts] = useStoredState('cargoShifts', NO_LIST);
   const [exceptions] = useStoredState('receiptExceptions', NO_MAP);
   const [shifting, setShifting] = useState(null);
+  // Aging limits come from Port setup > Rules and limits.
+  const [rules] = usePortRules();
+  const flagAt = Number(rules.agingFlag);
+  const referAt = Number(rules.agingRefer);
   const placeOf = (r) => [...shifts].reverse().find((x) => x.line === r.l.id)?.to ?? r.v.posting?.shed;
   const lots = p.state.visits.filter((v) => v.receipt?.locked).flatMap((v) => p.linesOfVisit(v).map((l) => ({ v, l, b: p.boeOfLine(l.id) }))).filter(({ b }) => !b?.closed);
   return (
     <Stack spacing={3}>
     <Card sx={{ p: 3 }}>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Aging limits at this port: flagged at {AGING_FLAG_DAYS} days, referred to the port in-charge at {AGING_REFER_DAYS} days.</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Aging limits at this port: flagged at {flagAt} days, referred to the port in-charge at {referAt} days (Port setup).</Typography>
       <ResponsiveTable
         rowKey={(r) => r.l.id}
         rows={lots}
@@ -237,7 +239,7 @@ function Custody({ onDone }) {
           { label: 'Place', render: (r) => <>{placeOf(r)}{exceptions[r.l.id] && <Typography variant="caption" color="warning.text" component="div">{exceptions[r.l.id].kind} recorded at receipt</Typography>}</> },
           { label: 'In custody', align: 'right', render: (r) => formatKg(r.v.receipt.lines[r.l.id].receiptKg - (r.b?.deliveredKg ?? 0)) },
           { label: 'Storage', align: 'right', priority: 'low', render: (r) => `${daysSince(r.v.receipt.at)} days` },
-          { label: 'Aging', priority: 'low', render: (r) => <AgingFlag days={daysSince(r.v.receipt.at)} /> },
+          { label: 'Aging', priority: 'low', render: (r) => <AgingFlag days={daysSince(r.v.receipt.at)} flagAt={flagAt} referAt={referAt} /> },
           { label: 'Status', render: (r) => { const h = p.holdsOnManifest(r.l.manifest); return <StatusPill word={h.length ? 'Customs hold' : r.b?.release ? 'Released' : 'Awaiting Customs'} />; } },
           { label: '', align: 'right', render: (r) => <Button size="small" variant="outlined" color="inherit" onClick={() => setShifting(r)}>Shift</Button> },
         ]}
@@ -261,9 +263,9 @@ function Custody({ onDone }) {
   );
 }
 
-function AgingFlag({ days }) {
-  if (days >= AGING_REFER_DAYS) return <Label color="error">{days} days · refer</Label>;
-  if (days >= AGING_FLAG_DAYS) return <Label color="warning">{days} days · flagged</Label>;
+function AgingFlag({ days, flagAt, referAt }) {
+  if (days >= referAt) return <Label color="error">{days} days · refer</Label>;
+  if (days >= flagAt) return <Label color="warning">{days} days · flagged</Label>;
   return <Label>{days} days</Label>;
 }
 

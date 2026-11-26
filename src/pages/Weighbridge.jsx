@@ -3,6 +3,7 @@ import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from
 import { PageHeader } from '../components/common';
 import { tareValid, usePort, useStoredState } from '../demo/PortStore';
 import Label from '../components/Label';
+import { usePortRules } from '../demo/portRules';
 import { billableTonnes, formatDateTime, formatDuration, formatKg, formatTonnes } from '../demo/format';
 import { ActionFoot, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
@@ -23,6 +24,8 @@ export default function Weighbridge() {
   const [typing, setTyping] = useState(false);
   const [typedKg, setTypedKg] = useState('');
   const [reason, setReason] = useState('');
+  const [rules] = usePortRules();
+  const [seal, setSeal] = useState('');
   const item = queue.find((x) => x.id === sel) ?? queue[0];
   const v = item && p.visit(item.id);
   const declared = v ? p.declaredKgOfVisit(v) : 0;
@@ -86,6 +89,7 @@ export default function Weighbridge() {
                 <Fact label="Tolerance">{p.port.tolerancePct}%</Fact>
               </Facts>
             )}
+            {rules.fields.sealNumber && item.job !== 'empty' && <TextField size="small" label="Seal number" value={seal} onChange={(e) => setSeal(e.target.value)} helperText="Shown because this port records seal numbers (Port setup)" sx={{ maxWidth: 280 }} />}
             {over && <Alert severity="warning">Weight over tolerance. Capturing it flags the reading to the BLPA and Customs officials; IBMS places no hold of its own. An authorized official may place one.</Alert>}
             {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
             {typing ? (

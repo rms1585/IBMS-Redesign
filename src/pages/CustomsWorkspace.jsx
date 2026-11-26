@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Alert, Box, Button, Card, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
+import Label from '../components/Label';
 import { useRole } from '../RoleContext';
-import { usePort } from '../demo/PortStore';
-import { formatDateTime, formatKg } from '../demo/format';
+import { usePort, useStoredState } from '../demo/PortStore';
+import { formatDateTime, formatKg, searchKey } from '../demo/format';
+import { initialReceipts } from './Passenger';
 import { ApprovalRow, Confirmation, HoldRow, Plate, ReasonField, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
 
@@ -166,6 +168,29 @@ function ReadOnlyTrucks() {
   );
 }
 
+const NONE_USED = [];
+
+// BGB and Immigration see who paid the passenger fee and whether the ticket was used at the checkpoint before
+// Immigration. Read-only; IBMS holds no immigration status (M-20).
+function PassengerList() {
+  const [receipts] = useStoredState('passengerReceipts', initialReceipts);
+  const [used] = useStoredState('passengerTicketsUsed', NONE_USED);
+  const [q, setQ] = useState('');
+  const k = searchKey(q);
+  const rows = receipts.filter((r) => !k || searchKey(`${r.name} ${r.passport} ${r.id}`).includes(k));
+  return (
+    <>
+      <TextField size="small" label="Search name, passport or receipt" value={q} onChange={(e) => setQ(e.target.value)} sx={{ mb: 2, maxWidth: 360 }} fullWidth />
+      <ResponsiveTable rowKey={(r) => r.id} rows={rows} empty="No passenger matches." columns={[
+        { label: 'Passenger', render: (r) => <><Typography variant="subtitle2">{r.name}</Typography><Typography variant="caption" color="text.secondary">Passport {r.passport} · {r.country.split('-')[1] ?? r.country}</Typography></> },
+        { label: 'Fee receipt', render: (r) => r.id },
+        { label: 'Paid', priority: 'low', render: (r) => `${r.at} · ${r.method}` },
+        { label: 'Checkpoint', align: 'right', render: (r) => (used.includes(r.id) ? <Label color="success">Ticket used</Label> : <Label>Not yet at the checkpoint</Label>) },
+      ]} />
+    </>
+  );
+}
+
 export default function CustomsWorkspace() {
   const t = useT();
   const { role } = useRole();
@@ -174,7 +199,7 @@ export default function CustomsWorkspace() {
   const [tab, setTab] = useState(0);
   const [msg, setMsg] = useState('');
   const customs = body === 'Customs';
-  const tabs = customs ? ['Holds', 'Weight flags', 'Co-approvals', 'Re-weigh flags', 'Trucks'] : ['Trucks', 'Holds'];
+  const tabs = customs ? ['Holds', 'Weight flags', 'Co-approvals', 'Re-weigh flags', 'Trucks'] : ['Trucks', 'Passengers', 'Holds'];
   const current = tabs[tab] ?? tabs[0];
   return (
     <>
@@ -187,7 +212,7 @@ export default function CustomsWorkspace() {
           </TextField>
         )}
       />
-      {!customs && <Alert severity="info" sx={{ mb: 2 }}>No immigration status is held in IBMS. Passenger records are in the passenger module.</Alert>}
+      {!customs && <Alert severity="info" sx={{ mb: 2 }}>No immigration status is held in IBMS. Passenger records from the fee counter are on the Passengers tab.</Alert>}
       <Card sx={{ px: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
           {tabs.map((x) => <Tab key={x} label={x} />)}
@@ -199,6 +224,7 @@ export default function CustomsWorkspace() {
         {current === 'Co-approvals' && <CoApprovals onDone={setMsg} />}
         {current === 'Re-weigh flags' && <Reweigh onDone={setMsg} />}
         {current === 'Trucks' && <ReadOnlyTrucks />}
+        {current === 'Passengers' && <PassengerList />}
       </Card>
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>

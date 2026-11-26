@@ -511,3 +511,31 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   - Audit log:
     - Filters for person, role and period, and "only keyed, typed or back-entered values".
     - Export first shows a notice. The export itself is written to the audit trail, with the filters used.
+- **Step 4 batch 4, the last batch (B8, B17, B19–B22, Bangla):**
+  - Port setup has a new step, "Rules and limits", saved per port in `src/demo/portRules.js`. The benches read it:
+    - The "Other" manifest switch. With it off, the gate refuses BNSW-down keyed lines and the truck waits.
+    - Optional fields: driver mobile and truck colour at the border gate, seal number at the weighbridge.
+    - Holding-area places and call time, shown on Posting.
+    - Aging limits, used by Warehousing > Custody.
+    - Approval time limits with night delegates.
+    - Open-record limits with owners.
+  - A tariff order now needs its legal reference (SRO or gazette notice). Reading a scanned tariff is not built.
+  - Rail:
+    - A train arrival is keyed in BNSW-down mode and marked keyed.
+    - A notice releases the empty wagons.
+    - Export wagons are loaded and sealed per wagon.
+    - The hand-over is refused without every wagon loaded, Customs' release, the bill paid and no hold. The
+      departure closes the record.
+  - Licences: a renewed licence needs a copy and the licensing authority's reference. Both show as evidence.
+  - Labour:
+    - A Workers tab holds profiles and card status.
+    - Attendance has a demo card reader. It refuses unknown cards, blocked cards and a card already in use.
+    - A worker can be marked present without a read only with a reason, and the record shows "By hand".
+  - Importer portal:
+    - "Download the record" on each consignment.
+    - "Can't find your consignment?" raises a BIN mismatch case to Customs when the manifest names another
+      importer.
+  - The Customs workspace for BGB and Immigration has a Passengers tab: fee receipts and whether each ticket was
+    used at the checkpoint.
+  - Bangla: 150 strings already set up for translation got Bangla, including every C&F 3e string. Many headings
+    and help texts added in step 4 are still plain English in the code and are not translated yet.

@@ -3,6 +3,7 @@ import { Alert, Box, Button, Stack, TextField, ToggleButton, ToggleButtonGroup, 
 import { PageHeader } from '../components/common';
 import { agencyName, importerName, usePort, useStoredState } from '../demo/PortStore';
 import { formatDateTime, formatDuration, formatKg, searchKey } from '../demo/format';
+import { usePortRules } from '../demo/portRules';
 
 const NO_LIST = [];
 const NO_MAP = {};
@@ -32,11 +33,17 @@ function EntryBench({ onDone }) {
   // EXC-03: a plate that already has an open visit is a hard stop.
   const openTwin = v ? p.state.visits.find((x) => x.id !== v.id && x.plate === v.plate && x.gateIn && x.stage !== 'Exited') : null;
   const keyedForV = v ? keyedLines[v.id] ?? NO_LIST : NO_LIST;
+  const [rules] = usePortRules();
+  // Optional fields this port switched on in Port setup; recorded per visit.
+  const [extra, setExtra] = useStoredState('gateExtraFields', NO_MAP);
+  const extraOf = (key) => (v ? extra[v.id]?.[key] ?? '' : '');
+  const setExtraOf = (key) => (e) => setExtra((all) => ({ ...all, [v.id]: { ...all[v.id], [key]: e.target.value } }));
   const needKeyed = v && v.late && p.state.bnswDown;
+  const otherOff = needKeyed && !rules.otherManifest;
   const checks = v ? [
     ...p.admissionChecks(v),
     ...(openTwin ? [{ label: 'One open visit per plate', state: 'fail', text: `${v.plate} already has an open visit (${openTwin.id}). Second gate-in refused and the supervisor alerted (EXC-03).` }] : []),
-    ...(needKeyed ? [{ label: 'Manifest lines keyed from the Car Pass', state: keyedForV.length ? 'pass' : 'fail', text: keyedForV.length ? `${keyedForV.length} line${keyedForV.length === 1 ? '' : 's'} keyed (BNSW-down mode).` : 'BNSW is down: key the manifest lines written on the Car Pass.' }] : []),
+    ...(otherOff ? [{ label: 'Manual "Other" manifest', state: 'fail', text: 'This port does not allow "Other" manifest entry (Port setup). The truck waits until BNSW returns.' }] : needKeyed ? [{ label: 'Manifest lines keyed from the Car Pass', state: keyedForV.length ? 'pass' : 'fail', text: keyedForV.length ? `${keyedForV.length} line${keyedForV.length === 1 ? '' : 's'} keyed (BNSW-down mode).` : 'BNSW is down: key the manifest lines written on the Car Pass.' }] : []),
   ] : [];
   const blocked = checks.some((c) => c.state === 'fail');
   const admit = useCallback(() => {
@@ -101,6 +108,7 @@ function EntryBench({ onDone }) {
             <Fact label="Car Pass number">{v.carPass}</Fact>
             <Fact label="Vehicle class">{v.vehicleClass}, {v.axles} axles</Fact>
             <Fact label="Driver (from the Car Pass)">{v.driver.name}<br />{v.driver.nid}</Fact>
+
             <Fact label="Entered by">{v.enteredBy ? agencyName(v.enteredBy) : '–'}</Fact>
             <Fact label="Manifests">{v.manifests.join(', ') || v.carPassManifest}</Fact>
           </Facts>
@@ -115,7 +123,13 @@ function EntryBench({ onDone }) {
               ))}
             </Box>
           ))}
-          {needKeyed && (
+          {(rules.fields.driverMobile || rules.fields.truckColour) && (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              {rules.fields.driverMobile && <TextField size="small" label="Driver mobile" inputMode="tel" value={extraOf('driverMobile')} onChange={setExtraOf('driverMobile')} />}
+              {rules.fields.truckColour && <TextField size="small" label="Truck colour" value={extraOf('truckColour')} onChange={setExtraOf('truckColour')} />}
+            </Stack>
+          )}
+          {needKeyed && !otherOff && (
             <Box>
               <SectionTitle>Manifest lines keyed from the Car Pass (BNSW down)</SectionTitle>
               {keyedForV.map((l, i) => <Stack key={i} direction="row" justifyContent="space-between" sx={{ py: 0.5 }}><Typography variant="body2">Line {i + 1}: {l.goods}</Typography><Stack direction="row" spacing={1} alignItems="center"><Typography variant="body2">{formatKg(l.kg)}</Typography><SourceMarker source="Keyed at the gate" /></Stack></Stack>)}

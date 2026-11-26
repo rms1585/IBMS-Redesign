@@ -153,6 +153,7 @@ const REGISTERS = {
     title: 'Record tariff order', action: 'Record tariff order', subtitle: 'Saved as a draft until head office activates it. Rates are entered line by line afterwards.',
     fields: [
       { key: 'ref', label: 'Order reference', required: true, placeholder: 'TO-2027-01', check: (v) => (/^TO-\d{4}-\d{2}$/.test(v) ? '' : 'Use the form TO-2027-01') },
+      { key: 'legalRef', label: 'Legal reference (SRO or gazette notice)', required: true, placeholder: 'SRO 118-Law/2027' },
       { key: 'effective', label: 'Effective from', kind: 'date', required: true },
       { key: 'ports', label: 'Billing at', kind: 'multi', options: PORT_CODES, initial: [], required: true },
       { key: 'storageFree', label: 'Free storage days', initial: '3', check: (v) => (/^\d+$/.test(v) ? '' : 'A whole number') },
@@ -226,7 +227,7 @@ function DraftOrder({ order, active, onActivate }) {
         <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">{order.ref}</Typography>{active ? <Label color="success">{tr('Active')}</Label> : <Label color="warning">{tr('Draft')}</Label>}</Stack>
         {!active && !editing && <Button variant="outlined" color="inherit" onClick={() => setEditing(true)}>{tr('Enter rates and activate')}</Button>}
       </Stack>
-      <Typography variant="body2" color="text.secondary">Effective {order.effective} · billing at {order.ports.join(', ')} · free days: storage {order.storageFree}, haltage {order.haltageFree}</Typography>
+      <Typography variant="body2" color="text.secondary">{order.legalRef ? `${order.legalRef} · ` : ''}Effective {order.effective} · billing at {order.ports.join(', ')} · free days: storage {order.storageFree}, haltage {order.haltageFree}</Typography>
       {editing && !active && (
         <Box sx={{ mt: 2 }}>
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))' } }}>
@@ -300,7 +301,7 @@ export default function PlatformSetup() {
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
               <Box>
                 <Stack direction="row" spacing={1} alignItems="center"><Typography variant="h6">TO-2026-03</Typography>{activeTariff ? <Label>{tr('Replaced')}</Label> : <Label color="success">{tr('Active')}</Label>}</Stack>
-                <Typography variant="body2" color="text.secondary">Invented reference · effective 1 Mar 2026 · billing at BEN, BUR, SON, AKH</Typography>
+                <Typography variant="body2" color="text.secondary">Legal reference: invented for the demo · effective 1 Mar 2026 · billing at BEN, BUR, SON, AKH</Typography>
               </Box>
               <Stack direction="row" spacing={1}><Button variant="outlined" color="inherit">{tr("Edit details")}</Button><Button variant="outlined" color="error">{tr("Deactivate")}</Button></Stack>
             </Stack>

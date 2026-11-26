@@ -60,7 +60,7 @@ const categories = ['Standard', 'Illiterate (assisted)', 'Disabled', 'Sick'];
 const today = () => new Date().toISOString().slice(0, 10);
 // Stored with the record, so it has to stay true later: the clock time, not "Just now".
 const nowLabel = () => `Today, ${new Date().toTimeString().slice(0, 5)}`;
-const initialReceipts = [
+export const initialReceipts = [
   { id: 'PF-BEN-55104', name: 'Anirban Ghosh', phone: '', passport: 'Z4827713', country: 'IND-India', port: ports[0], date: today(), category: 'Standard', method: 'Cash at counter', at: 'Today, 10:48', by: 'Counter 2' },
   { id: 'PF-BEN-55103', name: 'Rafiqul Islam', phone: '+880 1711234567', passport: 'A09451820', country: 'BGD-Bangladesh', port: ports[0], date: today(), category: 'Standard', method: 'bKash', at: 'Today, 10:42', by: 'Counter 2' },
   { id: 'PF-BEN-55102', name: 'Mita Rani Das', phone: '', passport: 'T6631954', country: 'IND-India', port: ports[0], date: today(), category: 'Disabled', method: 'Cash at counter', at: 'Today, 10:36', by: 'Counter 1' },

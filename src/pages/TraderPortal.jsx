@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
-import { agencyName, billTotals, importerName, usePort } from '../demo/PortStore';
+import { agencyName, billTotals, importerName, usePort, useStoredState } from '../demo/PortStore';
+import { downloadRecord } from './CfExtras';
+import { searchKey } from '../demo/format';
 import { formatBDT, formatKg } from '../demo/format';
 import { Confirmation, Id, Plate, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
@@ -32,6 +34,47 @@ function TagControl({ m, bin, onDone }) {
   );
 }
 
+const NO_LIST = [];
+
+// An importer that cannot find its consignment keys the manifest number. If the manifest names another importer's
+// BIN on its lines, a case goes to Customs through BNSW; IBMS never changes the consignee itself (M-15).
+function FindManifest({ bin, onDone }) {
+  const p = usePort();
+  const [cases, setCases] = useStoredState('binCases', NO_LIST);
+  const [q, setQ] = useState('');
+  const [note, setNote] = useState('');
+  const m = q.trim() ? p.state.manifests.find((x) => searchKey(x.id) === searchKey(q)) : null;
+  const theirs = m && !m.lines.some((l) => l.importer === bin) ? [...new Set(m.lines.map((l) => l.importer))] : [];
+  const mine = cases.filter((c) => c.bin === bin);
+  const raise = () => {
+    const id = `BM-BEN-2026-${String(cases.length + 17).padStart(4, '0')}`;
+    setCases((l) => [...l, { id, bin, manifest: m.id, named: theirs.map(importerName).join(', '), note: note.trim(), at: new Date().toISOString(), status: 'With Customs' }]);
+    p.logEvent(`BIN mismatch case ${id} raised by ${importerName(bin)} on ${m.id}: ${note.trim()}`, m.id);
+    setQ(''); setNote('');
+    onDone(`Case ${id} sent to Customs through BNSW`);
+  };
+  return (
+    <Card sx={{ p: 3 }}>
+      <SectionTitle>Can't find your consignment?</SectionTitle>
+      <TextField size="small" label="Manifest number on your papers" placeholder="2026/601/08852" value={q} onChange={(e) => setQ(e.target.value)} sx={{ maxWidth: 360 }} fullWidth />
+      {q.trim() && !m && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Not in IBMS yet. It appears here when Customs' manifest reaches IBMS through BNSW; at the gate it can be keyed from the Car Pass as an "Other" manifest until then.</Typography>}
+      {m && !theirs.length && <Typography variant="body2" sx={{ mt: 1.5 }}>{m.id} already names your BIN; it is listed below.</Typography>}
+      {m && theirs.length > 0 && (
+        <Stack spacing={1.5} sx={{ mt: 2 }}>
+          <Alert severity="warning">{m.id} names {theirs.map(importerName).join(', ')} as consignee, not your BIN {bin}. Only Customs can correct a manifest; raise a case and Customs answers through BNSW.</Alert>
+          <TextField size="small" label="What is wrong" placeholder="Our LC 0417-26-0133 covers line 1" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Box><Button variant="contained" disabled={!note.trim()} onClick={raise}>Raise a BIN mismatch case</Button></Box>
+        </Stack>
+      )}
+      {mine.length > 0 && (
+        <Stack spacing={1} sx={{ mt: 2 }}>
+          {mine.map((c) => <Typography key={c.id} variant="body2">{c.id}: {c.manifest} names {c.named}. {c.note} · <strong>{c.status}</strong></Typography>)}
+        </Stack>
+      )}
+    </Card>
+  );
+}
+
 export default function TraderPortal() {
   const p = usePort();
   const t = useT();
@@ -52,6 +95,7 @@ export default function TraderPortal() {
         )}
       />
       <Stack spacing={2.5}>
+        <FindManifest bin={bin} onDone={setMsg} />
         {mine.length === 0 && <Alert severity="info">No manifest names your BIN yet. When Customs' manifest reaches IBMS through BNSW it appears here, and you tag your C&F agency.</Alert>}
         {mine.map((m) => {
           const lines = m.lines.filter((l) => l.importer === bin);
@@ -59,10 +103,12 @@ export default function TraderPortal() {
           const bills = p.state.bills.filter((b) => b.for.kind === 'dr' && p.boe(p.dr(b.for.id)?.boe)?.importer === bin && p.boe(p.dr(b.for.id)?.boe)?.manifest === m.id);
           return (
             <Card key={m.id} sx={{ p: 3 }}>
-              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 1 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
                 <Typography variant="h6"><Id sx={{ typography: 'h6' }}>{m.id}</Id></Typography>
                 <Typography variant="body2" color="text.secondary">{m.alias}</Typography>
                 {!m.tags[bin] && <StatusPill word="Open" />}
+                <Box sx={{ flex: 1 }} />
+                <Button size="small" variant="outlined" color="inherit" onClick={() => { const v = p.visitOfManifest(m.id); downloadRecord(m, lines, v ? [v] : [], p.state.boes.filter((b) => b.manifest === m.id && b.importer === bin), p.state.events.filter((e) => e.record === m.id)); }}>Download the record</Button>
               </Stack>
               {!m.tags[bin] && <Alert severity="warning" sx={{ mb: 2 }}>No agency is tagged to your lines. Until you tag one, no agency can act and the truck is not admitted.</Alert>}
               <SectionTitle>Your lines</SectionTitle>

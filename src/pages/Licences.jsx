@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Box, Button, Card, Stack, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
-import { usePort } from '../demo/PortStore';
+import { usePort, useStoredState } from '../demo/PortStore';
 import { dayKey } from '../demo/format';
 import { Confirmation, Fact, Facts, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
 
 // M-18: licence evidence and the validity gate. IBMS records and verifies; it never issues or renews a licence.
+
+const NO_MAP = {};
 
 function statusWord(l) {
   if (l.status !== 'Verified') return l.status;
@@ -19,6 +21,10 @@ function AgencyLicence({ agency, onDone }) {
   const [editing, setEditing] = useState(false);
   const [number, setNumber] = useState('');
   const [validTo, setValidTo] = useState('');
+  const [file, setFile] = useState('');
+  const [authRef, setAuthRef] = useState('');
+  const [evidence, setEvidence] = useStoredState('licenceEvidence', NO_MAP);
+  const doc = evidence[agency.ain];
   const word = statusWord(l);
   return (
     <Card sx={{ p: 3 }}>
@@ -32,6 +38,7 @@ function AgencyLicence({ agency, onDone }) {
         <Fact label="Issuer">{l.issuer}</Fact>
         <Fact label="Valid to">{l.validTo}</Fact>
         <Fact label="Verified by">{l.verifiedBy ?? '–'}</Fact>
+        <Fact label="Evidence">{doc ? `${doc.file} · ${doc.ref}` : 'No document on file'}</Fact>
       </Facts>
       {word !== 'Verified' && (
         <Typography variant="body2" color="error.text" sx={{ mt: 2 }}>
@@ -48,9 +55,17 @@ function AgencyLicence({ agency, onDone }) {
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
             <TextField required label="Licence number" value={number} onChange={(e) => setNumber(e.target.value)} />
             <TextField required label="Valid to" type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} InputLabelProps={{ shrink: true }} />
+            <TextField required label="Authority's reference" placeholder="NBR licensing letter or portal ID" value={authRef} onChange={(e) => setAuthRef(e.target.value)} helperText="Checked against the licensing authority, not the copy alone" />
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Button component="label" variant="outlined" color="inherit">
+                {file ? 'Replace licence copy' : 'Upload licence copy'}
+                <input hidden type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile(f.name); e.target.value = ''; }} />
+              </Button>
+              <Typography variant="caption" color={file ? 'text.secondary' : 'error.text'}>{file || 'A copy is required'}</Typography>
+            </Stack>
           </Box>
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-            <Button variant="contained" disabled={!number.trim() || !validTo} onClick={() => { p.recordLicence(agency.ain, { number: number.trim(), validTo }); setEditing(false); setNumber(''); setValidTo(''); onDone('Licence recorded. It stays unverified until checked'); }}>Record licence</Button>
+            <Button variant="contained" disabled={!number.trim() || !validTo || !file || !authRef.trim()} onClick={() => { p.recordLicence(agency.ain, { number: number.trim(), validTo }); setEvidence((all) => ({ ...all, [agency.ain]: { file, ref: authRef.trim() } })); setEditing(false); setNumber(''); setValidTo(''); setFile(''); setAuthRef(''); onDone('Licence recorded with its evidence. It stays unverified until checked'); }}>Record licence</Button>
             <Button variant="outlined" color="inherit" onClick={() => setEditing(false)}>Cancel</Button>
           </Stack>
         </Box>

@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import VehicleTerminal from './VehicleTerminal';
 import { PageHeader } from '../components/common';
 import { importerName, usePort, useStoredState } from '../demo/PortStore';
+import { usePortRules } from '../demo/portRules';
 import { billableTonnes, formatDuration, formatKg } from '../demo/format';
 import { ActionFoot, Bench, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, StatusPill, useKeyAction } from '../demo/ui';
 
@@ -32,6 +33,7 @@ function PostingBench() {
   const [escalated, setEscalated] = useStoredState('postingEscalated', NO_MAP);
   const [overrides, setOverrides] = useStoredState('postingOverrides', NO_MAP);
   const [asking, setAsking] = useState(null);
+  const [rules] = usePortRules();
   const [reason, setReason] = useState('');
   const queue = p.state.visits.filter((v) => v.stage === 'Weighed' && !v.posting && !v.holding)
     .sort((a, b) => (sentBack[a.id] ?? '').localeCompare(sentBack[b.id] ?? ''));
@@ -154,8 +156,8 @@ function PostingBench() {
         right={v ? (<><Typography variant="subtitle2" sx={{ mb: 1 }}>Checks</Typography><Checklist checks={checks} /><ActionFoot checks={checks} label="Propose posting" keyHint="P" onClick={propose} /></>) : null}
       />
       <Card sx={{ p: 3, mt: 3 }}>
-        <SectionTitle>Holding area</SectionTitle>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Only for a truck with no free space, a manifest not yet available, a transshipment truck waiting for its receiving trucks, or goods being inspected.</Typography>
+        <SectionTitle>Holding area · {holding.length} of {rules.holdingPlaces} places</SectionTitle>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>A called truck has {rules.callMinutes} minutes to move before it loses its turn. Only for a truck with no free space, a manifest not yet available, a transshipment truck waiting for its receiving trucks, or goods being inspected.</Typography>
         <ResponsiveTable
           rowKey={(x) => x.id}
           rows={holding}

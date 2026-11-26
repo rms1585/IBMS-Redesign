@@ -10,6 +10,7 @@ import Label from '../components/Label';
 import { ports, agencies, users } from '../data/mock';
 import { useStoredState } from '../demo/PortStore';
 import FormDrawer, { useFreshForm } from '../components/FormDrawer';
+import { SCREEN_FIELDS, usePortRules } from '../demo/portRules';
 
 // Module switches and tolerance are kept per port in the shared record.
 const NO_SETTINGS = {};
@@ -21,6 +22,7 @@ const steps = [
   { key: 'port', title: 'The port', desc: 'Name and Customs station' },
   { key: 'modules', title: 'Modules', desc: 'What this port handles' },
   { key: 'resources', title: 'What the port has', desc: 'Gates, scales, sheds, yards' },
+  { key: 'rules', title: 'Rules and limits', desc: 'Fields, holding area, aging, approvals' },
   { key: 'people', title: 'Who works here', desc: 'Staff and agencies' },
   { key: 'golive', title: 'Go live', desc: 'Checks and approval' },
 ];
@@ -178,6 +180,83 @@ function StepResources({ port, modules }) {
   );
 }
 
+const wholeNumber = (v) => /^\d+$/.test(v) && Number(v) > 0;
+
+// Rules and limits this port sets for itself (M-12). Saved per port; the benches read them (src/demo/portRules.js).
+function StepRules({ port }) {
+  const [rules, setRules] = usePortRules(port.code);
+  const setRow = (key, i, field) => (e) => setRules({ [key]: rules[key].map((r, j) => (j === i ? { ...r, [field]: e.target.value } : r)) });
+  const agingOk = wholeNumber(rules.agingFlag) && wholeNumber(rules.agingRefer) && Number(rules.agingRefer) > Number(rules.agingFlag);
+  const block = (title, children) => (
+    <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: 'background.neutral' }}>
+      <Typography variant="subtitle2" sx={{ mb: 1.5 }}>{title}</Typography>
+      {children}
+    </Box>
+  );
+  return (
+    <Stack spacing={2.5}>
+      <Alert severity="info">At a live port each change here goes to head office for approval and is kept as a new version.</Alert>
+      {block('Manifests entered by hand', (
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="body2">Allow "Other" manifest entry</Typography>
+            <Typography variant="caption" color="text.secondary">In BNSW-down mode the gate keys the Car Pass lines as a manifest marked "Other", unmatched until BNSW confirms it. Off: the truck waits until BNSW returns.</Typography>
+          </Box>
+          <Switch inputProps={{ 'aria-label': 'Allow Other manifest entry' }} checked={rules.otherManifest} onChange={(e) => setRules({ otherManifest: e.target.checked })} />
+        </Stack>
+      ))}
+      {block('Optional fields on screens', (
+        <Stack divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
+          {SCREEN_FIELDS.map(([k, label, screen]) => (
+            <Stack key={k} direction="row" spacing={2} alignItems="center" sx={{ py: 1 }}>
+              <Box sx={{ flex: 1 }}><Typography variant="body2">{label}</Typography><Typography variant="caption" color="text.secondary">{screen}</Typography></Box>
+              <Switch inputProps={{ 'aria-label': label }} checked={Boolean(rules.fields[k])} onChange={(e) => setRules({ fields: { ...rules.fields, [k]: e.target.checked } })} />
+            </Stack>
+          ))}
+        </Stack>
+      ))}
+      <Grid container spacing={2.5}>
+        <Grid size={{ xs: 12, md: 6 }}>{block('Holding area', (
+          <Stack spacing={2}>
+            <TextField size="small" label={tr('Places')} value={rules.holdingPlaces} onChange={(e) => setRules({ holdingPlaces: e.target.value })} error={!wholeNumber(rules.holdingPlaces)} helperText={wholeNumber(rules.holdingPlaces) ? 'Trucks that can wait at once' : 'A whole number above zero'} />
+            <TextField size="small" label={tr('Call time (minutes)')} value={rules.callMinutes} onChange={(e) => setRules({ callMinutes: e.target.value })} error={!wholeNumber(rules.callMinutes)} helperText={wholeNumber(rules.callMinutes) ? 'A called truck that does not move in this time loses its turn' : 'A whole number above zero'} />
+          </Stack>
+        ))}</Grid>
+        <Grid size={{ xs: 12, md: 6 }}>{block('Aging limits', (
+          <Stack spacing={2}>
+            <TextField size="small" label={tr('Flag a lot after (days)')} value={rules.agingFlag} onChange={(e) => setRules({ agingFlag: e.target.value })} error={!agingOk} />
+            <TextField size="small" label={tr('Refer to the port in-charge after (days)')} value={rules.agingRefer} onChange={(e) => setRules({ agingRefer: e.target.value })} error={!agingOk} helperText={agingOk ? 'Disposal is decided by Customs and the disposal committee' : 'Whole numbers; the referral comes after the flag'} />
+          </Stack>
+        ))}</Grid>
+      </Grid>
+      {block('Approval time limits and night delegates', (
+        <Stack spacing={2}>
+          {rules.approvals.map((a, i) => (
+            <Box key={a.act} sx={{ display: 'grid', gap: 1.5, alignItems: 'center', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr 2fr' } }}>
+              <Typography variant="body2">{a.act}</Typography>
+              <TextField size="small" label={tr('Within (hours)')} value={a.hours} onChange={setRow('approvals', i, 'hours')} error={!wholeNumber(a.hours)} />
+              <TextField size="small" label={tr('Night delegate')} value={a.night} onChange={setRow('approvals', i, 'night')} error={!a.night.trim()} />
+            </Box>
+          ))}
+          <Typography variant="caption" color="text.secondary">Past the limit, or at night, the item goes to the delegate and the original approver is told.</Typography>
+        </Stack>
+      ))}
+      {block('Open-record limits', (
+        <Stack spacing={2}>
+          {rules.openRecords.map((r, i) => (
+            <Box key={r.what} sx={{ display: 'grid', gap: 1.5, alignItems: 'center', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr 2fr' } }}>
+              <Typography variant="body2">{r.what}</Typography>
+              <TextField size="small" label={tr('After (days)')} value={r.days} onChange={setRow('openRecords', i, 'days')} error={!wholeNumber(r.days)} />
+              <TextField size="small" label={tr('Owner')} value={r.owner} onChange={setRow('openRecords', i, 'owner')} error={!r.owner.trim()} />
+            </Box>
+          ))}
+          <Typography variant="caption" color="text.secondary">A record open past its limit appears on the owner's Inbox and the open-record list.</Typography>
+        </Stack>
+      ))}
+    </Stack>
+  );
+}
+
 function StepPeople() {
   return (
     <Grid container spacing={3}>
@@ -327,7 +406,7 @@ export default function PortSetup() {
                       bgcolor: active || done ? 'primary.main' : 'action.selected', color: active || done ? 'primary.contrastText' : 'text.secondary',
                     }}
                   >
-                    {i < 4 ? i + 1 : 'L'}
+                    {i < steps.length - 1 ? i + 1 : 'L'}
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color={active ? 'primary.main' : 'text.primary'}>{s.title}</Typography>
@@ -344,8 +423,9 @@ export default function PortSetup() {
               {step === 0 && <StepPort key={port.code} port={port} />}
               {step === 1 && <StepModules modules={modules} setModules={setModules} />}
               {step === 2 && <StepResources port={port} modules={modules} />}
-              {step === 3 && <StepPeople />}
-              {step === 4 && <StepGoLive port={port} modules={modules} onRequest={() => setToast(`Go-live request for ${port.name} sent to head office.`)} />}
+              {step === 3 && <StepRules key={port.code} port={port} />}
+              {step === 4 && <StepPeople />}
+              {step === 5 && <StepGoLive port={port} modules={modules} onRequest={() => setToast(`Go-live request for ${port.name} sent to head office.`)} />}
             </Box>
             <Divider sx={{ borderStyle: 'dashed' }} />
             <Stack direction="row" justifyContent="space-between" flexWrap="wrap" gap={1.5} sx={{ p: 3 }}>
