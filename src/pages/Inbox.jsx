@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { PageHeader } from '../components/common';
 import Label from '../components/Label';
 import { usePort, useStoredState } from '../demo/PortStore';
+import { useRole } from '../RoleContext';
 import SignAndConfirm from '../demo/SignaturePad';
 import { useTypedPlates } from '../demo/typedPlates';
 import { escalation, refuseSelfApproval } from '../demo/inbox';
@@ -89,6 +90,9 @@ const NO_LIST = [];
 
 // Rules that allow an override with a reason, and acts that never do (M-13, Table 59).
 const OVERRIDABLE = ['Storage rule for a place', 'Holding-area call time', 'Aging limit for a lot', 'Weighbridge queue order'];
+// PI-2: overrides that carry real consequence (money, custody time) need the port in-charge, not a supervisor.
+const IN_CHARGE_LEVEL = ['Aging limit for a lot', 'Holding-area call time'];
+const IN_CHARGE_ROLES = ['port-incharge', 'super-admin', 'platform-admin'];
 const NEVER = ["Customs' release or exit note", 'A paid status', 'A locked load', 'An Exit Pass', 'An active hold', 'An approved correction'];
 
 // Tariff orders waiting for the head-office approver (HO-1, Annex 8.2): every amount, what changes against the
@@ -185,6 +189,7 @@ function TariffApprovals({ onDone }) {
 
 function OverrideRequests({ onDone }) {
   const p = usePort();
+  const { role } = useRole();
   const requests = p.state.overrideRequests ?? NO_LIST;
   const [rule, setRule] = useState(OVERRIDABLE[0]);
   const [record, setRecord] = useState('');
@@ -200,7 +205,7 @@ function OverrideRequests({ onDone }) {
   };
   const decide = (o, approve) => {
     save((l) => l.map((x) => (x.id === o.id ? { ...x, decision: { approve, by: p.actor.name, at: new Date().toISOString() } } : x)));
-    p.logEvent(`Override on ${o.record} (${o.rule}) ${approve ? 'approved' : 'rejected'}`, o.record);
+    p.logEvent(`Override on ${o.record} (${o.rule}) ${approve ? 'approved' : 'rejected'} by ${p.actor.name}, ${p.actor.role}. ${o.by} is told`, o.record);
     onDone(`Override ${approve ? 'approved' : 'rejected'}`);
   };
   return (
@@ -224,11 +229,12 @@ function OverrideRequests({ onDone }) {
           {requests.map((o) => (
             <Stack key={o.id} direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }} sx={{ pt: 1.5, borderTop: 1, borderColor: 'divider' }}>
               <Box sx={{ flex: 1 }}>
-                <Typography variant="body2">{o.rule} on {o.record}: {o.reason}</Typography>
+                <Typography variant="body2">{o.rule} on {o.record}: {o.reason}{IN_CHARGE_LEVEL.includes(o.rule) ? ` · ${tr('port in-charge decides')}` : ''}</Typography>
                 <Typography variant="caption" color="text.secondary">Asked by {o.by}, {formatDateTime(o.at)}{o.decision ? ` · ${o.decision.approve ? 'approved' : 'rejected'} by ${o.decision.by}` : ''}</Typography>
               </Box>
               {o.decision ? <StatusPill word={o.decision.approve ? 'Approved' : 'Rejected'} />
                 : o.by === p.actor.name ? <SelfRefusal text={tr("You asked, so someone else decides")} onTry={() => refuseSelfApproval(p, `the override on ${o.record}`, o.record)} />
+                  : IN_CHARGE_LEVEL.includes(o.rule) && !IN_CHARGE_ROLES.includes(role.id) ? <Typography variant="caption" color="text.secondary">{tr('Needs the port in-charge')}</Typography>
                   : <Stack direction="row" spacing={1}><Button size="small" variant="contained" onClick={() => decide(o, true)}>{tr("Approve")}</Button><Button size="small" variant="outlined" color="error" onClick={() => decide(o, false)}>{tr("Reject")}</Button></Stack>}
             </Stack>
           ))}

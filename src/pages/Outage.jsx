@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Box, Button, Card, Checkbox, FormControlLabel, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
 import Label from '../components/Label';
-import { usePort } from '../demo/PortStore';
+import { usePort, useStoredState } from '../demo/PortStore';
 import { formatBDT, formatDateTime } from '../demo/format';
 import { ResponsiveTable, SectionTitle } from '../demo/ui';
 import { tr } from '../i18n/LanguageContext';
@@ -43,6 +43,7 @@ const CLASS_INFO = {
 
 const NO_OUTAGE = { phase: 'normal' };
 const NO_LIST = [];
+const NO_MAP = {};
 const nowIso = () => new Date().toISOString();
 const hoursFromNow = (h) => new Date(Date.now() + h * 3600000).toISOString();
 
@@ -331,6 +332,58 @@ function Report({ data, counts }) {
   );
 }
 
+// MG-7: every exit recorded on paper during the outage, checked after the event against holds, release and
+// payment. A class E breach is a security incident owned by Customs and BLPA: the review adds a remark, never closes it.
+function ExitReview({ data }) {
+  const { p, entries, cases } = data;
+  const [reviews, setReviews] = useStoredState('manualExitReviews', NO_MAP);
+  const [remark, setRemark] = useState({});
+  const exits = entries.filter((e) => e.form === 'exit' && !e.spoiled);
+  const checkOf = (e) => {
+    const visit = p.state.visits.find((v) => v.plate.replace(/\s/g, '') === e.plate.replace(/\s/g, ''));
+    const breach = cases.find((c) => c.entry === e.id && c.cls === 'E');
+    const boes = visit ? p.state.boes.filter((b) => visit.manifests.includes(b.manifest)) : [];
+    const released = boes.some((b) => b.release);
+    const unpaid = p.state.bills.filter((b) => b.status === 'Payment due' && visit && (b.for.id === visit.id || boes.some((x) => p.state.deliveryRequests.some((d) => d.boe === x.id && d.id === b.for.id))));
+    return [
+      breach ? `Hold open at the time: ${breach.text}` : 'No hold open at the time',
+      visit ? (released ? 'Release on record' : 'No release on record') : 'Truck not in the record',
+      unpaid.length ? `${unpaid.length} bill unpaid` : 'No bill unpaid',
+    ].map((x) => tr(x)).join(' · ');
+  };
+  return (
+    <Card sx={{ p: 3 }}>
+      <SectionTitle>{tr('Exits recorded on paper')}</SectionTitle>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr('Each exit back-entered from the manual procedure, checked after the event against holds, release and payment.')}</Typography>
+      {exits.length === 0 && <Typography variant="body2" color="text.secondary">{tr('No exit form has been back-entered.')}</Typography>}
+      <Stack spacing={2}>
+        {exits.map((e) => {
+          const breach = cases.find((c) => c.entry === e.id && c.cls === 'E');
+          // Remarks add up; a breach keeps taking remarks and never closes.
+          const r = reviews[e.id]?.length ? reviews[e.id] : null;
+          return (
+            <Box key={e.id} sx={{ pb: 2, borderBottom: 1, borderColor: 'divider' }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Typography variant="subtitle2">{e.plate}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>{e.what || tr('Exit')} · {tr('form')} {e.no} · {tr('event')} {formatDateTime(e.eventAt)} · {tr('entered')} {formatDateTime(e.enteredAt)}</Typography>
+                {breach ? <Label color="error">{tr('Security incident · Customs and BLPA')}</Label> : r ? <Label color="success">{tr('Reviewed')}</Label> : <Label>{tr('To review')}</Label>}
+              </Stack>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>{checkOf(e)}</Typography>
+              {(r ?? []).map((x) => <Typography key={x.at} variant="caption" color="text.secondary" component="div">{tr('Remark')}: {x.remark} · {x.by}, {formatDateTime(x.at)}</Typography>)}
+              {(!r || breach) && (
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
+                  <TextField size="small" label={tr('Remark')} value={remark[e.id] ?? ''} onChange={(ev) => setRemark({ ...remark, [e.id]: ev.target.value })} sx={{ flex: 1 }} helperText={breach ? tr('A remark is added to the incident; it cannot close it.') : ' '} />
+                  <Button variant="outlined" color="inherit" disabled={!remark[e.id]?.trim()} onClick={() => { setReviews((all) => ({ ...all, [e.id]: [...(Array.isArray(all[e.id]) ? all[e.id] : []), { remark: remark[e.id].trim(), by: p.actor.name, at: nowIso() }] })); setRemark({ ...remark, [e.id]: '' }); }}>{breach ? tr('Add remark') : tr('Mark reviewed')}</Button>
+                </Stack>
+              )}
+            </Box>
+          );
+        })}
+      </Stack>
+    </Card>
+  );
+}
+
 export default function Outage() {
   const data = useOutageData();
   const [tab, setTab] = useState('declare');
@@ -362,6 +415,7 @@ export default function Outage() {
         <Tab value="entry" label={tr('Back-entry')} />
         <Tab value="missing" label={tr('Missing forms')} />
         <Tab value="cases" label={`${tr('Exceptions')} (${data.cases.filter((c) => !c.referred).length})`} />
+        <Tab value="exits" label={tr('Exit review')} />
         <Tab value="report" label={tr('Reconciliation report')} />
       </Tabs>
       {tab === 'declare' && <Declarations data={data} counts={counts} />}
@@ -369,6 +423,7 @@ export default function Outage() {
       {tab === 'entry' && <BackEntry data={data} />}
       {tab === 'missing' && <Missing data={data} />}
       {tab === 'cases' && <Exceptions data={data} />}
+      {tab === 'exits' && <ExitReview data={data} />}
       {tab === 'report' && <Report data={data} counts={counts} />}
     </>
   );

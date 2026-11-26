@@ -22,6 +22,8 @@ import { CheckRoundedIcon, ChevronLeftRoundedIcon, ChevronRightRoundedIcon, Clou
 const NAV_WIDTH = 280;
 const NAV_MINI = 88;
 const HEADER = 72;
+// The platform super admin (TR-20), and the demo presenter, may open a module switched off at the port (SA-1).
+const SEES_OFF_MODULES = ['platform-admin', 'super-admin'];
 
 
 function NavItem({ item, mini }) {
@@ -54,6 +56,7 @@ function NavItem({ item, mini }) {
           : { minHeight: 44, pl: 1.5, pr: 1, py: 0.5, gap: 1.5, justifyContent: 'flex-start' }),
         ...(active && activeSx),
         ...(item.disabled && { opacity: 0.48, cursor: 'default' }),
+        ...(item.off && { opacity: 0.64 }),
       }}
     >
       <Box sx={{ width: 24, height: 24, display: 'grid', placeItems: 'center', flexShrink: 0, '& svg': { fontSize: 22 } }}>
@@ -82,11 +85,12 @@ function NavItem({ item, mini }) {
       </Typography>
       {!mini && item.badge ? <Label color="error">{item.badge}</Label> : null}
       {!mini && item.disabled ? <Label>Soon</Label> : null}
+      {!mini && item.off ? <Label>{t('Off')}</Label> : null}
     </ButtonBase>
   );
 
   return mini ? (
-    <Tooltip title={t(item.title)} placement="right" arrow>
+    <Tooltip title={item.off ? `${t(item.title)} · ${t('Off')}` : t(item.title)} placement="right" arrow>
       <Box>{content}</Box>
     </Tooltip>
   ) : (
@@ -350,11 +354,13 @@ function StatusStrips() {
 function NavContent({ mini, onToggle }) {
   const theme = useTheme();
   const { state } = usePort();
-  const { canOpen } = useRole();
+  const { canOpen, role } = useRole();
   const { moduleOff } = usePort();
-  // Screens of a module switched off for the port drop out of the menu (Port setup, step 2).
+  // Screens of a module switched off for the port drop out of the menu (Port setup, step 2); the super admin still
+  // sees them, marked Off.
+  const seesOff = SEES_OFF_MODULES.includes(role.id);
   const groups = navConfig
-    .map((g) => ({ ...g, items: g.items.filter((item) => canOpen(item.path) && !moduleOff(item.path)) }))
+    .map((g) => ({ ...g, items: g.items.filter((item) => canOpen(item.path) && (seesOff || !moduleOff(item.path))).map((item) => (moduleOff(item.path) ? { ...item, off: true } : item)) }))
     .filter((g) => g.items.length > 0);
   return (
     <>
@@ -505,7 +511,12 @@ export default function DashboardLayout() {
           {/* Screens outside the current role's modules send the user back to Home. */}
           <StatusStrips />
           {/* Keyed by language so screens that use tr() re-read their strings when the language changes. */}
-          {!canOpen(pathname) ? <NotAllowed pathname={pathname} /> : moduleOff(pathname) ? <ModuleOff module={moduleOff(pathname)} /> : <ScreenErrorBoundary key={`${pathname}${search}-${lang}`}><Outlet key={lang} /></ScreenErrorBoundary>}
+          {!canOpen(pathname) ? <NotAllowed pathname={pathname} /> : moduleOff(pathname) && !SEES_OFF_MODULES.includes(role.id) ? <ModuleOff module={moduleOff(pathname)} /> : (
+            <>
+              {moduleOff(pathname) && <Alert severity="warning" sx={{ mb: 2 }}>{t(MODULE_NAMES[moduleOff(pathname)])}: {t('switched off at Benapole. You can open it as super admin; no one else at the port can, and nothing here takes effect for operations until it is switched on.')}</Alert>}
+              <ScreenErrorBoundary key={`${pathname}${search}-${lang}`}><Outlet key={lang} /></ScreenErrorBoundary>
+            </>
+          )}
         </Box>
       </Box>
     </Box>

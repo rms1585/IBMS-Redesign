@@ -76,6 +76,14 @@ function Simulator({ onDone }) {
               </SimRow>
             ))}
           </SimSection>
+          <SimSection title="Amend a manifest twice, out of order">
+            {state.manifests.filter((m) => m.source === 'BNSW').slice(0, 2).map((m) => (
+              <SimRow key={m.id} action={<Button size="small" variant="contained" disabled={state.bnswDown} onClick={() => { p.bnsw.sendAmendments(m.id); onDone(`Two amendments of ${m.id} sent; the later version wins`); }}>{tr('Send two amendments')}</Button>}>
+                <Id>{m.id}</Id>
+                <Typography variant="body2" color="text.secondary">{tr('Version')} {m.version ?? 1}</Typography>
+              </SimRow>
+            ))}
+          </SimSection>
           <SimSection title="Send a release" empty={awaitingRelease.length === 0 && 'No Bill of Entry is waiting for release.'}>
             {awaitingRelease.map((b) => (
               <SimRow key={b.id} action={<Button size="small" variant="contained" disabled={state.bnswDown || p.holdsOnBoe(b).length > 0} onClick={() => { p.bnsw.sendRelease(b.id); onDone('Release sent'); }}>Send release</Button>}>

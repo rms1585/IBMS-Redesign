@@ -627,3 +627,18 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
     at night (22:00 to 06:00), shows "Escalated to <night delegate>".
   - **TS-4, after a transfer:** once a request closes, lines still aboard the foreign truck go to posting (the
     transferred line drops out of its drop points). With nothing left aboard, the truck goes to exit.
+- **Annex 9 batch C (2026-11-26):**
+  - **SA-1, switched-off modules:** the platform super admin (and the demo presenter) sees a switched-off module in
+    the menu marked Off, and can open it under a banner saying no one else at the port can. Every other role
+    still gets the ModuleOff notice.
+  - **BG-3, border admission:** admitting a truck logs "Arrival sent to BNSW (request 2)", or "queued" while BNSW
+    is down, and an alert to the tagged C&F agencies. The alert shows in the agency's portal Alerts.
+  - **PI-2, port in-charge decisions:** an override of an aging limit or the holding-area call time needs the port
+    in-charge; a supervisor sees "Needs the port in-charge". The decision is logged with the decider's name and
+    role, and the requester is told.
+  - **MG-7, manual-procedure exits:** Outage and back-entry > Exit review lists every exit back-entered from paper:
+    form number, event and entry times, and the check against holds, release and payment. A class E breach is
+    marked a security incident owned by Customs and BLPA; remarks add up but never close it.
+  - **IS-3, events in order:** holds already apply at once, because there is one shared record. The BNSW simulator
+    can now send two amendments of a manifest out of order. The later version wins, and the manifest record lists
+    every version with its arrival time, including the one not applied.

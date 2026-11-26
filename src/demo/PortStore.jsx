@@ -461,6 +461,12 @@ export function PortProvider({ children }) {
           v.stage = v.late ? 'Manifest not yet available' : 'Admitted';
           v.charges = [{ what: 'Entry gate, foreign truck', qty: 1, rate: effectiveTariff(n).rates.gateEntry.rate }];
           log(v.late ? `Truck ${v.plate} admitted on plate and Car Pass ${v.carPass}; manifest not yet available` : `Truck ${v.plate} admitted at Border gate 1, Lane 2`, v.manifests[0] ?? v.carPassManifest, typedReason ? 'Typed by hand' : 'Device');
+          // BG-3: the arrival goes to BNSW (request 2) and the tagged C&F agency is alerted.
+          const record = v.manifests[0] ?? v.carPassManifest;
+          const m = n.manifests.find((x) => x.id === record);
+          const agencies = [...new Set(Object.values(m?.tags ?? {}))];
+          log(n.bnswDown ? `Arrival of ${v.plate} queued for BNSW (request 2); sent when BNSW returns` : `Arrival of ${v.plate} sent to BNSW (request 2)`, record, 'IBMS', { name: 'IBMS', role: 'System' });
+          if (agencies.length) log(`Alert to ${agencies.map((ain) => agencyName(ain)).join(', ')}: truck ${v.plate} admitted at Border gate 1`, record, 'IBMS', { name: 'IBMS', role: 'System' });
         }),
 
       exitAtBorder: (visitId) =>
@@ -708,6 +714,23 @@ export function PortProvider({ children }) {
           change((n, { log }) => {
             n.exitCheckDown = down;
             log(down ? 'Exit check down (simulated). Every truck at the exit lanes is held.' : 'Exit check running again (simulated).', 'Exit check', 'IBMS', { name: 'BNSW simulator', role: 'Demo tool' });
+          }),
+        // IS-3: two amendments of one manifest arrive out of order; the later version wins and both arrivals stay on
+        // the record.
+        sendAmendments: (mid) =>
+          change((n, { log }) => {
+            const m = n.manifests.find((x) => x.id === mid);
+            const base = m.version ?? 1;
+            const l = m.lines[0];
+            const arrivals = [
+              { no: base + 2, arrivedAt: new Date().toISOString(), change: `line 1 declared weight ${l.declaredKg.toLocaleString('en-US')} → ${(l.declaredKg + 200).toLocaleString('en-US')} kg` },
+              { no: base + 1, arrivedAt: new Date(Date.now() + 1000).toISOString(), change: `line 1 declared weight ${l.declaredKg.toLocaleString('en-US')} → ${(l.declaredKg + 100).toLocaleString('en-US')} kg` },
+            ];
+            l.declaredKg += 200;
+            m.version = base + 2;
+            m.versions = [...(m.versions ?? [{ no: base, arrivedAt: m.receivedAt, change: 'original', applied: true }]), { ...arrivals[0], applied: true }, { ...arrivals[1], applied: false, note: `older than version ${base + 2}, already applied` }];
+            log(`Manifest ${mid} version ${base + 2} received from BNSW and applied (simulated)`, mid, 'BNSW', { name: 'BNSW', role: 'Customs system' });
+            log(`Manifest ${mid} version ${base + 1} arrived after version ${base + 2}; kept on record, not applied`, mid, 'BNSW', { name: 'BNSW', role: 'Customs system' });
           }),
         sendManifest: (mid) =>
           change((n, { log }) => {

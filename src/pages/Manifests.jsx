@@ -5,7 +5,7 @@ import { PageHeader, SearchField } from '../components/common';
 import { agencyName, importerName, usePort } from '../demo/PortStore';
 import { formatBoe, formatDateTime, formatKg, searchKey } from '../demo/format';
 import { Fact, Facts, HoldRow, Id, Plate, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { tr, useT } from '../i18n/LanguageContext';
 
 // M-02: one read-only record per consignment. It performs nothing (Annex 7.2).
 
@@ -67,6 +67,12 @@ function ManifestRecord({ id }) {
             <Fact label="Lines">{m.lines.length}</Fact>
             <Fact label="Status"><StatusPill word={reasons.length ? 'Open' : 'Closed'} /></Fact>
           </Facts>
+          {m.versions && (
+            <Box sx={{ mt: 2 }}>
+              <SectionTitle>{tr('Versions received from BNSW')}</SectionTitle>
+              {m.versions.map((x) => <Typography key={`${x.no}-${x.arrivedAt}`} variant="body2" color={x.applied ? 'text.primary' : 'text.secondary'}>{tr('Version')} {x.no} · {formatDateTime(x.arrivedAt)} · {x.change} · {x.applied ? (x.no === m.version ? tr('in force') : tr('applied')) : `${tr('not applied')}: ${x.note}`}</Typography>)}
+            </Box>
+          )}
         </Card>
 
         {holds.length > 0 && (
