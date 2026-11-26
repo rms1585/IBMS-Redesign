@@ -435,3 +435,10 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   per-port demo values and the same period last year. Dashboard > Performance, Revenue, Resources and Control
   show them as cards with a "How it's calculated" panel; Benapole figures the record can compute are marked Live.
   A Benapole / Bhomra / Burimari / All ports switch sits beside the period. Every chart has an "In words" line.
+- **Step 3d, inland gate exits (B1; Annex 3.7 Table 31, 7.10):** Inland gate > Other exits handles receiving
+  trucks for a transfer (they cannot leave before the foreign truck), loaded export trucks against the Bill of
+  Export (a cancelled one is refused), stone trucks to the outside yard (exit note or written controlled-movement
+  proof; follows the outside-yards switch), empty export trucks after the return fee, returned export trucks on a
+  return-inland pass, and self-driven vehicles off a train (follows the rail switch). Every exit also checks for a
+  hold or BGB stop. When the plate reader fails, staff type the plate with a reason (EXC-01) and the check still
+  runs. Local trucks on an Exit Pass stay on Exit lanes.

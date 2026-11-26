@@ -455,6 +455,7 @@ const bn = {
   'Missing form numbers': 'অনুপস্থিত ফর্ম নম্বর',
   'Where Benapole stands': 'বেনাপোলের বর্তমান অবস্থা',
   'Port in-charge declarations': 'বন্দর প্রধানের ঘোষণা',
+  'Other exits': 'অন্যান্য প্রস্থান',
 };
 
 export default bn;
