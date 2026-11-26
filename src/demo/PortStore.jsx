@@ -321,6 +321,30 @@ export function PortProvider({ children }) {
           log(`Truck ${plate} entered for ${mid} with Car Pass ${carPass}`, mid, 'Keyed by the agency');
         }),
 
+      // M-01: when a manifest arrives for a truck already admitted on its Car Pass, the C&F agency enters the plate
+      // and IBMS ties the waiting visit to the manifest. Returns null, or the reason it was refused.
+      tieVisit: (mid, plate, ain) => {
+        const key = plate.replace(/\s/g, '').toUpperCase();
+        const waiting = s.visits.find((x) => x.late && x.carPassManifest === mid);
+        if (!waiting) return 'No truck admitted on this manifest is waiting.';
+        if (waiting.plate.replace(/\s/g, '').toUpperCase() !== key) return `No waiting truck with plate ${plate} was admitted on this manifest's Car Pass.`;
+        change((n, { log }) => {
+          const v = n.visits.find((x) => x.id === waiting.id);
+          const m = n.manifests.find((x) => x.id === mid);
+          v.manifests = [mid];
+          v.late = false;
+          v.enteredBy = ain;
+          if (v.stage === 'Manifest not yet available') v.stage = v.weigh ? 'Weighed' : 'Admitted';
+          if (v.weigh && m) {
+            const declaredKg = m.lines.reduce((sum, l) => sum + l.declaredKg, 0);
+            v.weigh.declaredKg = declaredKg;
+            v.weigh.overTolerance = Math.abs(v.weigh.kg - declaredKg) / declaredKg > effectivePort(n).tolerancePct / 100;
+          }
+          log(`Waiting truck ${v.plate} tied to manifest ${mid} by its C&F agency`, mid, 'Keyed by the agency');
+        });
+        return null;
+      },
+
       recordBoe: ({ mid, bin, ain, lineIds, reg, date }) =>
         change((n, { log, id }) => {
           const down = n.bnswDown;
@@ -625,19 +649,9 @@ export function PortProvider({ children }) {
             const m = { ...n.pendingManifests[idx], receivedAt: new Date().toISOString() };
             n.pendingManifests.splice(idx, 1);
             n.manifests.unshift(m);
+            // The waiting visit is not tied automatically: the tagged C&F agency enters its plate (M-01, B7).
             const v = n.visits.find((x) => x.late && x.carPassManifest === mid);
-            if (v) {
-              v.manifests = [mid];
-              v.late = false;
-              v.enteredBy = m.tags[m.lines[0].importer] ?? null;
-              if (v.stage === 'Manifest not yet available') v.stage = v.weigh ? 'Weighed' : 'Admitted';
-              if (v.weigh) {
-                const declaredKg = m.lines.reduce((sum, l) => sum + l.declaredKg, 0);
-                v.weigh.declaredKg = declaredKg;
-                v.weigh.overTolerance = Math.abs(v.weigh.kg - declaredKg) / declaredKg > effectivePort(n).tolerancePct / 100;
-              }
-            }
-            log(`Manifest ${mid} received from BNSW (simulated)${v ? `; waiting visit ${v.plate} tied to it` : ''}`, mid, 'BNSW', { name: 'BNSW', role: 'Customs system' });
+            log(`Manifest ${mid} received from BNSW (simulated)${v ? `; truck ${v.plate} admitted on its Car Pass is waiting for the C&F agency to tie it` : ''}`, mid, 'BNSW', { name: 'BNSW', role: 'Customs system' });
           }),
         sendRelease: (boeId) =>
           change((n, { log }) => {

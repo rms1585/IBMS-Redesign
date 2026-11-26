@@ -7,6 +7,7 @@ import { dayKey, formatBDT, formatBoe, formatDateTime, formatKg } from '../demo/
 import { ApprovalRow, Confirmation, Fact, Facts, HoldRow, Id, Plate, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
 import { AgencyPicker, LicenceBanner, useAgency } from './CfPortal';
 import { tr } from '../i18n/LanguageContext';
+import { Documents, TieWaitingTruck, TransferRequest, downloadRecord } from './CfExtras';
 
 const CLASSES = [['10-wheel truck', 3], ['12-wheel truck', 4], ['6-wheel truck', 2], ['Covered van', 2]];
 
@@ -239,10 +240,16 @@ export default function CfManifest() {
   const events = p.state.events.filter((e) => e.record === m.id || boes.some((b) => p.state.deliveryRequests.some((d) => d.boe === b.id && d.id === e.record))).slice(0, 12);
   return (
     <>
-      <PageHeader title={m.id} links={[{ name: 'C&F portal', href: '/cf-portal' }, { name: m.id }]} subtitle={`${m.alias} · from ${m.exporter}`} action={canPick && <AgencyPicker ain={ain} pick={pick} />} />
+      <PageHeader
+        title={m.id}
+        links={[{ name: 'C&F portal', href: '/cf-portal' }, { name: m.id }]}
+        subtitle={`${m.alias} · from ${m.exporter}`}
+        action={<Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>{canPick && <AgencyPicker ain={ain} pick={pick} />}<Button variant="outlined" color="inherit" onClick={() => downloadRecord(m, lines, visits, boes, events)}>{tr('Download the record')}</Button></Stack>}
+      />
       <LicenceBanner ain={ain} />
       <Stack spacing={3}>
         {p.holdsOnManifest(m.id).map((h) => <HoldRow key={h.id} hold={h} />)}
+        <TieWaitingTruck m={m} ain={ain} onDone={setMsg} />
 
         <Card sx={{ p: 3 }}>
           <SectionTitle>Lines tagged to your agency</SectionTitle>
@@ -324,6 +331,9 @@ export default function CfManifest() {
             })}
           </Stack>
         </Card>
+
+        <TransferRequest m={m} lines={lines} ain={ain} onDone={setMsg} />
+        <Documents m={m} lines={lines} />
 
         <Card sx={{ p: 3 }}>
           <SectionTitle>Alerts</SectionTitle>

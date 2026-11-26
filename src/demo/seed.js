@@ -83,7 +83,7 @@ export function createSeed() {
     {
       id: '2026/601/08866', alias: 'LC 0417-26-0118', source: 'BNSW', receivedAt: ago(6), exporter: 'Bharat Agro',
       lines: [line('2026/601/08866', 1, '000234567-0202', 'Onions', 600, 15000, 'perishable')],
-      tags: {},
+      tags: { '000234567-0202': '301112' },
     },
     {
       id: '2026/601/08799', alias: 'LC 0417-26-0071', source: 'BNSW', receivedAt: ago(140), exporter: 'Ganga Exports, Kolkata',

@@ -442,3 +442,11 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   return-inland pass, and self-driven vehicles off a train (follows the rail switch). Every exit also checks for a
   hold or BGB stop. When the plate reader fails, staff type the plate with a reason (EXC-01) and the check still
   runs. Local trucks on an Exit Pass stay on Exit lanes.
+- **Step 3e, C&F portal flows (B7):** the portal has Open and Closed consignment lists, an Exports tab (enter an
+  export truck against a road Bill of Export, or send the wagon list for a rail one; a cancelled Bill of Export
+  refuses both) and a Re-export tab (a declaration that differs from its temporary-import lot is flagged, EXC-38).
+  On a consignment: a truck admitted on its Car Pass before the manifest arrived waits until the agency enters its
+  plate (BNSW no longer ties it automatically); perishable lines get a transfer request with up to three
+  receiving-truck plates; documents are uploaded and their fields shown against the record (the demo misreads the
+  weight on purpose); "Download the record" saves a CSV of the consignment. All actions are refused while the
+  agency's licence is not valid. Bangla for these new screens is still to do.
