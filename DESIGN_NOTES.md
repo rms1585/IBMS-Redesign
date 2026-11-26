@@ -430,3 +430,8 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   into classes A–E (A duplicate logged, B one match linked, C adjustment bill raised, D hold wins, E security
   incident referred to Customs and BLPA, never closed as a correction). Missing form numbers and the
   reconciliation report are their own tabs. The demo has no sign-in page, so the red strip carries that notice.
+- **Step 3c, dashboard indicators (B10; Annex 11):** `src/data/indicators.js` holds all 42 Annex 11 indicators
+  (Performance 14, Revenue 8, Resources 7, Control and security 13) with definition, source, owner, baseline,
+  per-port demo values and the same period last year. Dashboard > Performance, Revenue, Resources and Control
+  show them as cards with a "How it's calculated" panel; Benapole figures the record can compute are marked Live.
+  A Benapole / Bhomra / Burimari / All ports switch sits beside the period. Every chart has an "In words" line.

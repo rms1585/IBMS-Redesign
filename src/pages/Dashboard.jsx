@@ -6,10 +6,11 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { KpiCard, PageHeader, SectionCard } from '../components/common';
 import Label from '../components/Label';
-import { BlockRoundedIcon, FileDownloadOutlinedIcon, LocalShippingRoundedIcon, PaymentsRoundedIcon, TimerOutlinedIcon } from '../components/icons';
+import { BlockRoundedIcon, FileDownloadOutlinedIcon, LocalShippingRoundedIcon, TimerOutlinedIcon } from '../components/icons';
 import { billTotals, usePort } from '../demo/PortStore';
-import { formatBDT, formatDuration } from '../demo/format';
+import { formatBDT, formatDateTime, formatDuration } from '../demo/format';
 import { ResponsiveTable } from '../demo/ui';
+import { indicators } from '../data/indicators';
 import { useT } from '../i18n/LanguageContext';
 
 // M-11 in the earlier dashboard's layout: tabs of figures and charts, read-only. Figures about what is in
@@ -114,6 +115,7 @@ function Operations({ f }) {
               margin={{ top: 40, right: 16, left: 40, bottom: 30 }}
             />
           </Box>
+          <ChartInWords>{days.map((d, i) => `${d} ${WEEK.admissions[i]} in, ${WEEK.departures[i]} out`).join('; ')}.</ChartInWords>
         </SectionCard>
       </Grid>
       <Grid size={{ xs: 12, lg: 4 }}>
@@ -171,129 +173,165 @@ function Operations({ f }) {
   );
 }
 
-function Performance() {
-  const theme = useTheme();
-  const rows = [
-    ['Time in port, foreign trucks (median)', '18 h 40 min', '21 h 05 min', 11.5],
-    ['Admission to weighing', '22 min', '27 min', 18.5],
-    ['Weighing to posting', '41 min', '38 min', -7.9],
-    ['Release to exit', '2 h 15 min', '2 h 50 min', 20.6],
-    ['Manifest open to closed', '3.2 days', '3.6 days', 11.1],
-  ];
+// ----- Annex 11 indicators -----
+
+const PORT_NAMES = { BEN: 'Benapole', BHO: 'Bhomra', BUR: 'Burimari' };
+
+// Benapole figures the demo record can compute; everything else is demonstration data (marked as such).
+function liveIndicators(f) {
+  const s = f.p.state;
+  const visits = s.visits.filter((v) => v.gateIn);
+  const exited = visits.filter((v) => v.stage === 'Exited' || v.exitAt).length;
+  const outage = s.outage ?? { phase: 'normal' };
+  const cases = s.outageCases ?? [];
+  const keyed = s.boes.filter((b) => b.source === 'Keyed by the agency').length;
+  const used = f.sheds.reduce((n, x) => n + x.usedT, 0);
+  const capacity = f.sheds.reduce((n, x) => n + x.capacityT, 0);
+  return {
+    holds: `${f.holds} open${f.holdText !== 'None open' ? ` (${f.holdText})` : ''}`,
+    weightFlags: `${f.flags} flag${f.flags === 1 ? '' : 's'}`,
+    occupancy: `${Math.round((used / capacity) * 100)}% used (${used} of ${capacity} t)`,
+    exitCompleteness: visits.length ? `${Math.round((exited / Math.max(1, visits.filter((v) => v.stage === 'Exited' || v.exitAt || v.stage === 'Unloaded').length)) * 100)}% of finished visits` : '–',
+    breaches: cases.filter((c) => c.cls === 'E').length ? `${cases.filter((c) => c.cls === 'E').length} incident(s), referred to Customs and BLPA` : 'None',
+    manualPeriods: outage.declaredAt ? `1 period from ${formatDateTime(outage.declaredAt)}${outage.normalAt ? ` to ${formatDateTime(outage.normalAt)}` : ', not yet closed'} · ${(s.backEntries ?? []).length} forms back-entered · ${cases.filter((c) => !c.referred).length} exceptions open` : 'None this period',
+    corrections: `${s.corrections.length} recorded · ${f.corrections} waiting approval`,
+    bnswDownShare: `${s.manifests.length ? Math.round((keyed / s.manifests.length) * 100) : 0}% keyed${s.bnswDown ? ' · BNSW down now' : ''}`,
+    revenue: `Billed ${formatBDT(f.billed)} · collected ${formatBDT(f.counted)}`,
+  };
+}
+
+function IndicatorCard({ ind, scope, live }) {
+  const [open, setOpen] = useState(false);
+  const isLive = scope === 'BEN' && live[ind.id] !== undefined;
+  const value = scope === 'all' ? null : (isLive ? live[ind.id] : ind.ports[scope]);
   return (
-    <Grid container spacing={3}>
-      <Grid size={12}>
-        <SectionCard title="Time in port" subheader="Median hours, gate in to exit, last 12 months">
-          <Box sx={{ px: 1 }}>
-            <LineChart
-              skipAnimation={reduceMotion()}
-              height={300}
-              xAxis={[{ scaleType: 'point', data: MONTHS }]}
-              series={[{ data: [31.2, 30.4, 29.8, 28.1, 26.9, 25.5, 24.2, 23.0, 21.8, 20.9, 19.6, 18.7], label: 'Median hours', color: theme.palette.primary.main, area: true, showMark: false, curve: 'natural' }]}
-              sx={{ '& .MuiAreaElement-root': { fillOpacity: 0.12 } }}
-              slotProps={{ legend }}
-              margin={{ top: 40, right: 20, left: 40, bottom: 30 }}
-            />
+    <Card sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1} sx={{ mb: 1 }}>
+        <Typography variant="subtitle2" component="h3">{ind.name}</Typography>
+        <Label color={isLive || (scope === 'all' && live[ind.id] !== undefined) ? 'success' : 'default'}>{isLive ? 'Live' : scope === 'all' && live[ind.id] !== undefined ? 'Benapole live' : 'Demo'}</Label>
+      </Stack>
+      {scope === 'all' ? (
+        <Stack spacing={0.5} sx={{ mb: 1 }}>
+          {Object.entries(ind.ports).map(([code, v]) => (
+            <Typography key={code} variant="body2"><Box component="span" sx={{ color: 'text.secondary' }}>{PORT_NAMES[code]}:</Box> {code === 'BEN' && live[ind.id] !== undefined ? live[ind.id] : v}</Typography>
+          ))}
+        </Stack>
+      ) : (
+        <Typography variant="h6" sx={{ mb: 0.5 }}>{value}</Typography>
+      )}
+      <Typography variant="caption" color="text.secondary" component="div">Same period last year: {ind.lastYear}</Typography>
+      <Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 1 }}>Answers for it: {ind.owner}</Typography>
+      <Box sx={{ mt: 'auto' }}>
+        <Button size="small" variant="outlined" color="inherit" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? 'Hide how it is calculated' : "How it's calculated"}</Button>
+        {open && (
+          <Box sx={{ mt: 1.5, p: 1.5, borderRadius: 1, bgcolor: 'background.neutral' }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>{ind.definition}</Typography>
+            <Typography variant="caption" color="text.secondary" component="div">Computed from: {ind.from}</Typography>
+            <Typography variant="caption" color="text.secondary" component="div">Baseline: {ind.baseline}</Typography>
+            {isLive && <Typography variant="caption" color="text.secondary" component="div">This figure is computed now from the Benapole demo record.</Typography>}
           </Box>
-        </SectionCard>
-      </Grid>
-      <Grid size={12}>
-        <Card sx={{ p: 3 }}>
-          <ResponsiveTable
-            rowKey={(r) => r[0]}
-            rows={rows}
-            columns={[
-              { label: 'Measure', render: (r) => <Typography variant="subtitle2">{r[0]}</Typography> },
-              { label: 'This period', align: 'right', render: (r) => r[1] },
-              { label: 'Period before', align: 'right', priority: 'low', render: (r) => <Box component="span" sx={{ color: 'text.secondary' }}>{r[2]}</Box> },
-              { label: 'Change', align: 'right', render: (r) => <Label color={r[3] >= 0 ? 'success' : 'error'}>{r[3] >= 0 ? 'Faster' : 'Slower'} {Math.abs(r[3])}%</Label> },
-            ]}
+        )}
+      </Box>
+    </Card>
+  );
+}
+
+function IndicatorGrid({ group, scope, f }) {
+  const live = liveIndicators(f);
+  const list = indicators.filter((i) => i.group === group);
+  return (
+    <>
+      <Typography variant="h6" component="h2" sx={{ mt: 1, mb: 2 }}>{group} indicators (M2 Annex 11) · {list.length}</Typography>
+      <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))', lg: 'repeat(3, minmax(0,1fr))' } }}>
+        {list.map((ind) => <IndicatorCard key={ind.id} ind={ind} scope={scope} live={live} />)}
+      </Box>
+    </>
+  );
+}
+
+// Every chart has the same information in words beneath it (M2 Annex 24.8).
+function ChartInWords({ children }) {
+  return <Typography variant="body2" color="text.secondary" sx={{ px: 3, pb: 3 }}><Box component="span" sx={{ fontWeight: 600 }}>In words: </Box>{children}</Typography>;
+}
+
+function Performance({ f, scope }) {
+  const theme = useTheme();
+  const hours = [31.2, 30.4, 29.8, 28.1, 26.9, 25.5, 24.2, 23.0, 21.8, 20.9, 19.6, 18.7];
+  return (
+    <Stack spacing={3}>
+      <SectionCard title="Time in port" subheader="Median hours, gate in to exit, last 12 months, Benapole">
+        <Box sx={{ px: 1 }}>
+          <LineChart
+            skipAnimation={reduceMotion()}
+            height={300}
+            xAxis={[{ scaleType: 'point', data: MONTHS }]}
+            series={[{ data: hours, label: 'Median hours', color: theme.palette.primary.main, area: true, showMark: false, curve: 'natural' }]}
+            sx={{ '& .MuiAreaElement-root': { fillOpacity: 0.12 } }}
+            slotProps={{ legend }}
+            margin={{ top: 40, right: 20, left: 40, bottom: 30 }}
           />
-        </Card>
-      </Grid>
-    </Grid>
+        </Box>
+        <ChartInWords>The median time in port fell every month, from {hours[0]} hours in {MONTHS[0]} to {hours[11]} hours in {MONTHS[11]}.</ChartInWords>
+      </SectionCard>
+      <Box><IndicatorGrid group="Performance" scope={scope} f={f} /></Box>
+    </Stack>
   );
 }
 
-function Revenue({ f }) {
+function Revenue({ f, scope }) {
   const theme = useTheme();
-  const rate = f.billed ? `${((f.counted / f.billed) * 100).toFixed(1)}%` : '–';
   return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Billed this month" value="BDT 3.42 cr" change={5.4} icon={<PaymentsRoundedIcon />} /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Collection rate" value={rate} caption="Live, bills in the record" icon={<PaymentsRoundedIcon />} color="success" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Owed" value={formatBDT(f.owed)} caption={`${f.unpaidBills} bill${f.unpaidBills === 1 ? '' : 's'} with payment due`} icon={<PaymentsRoundedIcon />} color="warning" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Correcting lines waiting" value={f.corrections} caption="Approved by a different person" icon={<PaymentsRoundedIcon />} color="error" /></Grid>
-      <Grid size={12}>
-        <SectionCard title="Billed and counted" subheader="Last 12 months (BDT lakh)">
-          <Box sx={{ px: 1 }}>
-            <LineChart
-              skipAnimation={reduceMotion()}
-              height={340}
-              xAxis={[{ scaleType: 'point', data: MONTHS }]}
-              series={[
-                { data: BILLED_LAKH, label: 'Billed', color: theme.palette.primary.main, area: true, showMark: false, curve: 'natural' },
-                { data: COUNTED_LAKH, label: 'Counted', color: theme.palette.warning.main, showMark: false, curve: 'natural' },
-              ]}
-              sx={{ '& .MuiAreaElement-root': { fillOpacity: 0.12 } }}
-              slotProps={{ legend }}
-              margin={{ top: 40, right: 20, left: 40, bottom: 30 }}
-            />
-          </Box>
-        </SectionCard>
-      </Grid>
-    </Grid>
+    <Stack spacing={3}>
+      <SectionCard title="Billed and counted" subheader="Last 12 months (BDT lakh), Benapole">
+        <Box sx={{ px: 1 }}>
+          <LineChart
+            skipAnimation={reduceMotion()}
+            height={340}
+            xAxis={[{ scaleType: 'point', data: MONTHS }]}
+            series={[
+              { data: BILLED_LAKH, label: 'Billed', color: theme.palette.primary.main, area: true, showMark: false, curve: 'natural' },
+              { data: COUNTED_LAKH, label: 'Counted', color: theme.palette.warning.main, showMark: false, curve: 'natural' },
+            ]}
+            sx={{ '& .MuiAreaElement-root': { fillOpacity: 0.12 } }}
+            slotProps={{ legend }}
+            margin={{ top: 40, right: 20, left: 40, bottom: 30 }}
+          />
+        </Box>
+        <ChartInWords>Billing grew from {BILLED_LAKH[0]} lakh in {MONTHS[0]} to {BILLED_LAKH[11]} lakh in {MONTHS[11]}; collections followed about 11% lower each month, {COUNTED_LAKH[11]} lakh in {MONTHS[11]}.</ChartInWords>
+      </SectionCard>
+      <Box><IndicatorGrid group="Revenue" scope={scope} f={f} /></Box>
+    </Stack>
   );
 }
 
-function Resources({ f }) {
+function Resources({ f, scope }) {
   const theme = useTheme();
-  const used = f.sheds.reduce((s, x) => s + x.usedT, 0);
-  const capacity = f.sheds.reduce((s, x) => s + x.capacityT, 0);
-  const fullest = [...f.sheds].sort((a, b) => b.usedT / b.capacityT - a.usedT / a.capacityT)[0];
   return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Storage used" value={`${Math.round((used / capacity) * 100)}%`} caption={`${used} of ${capacity} t, live`} color="info" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Fullest" value={fullest.id} caption={`${Math.round((fullest.usedT / fullest.capacityT) * 100)}% used`} color="warning" /></Grid>
-      <Grid size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title="Tonnes weighed" value="8,412 t" caption="This week" color="primary" /></Grid>
-      <Grid size={12}>
-        <SectionCard title="Space by shed and yard" subheader="Tonnes, live">
-          <Box sx={{ px: 1, pb: 1 }}>
-            <BarChart
-              skipAnimation={reduceMotion()}
-              height={300}
-              borderRadius={6}
-              xAxis={[{ scaleType: 'band', data: f.sheds.map((s) => s.id), categoryGapRatio: 0.5, barGapRatio: 0.2 }]}
-              series={[
-                { data: f.sheds.map((s) => s.usedT), label: 'Used', color: theme.palette.primary.main, stack: 'space' },
-                { data: f.sheds.map((s) => s.capacityT - s.usedT), label: 'Free', color: theme.palette.grey[400], stack: 'space' },
-              ]}
-              slotProps={{ legend }}
-              margin={{ top: 40, right: 16, left: 48, bottom: 30 }}
-            />
-          </Box>
-        </SectionCard>
-      </Grid>
-    </Grid>
+    <Stack spacing={3}>
+      <SectionCard title="Space by shed and yard" subheader="Tonnes, live, Benapole">
+        <Box sx={{ px: 1, pb: 1 }}>
+          <BarChart
+            skipAnimation={reduceMotion()}
+            height={300}
+            borderRadius={6}
+            xAxis={[{ scaleType: 'band', data: f.sheds.map((s) => s.id), categoryGapRatio: 0.5, barGapRatio: 0.2 }]}
+            series={[
+              { data: f.sheds.map((s) => s.usedT), label: 'Used', color: theme.palette.primary.main, stack: 'space' },
+              { data: f.sheds.map((s) => s.capacityT - s.usedT), label: 'Free', color: theme.palette.grey[400], stack: 'space' },
+            ]}
+            slotProps={{ legend }}
+            margin={{ top: 40, right: 16, left: 48, bottom: 30 }}
+          />
+        </Box>
+        <ChartInWords>{f.sheds.map((s) => `${s.id} ${s.usedT} of ${s.capacityT} t used`).join('; ')}.</ChartInWords>
+      </SectionCard>
+      <Box><IndicatorGrid group="Resources" scope={scope} f={f} /></Box>
+    </Stack>
   );
 }
 
-function Control({ f }) {
-  const items = [
-    ['Holds open', f.holds, f.holdText, 'error'],
-    ['Correcting lines waiting', f.corrections, 'Each needs a different approver', 'warning'],
-    ['Truck changes waiting', f.truckChanges, 'Shed and ARO sign-off', 'warning'],
-    ['Weight over tolerance', f.flags, 'Flags, not holds', 'info'],
-    ['Keyed values to check', f.keyed, 'Against BNSW when it is back', 'info'],
-    ['Exits without a valid Exit Pass', 0, 'This week', 'success'],
-  ];
-  return (
-    <Grid container spacing={3}>
-      {items.map(([title, value, caption, color]) => (
-        <Grid key={title} size={{ xs: 12, sm: 6, lg: 4 }}><KpiCard title={title} value={value} caption={caption} color={color} /></Grid>
-      ))}
-    </Grid>
-  );
+function Control({ f, scope }) {
+  return <IndicatorGrid group="Control and security" scope={scope} f={f} />;
 }
 
 // A preview loads with skeleton rows, and a report that cannot be built shows the system-error state with a
@@ -379,6 +417,8 @@ export default function Dashboard() {
   const f = useFigures();
   const [tab, setTab] = useState('operations');
   const [period, setPeriod] = useState('week');
+  // One port or all ports (M2 Annex 11 and M-11); Benapole is live from the record, the others are demo figures.
+  const [scope, setScope] = useState('BEN');
   const s = f.p.state;
   const problems = [
     s.bnswDown && 'BNSW is down: the port works in BNSW-down mode.',
@@ -388,9 +428,15 @@ export default function Dashboard() {
     <>
       <PageHeader
         title={t('Dashboard')}
-        subtitle="Benapole. Live figures come from the port record; history is demonstration data."
+        subtitle={`${scope === 'all' ? 'All pilot ports' : PORT_NAMES[scope]}. Figures marked Live come from the port record; the rest, and last year, are demonstration data.`}
         action={
           <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+            <ToggleButtonGroup size="small" exclusive value={scope} onChange={(_, v) => v && setScope(v)} aria-label="Ports shown">
+              <ToggleButton value="BEN">Benapole</ToggleButton>
+              <ToggleButton value="BHO">Bhomra</ToggleButton>
+              <ToggleButton value="BUR">Burimari</ToggleButton>
+              <ToggleButton value="all">All ports</ToggleButton>
+            </ToggleButtonGroup>
             <ToggleButtonGroup size="small" exclusive value={period} onChange={(_, v) => v && setPeriod(v)} aria-label="Period">
               <ToggleButton value="day">Today</ToggleButton>
               <ToggleButton value="week">Week</ToggleButton>
@@ -411,10 +457,10 @@ export default function Dashboard() {
         <Tab value="reports" label="Reports" />
       </Tabs>
       {tab === 'operations' && <Operations f={f} />}
-      {tab === 'performance' && <Performance />}
-      {tab === 'revenue' && <Revenue f={f} />}
-      {tab === 'resources' && <Resources f={f} />}
-      {tab === 'control' && <Control f={f} />}
+      {tab === 'performance' && <Performance f={f} scope={scope} />}
+      {tab === 'revenue' && <Revenue f={f} scope={scope} />}
+      {tab === 'resources' && <Resources f={f} scope={scope} />}
+      {tab === 'control' && <Control f={f} scope={scope} />}
       {tab === 'reports' && <Reports />}
     </>
   );
