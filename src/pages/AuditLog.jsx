@@ -4,7 +4,7 @@ import { PageHeader } from '../components/common';
 import { usePort } from '../demo/PortStore';
 import { formatDateTime, searchKey } from '../demo/format';
 import { SourceMarker } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-13: every action as a plain sentence. No screen offers to edit or delete an entry, for any role.
 // Filters by how a value was recorded, by person, by role and by period; an export is itself written to the trail.
@@ -60,7 +60,7 @@ export default function AuditLog() {
     <>
       <PageHeader
         title={t('Audit log')}
-        subtitle="Who, in which role, did what, to which record, and how each value was recorded. Entries cannot be changed or deleted."
+        subtitle={tr("Who, in which role, did what, to which record, and how each value was recorded. Entries cannot be changed or deleted.")}
         action={<Button variant="outlined" color="inherit" disabled={!rows.length} onClick={() => setConfirming(true)}>{t('Export')}</Button>}
       />
       {confirming && (
@@ -69,7 +69,7 @@ export default function AuditLog() {
           sx={{ mb: 2 }}
           action={(
             <Stack direction="row" spacing={1}>
-              <Button size="small" color="inherit" onClick={() => setConfirming(false)}>Cancel</Button>
+              <Button size="small" color="inherit" onClick={() => setConfirming(false)}>{tr("Cancel")}</Button>
               <Button size="small" variant="contained" onClick={exportRows}>Export {rows.length} entries</Button>
             </Stack>
           )}
@@ -79,26 +79,26 @@ export default function AuditLog() {
       )}
       <Card sx={{ p: { xs: 2, sm: 3 } }}>
         <Box sx={{ display: 'grid', gap: 2, mb: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0,1fr))', lg: 'repeat(3, minmax(0,1fr))' } }}>
-          <TextField size="small" label="Search records, people or words" value={q} onChange={(e) => setQ(e.target.value)} />
-          <TextField select size="small" label="How the value was recorded" value={source} onChange={(e) => setSource(e.target.value)}>
+          <TextField size="small" label={tr("Search records, people or words")} value={q} onChange={(e) => setQ(e.target.value)} />
+          <TextField select size="small" label={tr("How the value was recorded")} value={source} onChange={(e) => setSource(e.target.value)}>
             {SOURCES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </TextField>
-          <TextField select size="small" label="Period" value={period} onChange={(e) => setPeriod(e.target.value)}>
+          <TextField select size="small" label={tr("Period")} value={period} onChange={(e) => setPeriod(e.target.value)}>
             {Object.keys(PERIODS).map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </TextField>
-          <TextField select size="small" label="Person" value={person} onChange={(e) => setPerson(e.target.value)}>
+          <TextField select size="small" label={tr("Person")} value={person} onChange={(e) => setPerson(e.target.value)}>
             {people.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </TextField>
-          <TextField select size="small" label="Role" value={role} onChange={(e) => setRole(e.target.value)}>
+          <TextField select size="small" label={tr("Role")} value={role} onChange={(e) => setRole(e.target.value)}>
             {roleNames.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </TextField>
         </Box>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
-          <Button size="small" variant={onlyKeyed ? 'contained' : 'outlined'} color={onlyKeyed ? 'primary' : 'inherit'} aria-pressed={onlyKeyed} onClick={() => setOnlyKeyed((v) => !v)}>Only keyed, typed or back-entered values</Button>
-          {filtered && <Button size="small" color="inherit" onClick={clear}>Clear filters</Button>}
+          <Button size="small" variant={onlyKeyed ? 'contained' : 'outlined'} color={onlyKeyed ? 'primary' : 'inherit'} aria-pressed={onlyKeyed} onClick={() => setOnlyKeyed((v) => !v)}>{tr("Only keyed, typed or back-entered values")}</Button>
+          {filtered && <Button size="small" color="inherit" onClick={clear}>{tr("Clear filters")}</Button>}
           <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>{rows.length} of {events.length} entries</Typography>
         </Stack>
-        {rows.length === 0 && <Typography variant="body2" color="text.secondary">Nothing matches. Clear the filters or search for a plate or manifest number.</Typography>}
+        {rows.length === 0 && <Typography variant="body2" color="text.secondary">{tr("Nothing matches. Clear the filters or search for a plate or manifest number.")}</Typography>}
         <Stack spacing={1.5}>
           {rows.map((e) => (
             <Box key={e.id} sx={{ pb: 1.5, borderBottom: 1, borderColor: 'divider' }}>

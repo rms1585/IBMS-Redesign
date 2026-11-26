@@ -54,7 +54,7 @@ function StepModules({ modules, setModules }) {
   ];
   return (
     <>
-      <Alert severity="info" sx={{ mb: 2 }}>At a live port, switching a module sends a request to head office. Nothing changes until it is approved, and a module cannot be turned off while work is in flight.</Alert>
+      <Alert severity="info" sx={{ mb: 2 }}>{tr("At a live port, switching a module sends a request to head office. Nothing changes until it is approved, and a module cannot be turned off while work is in flight.")}</Alert>
       <Stack divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
         {rows.map(([k, title, desc, fixed]) => (
           <Stack key={k} direction="row" alignItems="center" spacing={2} sx={{ py: 2 }}>
@@ -62,7 +62,7 @@ function StepModules({ modules, setModules }) {
               <Typography variant="subtitle2">{title}</Typography>
               <Typography variant="body2" color="text.secondary">{desc}</Typography>
             </Box>
-            {fixed ? <Label>Always on</Label> : <Switch inputProps={{ 'aria-label': title }} checked={Boolean(modules[k])} onChange={(e) => setModules({ ...modules, [k]: e.target.checked })} />}
+            {fixed ? <Label>{tr("Always on")}</Label> : <Switch inputProps={{ 'aria-label': title }} checked={Boolean(modules[k])} onChange={(e) => setModules({ ...modules, [k]: e.target.checked })} />}
           </Stack>
         ))}
       </Stack>
@@ -125,12 +125,12 @@ function StepResources({ port, modules }) {
   return (
     <>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">Border gates face the zero line. Inland gates face the Bangladesh road.</Typography>
+        <Typography variant="body2" color="text.secondary">{tr("Border gates face the zero line. Inland gates face the Bangladesh road.")}</Typography>
         <Button variant="outlined" color="inherit" startIcon={<AddRoundedIcon />} onClick={() => setAdding(true)}>{tr("Add resource")}</Button>
       </Stack>
       <Card variant="outlined" sx={{ boxShadow: 'none' }}>
         <Table size="small">
-          <TableHead><TableRow><TableCell sx={{ pl: 2 }}>Name</TableCell><TableCell>Type</TableCell><TableCell>Details</TableCell><TableCell>Status</TableCell><TableCell sx={{ pr: 2 }} /></TableRow></TableHead>
+          <TableHead><TableRow><TableCell sx={{ pl: 2 }}>{tr("Name")}</TableCell><TableCell>{tr("Type")}</TableCell><TableCell>{tr("Details")}</TableCell><TableCell>{tr("Status")}</TableCell><TableCell sx={{ pr: 2 }} /></TableRow></TableHead>
           <TableBody>
             {resources.map(([n, t, d, s]) => (
               <TableRow key={n} hover>
@@ -145,7 +145,7 @@ function StepResources({ port, modules }) {
         </Table>
       </Card>
       <Box sx={{ mt: 3, p: 2.5, borderRadius: 2, bgcolor: 'background.neutral' }}>
-        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Weighing rules</Typography>
+        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>{tr("Weighing rules")}</Typography>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}><TextField
             fullWidth
@@ -157,9 +157,9 @@ function StepResources({ port, modules }) {
             helperText={toleranceValid ? 'Set by BLPA and Customs together. A versioned rule: a change goes to a second approver, and each weight check records the version it used.' : 'Enter a percentage from 1 to 20.'}
           /></Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Typography variant="caption" color="text.secondary" component="div">Tare rule (every port)</Typography>
-            <Typography variant="body2" fontWeight={600}>Stored tare valid for 3 months</Typography>
-            <Typography variant="caption" color="text.secondary">Set by BLPA headquarters, the same at every port. A port cannot change it.</Typography>
+            <Typography variant="caption" color="text.secondary" component="div">{tr("Tare rule (every port)")}</Typography>
+            <Typography variant="body2" fontWeight={600}>{tr("Stored tare valid for 3 months")}</Typography>
+            <Typography variant="caption" color="text.secondary">{tr("Set by BLPA headquarters, the same at every port. A port cannot change it.")}</Typography>
           </Grid>
         </Grid>
       </Box>
@@ -195,12 +195,12 @@ function StepRules({ port }) {
   );
   return (
     <Stack spacing={2.5}>
-      <Alert severity="info">At a live port each change here goes to head office for approval and is kept as a new version.</Alert>
+      <Alert severity="info">{tr("At a live port each change here goes to head office for approval and is kept as a new version.")}</Alert>
       {block('Manifests entered by hand', (
         <Stack direction="row" spacing={2} alignItems="center">
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2">Allow "Other" manifest entry</Typography>
-            <Typography variant="caption" color="text.secondary">In BNSW-down mode the gate keys the Car Pass lines as a manifest marked "Other", unmatched until BNSW confirms it. Off: the truck waits until BNSW returns.</Typography>
+            <Typography variant="body2">{tr("Allow \"Other\" manifest entry")}</Typography>
+            <Typography variant="caption" color="text.secondary">{tr("In BNSW-down mode the gate keys the Car Pass lines as a manifest marked \"Other\", unmatched until BNSW confirms it. Off: the truck waits until BNSW returns.")}</Typography>
           </Box>
           <Switch inputProps={{ 'aria-label': 'Allow Other manifest entry' }} checked={rules.otherManifest} onChange={(e) => setRules({ otherManifest: e.target.checked })} />
         </Stack>
@@ -238,7 +238,7 @@ function StepRules({ port }) {
               <TextField size="small" label={tr('Night delegate')} value={a.night} onChange={setRow('approvals', i, 'night')} error={!a.night.trim()} />
             </Box>
           ))}
-          <Typography variant="caption" color="text.secondary">Past the limit, or at night, the item goes to the delegate and the original approver is told.</Typography>
+          <Typography variant="caption" color="text.secondary">{tr("Past the limit, or at night, the item goes to the delegate and the original approver is told.")}</Typography>
         </Stack>
       ))}
       {block('Open-record limits', (
@@ -250,7 +250,7 @@ function StepRules({ port }) {
               <TextField size="small" label={tr('Owner')} value={r.owner} onChange={setRow('openRecords', i, 'owner')} error={!r.owner.trim()} />
             </Box>
           ))}
-          <Typography variant="caption" color="text.secondary">A record open past its limit appears on the owner's Inbox and the open-record list.</Typography>
+          <Typography variant="caption" color="text.secondary">{tr("A record open past its limit appears on the owner's Inbox and the open-record list.")}</Typography>
         </Stack>
       ))}
     </Stack>
@@ -261,8 +261,8 @@ function StepPeople() {
   return (
     <Grid container spacing={3}>
       <Grid size={7}>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>BLPA staff at this port</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Assign existing national users. New identities are created in Users, not here.</Typography>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("BLPA staff at this port")}</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("Assign existing national users. New identities are created in Users, not here.")}</Typography>
         <Stack spacing={1.5}>
           {users.filter((u) => u.org === 'BLPA' && u.status === 'Active').map((u) => (
             <Stack key={u.email} direction="row" spacing={1.5} alignItems="center">
@@ -276,7 +276,7 @@ function StepPeople() {
         </Stack>
       </Grid>
       <Grid size={5}>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>C&amp;F agencies permitted here</Typography>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("C&F agencies permitted here")}</Typography>
         <Stack>
           {agencies.map((a) => (
             <Stack key={a.id} direction="row" alignItems="center">
@@ -322,7 +322,7 @@ function StepGoLive({ port, modules, onRequest }) {
           <Stack key={l} direction="row" spacing={1.25} alignItems="center">
             {ok ? <CheckCircleRoundedIcon color="success" fontSize="small" /> : <CancelRoundedIcon color={required ? 'error' : 'disabled'} fontSize="small" />}
             <Typography variant="body2" sx={{ flex: 1 }} color={ok || !required ? 'text.primary' : 'error.text'}>{l}</Typography>
-            {!required && <Label>Advisory</Label>}
+            {!required && <Label>{tr("Advisory")}</Label>}
           </Stack>
         ))}
       </Stack>
@@ -331,7 +331,7 @@ function StepGoLive({ port, modules, onRequest }) {
         <Alert severity="error">{blocking.length} blocking check{blocking.length > 1 ? 's' : ''} must pass before you can request go-live.</Alert>
       ) : (
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="body2" color="text.secondary">A head-office approver reviews the request. You cannot approve your own request.</Typography>
+          <Typography variant="body2" color="text.secondary">{tr("A head-office approver reviews the request. You cannot approve your own request.")}</Typography>
           <Button variant="contained" size="large" onClick={onRequest}>{tr("Request go-live")}</Button>
         </Stack>
       )}
@@ -409,8 +409,8 @@ export default function PortSetup() {
                     {i < steps.length - 1 ? i + 1 : 'L'}
                   </Box>
                   <Box>
-                    <Typography variant="subtitle2" color={active ? 'primary.main' : 'text.primary'}>{s.title}</Typography>
-                    <Typography variant="caption" color="text.secondary">{s.desc}</Typography>
+                    <Typography variant="subtitle2" color={active ? 'primary.main' : 'text.primary'}>{tr(s.title)}</Typography>
+                    <Typography variant="caption" color="text.secondary">{tr(s.desc)}</Typography>
                   </Box>
                 </ButtonBase>
               );
@@ -418,7 +418,7 @@ export default function PortSetup() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, lg: 9 }}>
-          <SectionCard title={steps[step].title} subheader={steps[step].desc}>
+          <SectionCard title={tr(steps[step].title)} subheader={tr(steps[step].desc)}>
             <Box sx={{ px: 3, pb: 3 }}>
               {step === 0 && <StepPort key={port.code} port={port} />}
               {step === 1 && <StepModules modules={modules} setModules={setModules} />}

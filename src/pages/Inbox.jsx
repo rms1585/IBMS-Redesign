@@ -8,7 +8,7 @@ import SignAndConfirm from '../demo/SignaturePad';
 import { MISSING_PAYMENTS } from '../data/finance';
 import { formatDateTime } from '../demo/format';
 import { Confirmation, Plate, ReasonField, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-13: every approval and request in one inbox. The maker never sees Approve or Reject, the super admin included.
 
@@ -27,9 +27,9 @@ function CorrectionItem({ c, onDone }) {
         <StatusPill word={c.decision ? (c.decision.approve ? 'Approved' : 'Rejected') : mine ? 'Sent for approval' : 'Waiting approval'} />
       </Stack>
       <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0,1fr))' }, mb: 1.5 }}>
-        <Box><Typography variant="caption" color="text.secondary">Field</Typography><Typography variant="body2">{c.field}</Typography></Box>
-        <Box><Typography variant="caption" color="text.secondary">Value now</Typography><Typography variant="body2">{c.from}</Typography></Box>
-        <Box><Typography variant="caption" color="text.secondary">Value asked for</Typography><Typography variant="body2" fontWeight={600}>{c.to}</Typography></Box>
+        <Box><Typography variant="caption" color="text.secondary">{tr("Field")}</Typography><Typography variant="body2">{c.field}</Typography></Box>
+        <Box><Typography variant="caption" color="text.secondary">{tr("Value now")}</Typography><Typography variant="body2">{c.from}</Typography></Box>
+        <Box><Typography variant="caption" color="text.secondary">{tr("Value asked for")}</Typography><Typography variant="body2" fontWeight={600}>{c.to}</Typography></Box>
       </Box>
       <Typography variant="body2">Reason: {c.reason}</Typography>
       <Typography variant="caption" color="text.secondary">Asked by {c.by}, {c.role} · {formatDateTime(c.at)}</Typography>
@@ -40,22 +40,22 @@ function CorrectionItem({ c, onDone }) {
           <Typography variant="caption" color="text.secondary">Signed on the device · second sign-in factor confirmed · {formatDateTime(signed.at)}</Typography>
         </Stack>
       )}
-      {!c.decision && mine && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>You asked for this change, so someone else decides it. It does not apply until approved.</Typography>}
+      {!c.decision && mine && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{tr("You asked for this change, so someone else decides it. It does not apply until approved.")}</Typography>}
       {!c.decision && !mine && (
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
-          <TextField size="small" label="Remarks (required to reject)" value={remarks} onChange={(e) => setRemarks(e.target.value)} sx={{ flex: 1 }} />
-          <Button variant="contained" onClick={() => setSigning(true)} disabled={signing}>Approve correction</Button>
-          <Button color="error" variant="outlined" disabled={!remarks.trim()} onClick={() => { p.decideCorrection(c.id, false, remarks.trim()); onDone('Correction rejected'); }}>Reject correction</Button>
+          <TextField size="small" label={tr("Remarks (required to reject)")} value={remarks} onChange={(e) => setRemarks(e.target.value)} sx={{ flex: 1 }} />
+          <Button variant="contained" onClick={() => setSigning(true)} disabled={signing}>{tr("Approve correction")}</Button>
+          <Button color="error" variant="outlined" disabled={!remarks.trim()} onClick={() => { p.decideCorrection(c.id, false, remarks.trim()); onDone('Correction rejected'); }}>{tr("Reject correction")}</Button>
         </Stack>
       )}
       {!c.decision && !mine && signing && (
         <Stack spacing={1.5} sx={{ mt: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-          <Typography variant="subtitle2">Sign to approve</Typography>
+          <Typography variant="subtitle2">{tr("Sign to approve")}</Typography>
           <SignAndConfirm person={p.actor.name} onChange={setSignature} />
           <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center">
-            {!signature && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>Sign and enter the six-digit code to approve.</Typography>}
-            <Button variant="outlined" color="inherit" onClick={() => setSigning(false)}>Cancel</Button>
-            <Button variant="contained" disabled={!signature} onClick={() => { setSignatures((all) => ({ ...all, [c.id]: { ...signature, at: new Date().toISOString() } })); p.decideCorrection(c.id, true, remarks.trim()); onDone('Correction approved and signed'); }}>Sign and approve</Button>
+            {!signature && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{tr("Sign and enter the six-digit code to approve.")}</Typography>}
+            <Button variant="outlined" color="inherit" onClick={() => setSigning(false)}>{tr("Cancel")}</Button>
+            <Button variant="contained" disabled={!signature} onClick={() => { setSignatures((all) => ({ ...all, [c.id]: { ...signature, at: new Date().toISOString() } })); p.decideCorrection(c.id, true, remarks.trim()); onDone('Correction approved and signed'); }}>{tr("Sign and approve")}</Button>
           </Stack>
         </Stack>
       )}
@@ -92,19 +92,19 @@ function OverrideRequests({ onDone }) {
   };
   return (
     <Card sx={{ p: 3 }}>
-      <SectionTitle>Overrides</SectionTitle>
+      <SectionTitle>{tr("Overrides")}</SectionTitle>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0,1fr))' } }}>
-        <TextField select label="Rule to override" value={rule} onChange={(e) => setRule(e.target.value)}>
-          {OVERRIDABLE.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
-          <MenuItem disabled divider sx={{ typography: 'caption' }}>Never overridable</MenuItem>
-          {NEVER.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+        <TextField select label={tr("Rule to override")} value={rule} onChange={(e) => setRule(e.target.value)}>
+          {OVERRIDABLE.map((r) => <MenuItem key={r} value={r}>{tr(r)}</MenuItem>)}
+          <MenuItem disabled divider sx={{ typography: 'caption' }}>{tr("Never overridable")}</MenuItem>
+          {NEVER.map((r) => <MenuItem key={r} value={r}>{tr(r)}</MenuItem>)}
         </TextField>
-        <TextField label="Record or place" placeholder="Shed 31 · Bay 2" value={record} onChange={(e) => setRecord(e.target.value)} disabled={never} />
+        <TextField label={tr("Record or place")} placeholder="Shed 31 · Bay 2" value={record} onChange={(e) => setRecord(e.target.value)} disabled={never} />
       </Box>
       {never ? <Alert severity="error" variant="outlined" sx={{ mt: 2 }}>{rule} never allows an override in IBMS, for any role. Customs, the provider or the approver who owns it must act.</Alert> : <Box sx={{ mt: 2 }}><ReasonField value={reason} onChange={setReason} /></Box>}
       <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }}>
-        {why && !never && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{why}</Typography>}
-        <Button variant="contained" disabled={Boolean(why)} onClick={raise}>Request override</Button>
+        {why && !never && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{tr(why)}</Typography>}
+        <Button variant="contained" disabled={Boolean(why)} onClick={raise}>{tr("Request override")}</Button>
       </Stack>
       {requests.length > 0 && (
         <Stack spacing={1.5} sx={{ mt: 3 }}>
@@ -115,8 +115,8 @@ function OverrideRequests({ onDone }) {
                 <Typography variant="caption" color="text.secondary">Asked by {o.by}, {formatDateTime(o.at)}{o.decision ? ` · ${o.decision.approve ? 'approved' : 'rejected'} by ${o.decision.by}` : ''}</Typography>
               </Box>
               {o.decision ? <StatusPill word={o.decision.approve ? 'Approved' : 'Rejected'} />
-                : o.by === p.actor.name ? <Typography variant="caption" color="text.secondary">You asked, so someone else decides</Typography>
-                  : <Stack direction="row" spacing={1}><Button size="small" variant="contained" onClick={() => decide(o, true)}>Approve</Button><Button size="small" variant="outlined" color="error" onClick={() => decide(o, false)}>Reject</Button></Stack>}
+                : o.by === p.actor.name ? <Typography variant="caption" color="text.secondary">{tr("You asked, so someone else decides")}</Typography>
+                  : <Stack direction="row" spacing={1}><Button size="small" variant="contained" onClick={() => decide(o, true)}>{tr("Approve")}</Button><Button size="small" variant="outlined" color="error" onClick={() => decide(o, false)}>{tr("Reject")}</Button></Stack>}
             </Stack>
           ))}
         </Stack>
@@ -133,20 +133,20 @@ function Reconciliation() {
   return (
     <Stack spacing={3}>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>After the manual procedure</SectionTitle>
-        {cases.length === 0 ? <Typography variant="body2" color="text.secondary">No exception from back-entry. Cases appear here once paper forms are back-entered.</Typography> : (
+        <SectionTitle>{tr("After the manual procedure")}</SectionTitle>
+        {cases.length === 0 ? <Typography variant="body2" color="text.secondary">{tr("No exception from back-entry. Cases appear here once paper forms are back-entered.")}</Typography> : (
           <Stack spacing={1.5}>{cases.map((c) => (
             <Stack key={c.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
               <Label color={c.cls === 'E' || c.cls === 'D' ? 'error' : c.cls === 'C' ? 'warning' : 'info'}>Class {c.cls}</Label>
               <Typography variant="body2" sx={{ flex: 1 }}>{c.text} · {c.owner}, due {formatDateTime(c.deadline)}</Typography>
-              {c.referred ? <Label color="success">With owner</Label> : <Button size="small" variant="outlined" color="inherit" component={RouterLink} to="/back-entry">Open</Button>}
+              {c.referred ? <Label color="success">{tr("With owner")}</Label> : <Button size="small" variant="outlined" color="inherit" component={RouterLink} to="/back-entry">{tr("Open")}</Button>}
             </Stack>
           ))}</Stack>
         )}
       </Card>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Keyed while BNSW was down</SectionTitle>
-        {keyed.length === 0 ? <Typography variant="body2" color="text.secondary">Nothing keyed is waiting for BNSW.</Typography> : (
+        <SectionTitle>{tr("Keyed while BNSW was down")}</SectionTitle>
+        {keyed.length === 0 ? <Typography variant="body2" color="text.secondary">{tr("Nothing keyed is waiting for BNSW.")}</Typography> : (
           <Stack spacing={1.5}>{keyed.map((b) => (
             <Stack key={b.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
               <Typography variant="body2" sx={{ flex: 1 }}>Bill of Entry {b.reg} for {b.manifest}{b.release?.ref ? `, release ${b.release.ref}` : ''}: checked against BNSW when it returns</Typography>
@@ -156,11 +156,11 @@ function Reconciliation() {
         )}
       </Card>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Payments that did not arrive</SectionTitle>
+        <SectionTitle>{tr("Payments that did not arrive")}</SectionTitle>
         <Stack spacing={1.5}>{MISSING_PAYMENTS.map((m) => (
           <Stack key={m.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
             <Typography variant="body2" sx={{ flex: 1 }}>{m.id}: payment ID {m.paymentId}, {m.provider}, open since {m.since}. {m.status}.</Typography>
-            <Button size="small" variant="outlined" color="inherit" component={RouterLink} to="/billing">Open</Button>
+            <Button size="small" variant="outlined" color="inherit" component={RouterLink} to="/billing">{tr("Open")}</Button>
           </Stack>
         ))}</Stack>
       </Card>
@@ -185,10 +185,10 @@ function Alerts() {
     <Stack spacing={3}>
       <Card sx={{ p: 3 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <SectionTitle>Alerts</SectionTitle>
-          <Button size="small" color="inherit" disabled={!shown.some((a) => !a.read)} onClick={() => setAlerts((l) => l.map((a) => ({ ...a, read: true })))}>Mark all as read</Button>
+          <SectionTitle>{tr("Alerts")}</SectionTitle>
+          <Button size="small" color="inherit" disabled={!shown.some((a) => !a.read)} onClick={() => setAlerts((l) => l.map((a) => ({ ...a, read: true })))}>{tr("Mark all as read")}</Button>
         </Stack>
-        {shown.length === 0 && <Typography variant="body2" color="text.secondary">No alerts for the types you follow.</Typography>}
+        {shown.length === 0 && <Typography variant="body2" color="text.secondary">{tr("No alerts for the types you follow.")}</Typography>}
         <Stack spacing={1}>{shown.map((a) => (
           <Stack key={a.id} direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: 1, bgcolor: a.read ? 'transparent' : 'background.neutral' }}>
             <Box sx={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, bgcolor: a.read ? 'transparent' : 'primary.main' }} aria-hidden />
@@ -196,12 +196,12 @@ function Alerts() {
               <Typography variant="body2" fontWeight={a.read ? 400 : 600}>{a.text}</Typography>
               <Typography variant="caption" color="text.secondary">{a.type} · {formatDateTime(a.at)}{a.read ? '' : ' · unread'}</Typography>
             </Box>
-            {!a.read && <Button size="small" color="inherit" onClick={() => setAlerts((l) => l.map((x) => (x.id === a.id ? { ...x, read: true } : x)))}>Mark read</Button>}
+            {!a.read && <Button size="small" color="inherit" onClick={() => setAlerts((l) => l.map((x) => (x.id === a.id ? { ...x, read: true } : x)))}>{tr("Mark read")}</Button>}
           </Stack>
         ))}</Stack>
       </Card>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Alerts you follow</SectionTitle>
+        <SectionTitle>{tr("Alerts you follow")}</SectionTitle>
         <Stack direction="row" flexWrap="wrap" gap={1}>
           {ALERT_TYPES.map((tp) => {
             const on = subs.includes(tp);
@@ -244,21 +244,21 @@ export default function Inbox() {
       {tab === 3 && <Alerts />}
       <Stack spacing={3} sx={{ display: tab < 2 ? 'flex' : 'none' }}>
         <Card sx={{ p: 3, display: tab === 0 ? 'block' : 'none' }}>
-          <SectionTitle>Approvals</SectionTitle>
+          <SectionTitle>{tr("Approvals")}</SectionTitle>
           <Stack spacing={2}>
-            {open.length === 0 && <Typography variant="body2" color="text.secondary">No correction is waiting. A request made from a locked value appears here for a second person.</Typography>}
+            {open.length === 0 && <Typography variant="body2" color="text.secondary">{tr("No correction is waiting. A request made from a locked value appears here for a second person.")}</Typography>}
             {open.map((c) => <CorrectionItem key={c.id} c={c} onDone={setMsg} />)}
           </Stack>
         </Card>
         {tab === 0 && <OverrideRequests onDone={setMsg} />}
         <Card sx={{ p: 3, display: tab === 1 ? 'block' : 'none' }}>
-          <SectionTitle>Needs attention</SectionTitle>
+          <SectionTitle>{tr("Needs attention")}</SectionTitle>
           <Stack spacing={1.5}>
             {passes.map((x) => (
               <Stack key={x.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
                 <StatusPill word="Waiting approval" />
                 <Typography variant="body2">Exit Pass {x.id} for <Plate>{x.plate}</Plate>: {3 - Object.values(x.approvals).filter(Boolean).length} of 3 approvals missing</Typography>
-                <Button size="small" variant="outlined" component={RouterLink} to="/inland-gate">Open</Button>
+                <Button size="small" variant="outlined" component={RouterLink} to="/inland-gate">{tr("Open")}</Button>
               </Stack>
             ))}
             {changes.map((tc) => (
@@ -270,7 +270,7 @@ export default function Inbox() {
             {flags.map((v) => (
               <Stack key={v.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
                 <StatusPill word="Weight over tolerance" />
-                <Typography variant="body2"><Plate>{v.plate}</Plate>: flagged to BLPA and Customs officials, no inspection outcome yet</Typography>
+                <Typography variant="body2"><Plate>{v.plate}</Plate>{tr(": flagged to BLPA and Customs officials, no inspection outcome yet")}</Typography>
               </Stack>
             ))}
             {late.map((v) => (
@@ -279,12 +279,12 @@ export default function Inbox() {
                 <Typography variant="body2"><Plate>{v.plate}</Plate>: admitted {formatDateTime(v.gateIn.at)}, manifest {v.carPassManifest} not matched (EXC-04). Owner: posting officer.</Typography>
               </Stack>
             ))}
-            {!passes.length && !changes.length && !flags.length && !late.length && <Typography variant="body2" color="text.secondary">Nothing needs attention.</Typography>}
+            {!passes.length && !changes.length && !flags.length && !late.length && <Typography variant="body2" color="text.secondary">{tr("Nothing needs attention.")}</Typography>}
           </Stack>
         </Card>
         {tab === 0 && decided.length > 0 && (
           <Card sx={{ p: 3 }}>
-            <SectionTitle>Decided</SectionTitle>
+            <SectionTitle>{tr("Decided")}</SectionTitle>
             <Stack spacing={2}>{decided.map((c) => <CorrectionItem key={c.id} c={c} onDone={setMsg} />)}</Stack>
           </Card>
         )}

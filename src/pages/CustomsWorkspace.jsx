@@ -7,7 +7,7 @@ import { usePort, useStoredState } from '../demo/PortStore';
 import { formatDateTime, formatKg, searchKey } from '../demo/format';
 import { initialReceipts } from './Passenger';
 import { ApprovalRow, Confirmation, HoldRow, Plate, ReasonField, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-20: Customs acts under the officer's own name. BGB and Immigration read, and may place and lift their own holds.
 const BODY_OF_ROLE = { customs: 'Customs', bgb: 'BGB', immigration: 'Immigration' };
@@ -30,7 +30,7 @@ function PlaceHold({ body, onDone }) {
       <Typography variant="subtitle1" gutterBottom>Place a {body === 'BGB' ? 'BGB stop' : `${body} hold`}</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>It applies at once at every exit gate and invalidates any Exit Pass it touches. Only {body} can lift it.</Typography>
       <Stack spacing={2}>
-        <TextField select label="On" value={key} onChange={(e) => setKey(e.target.value)} required>
+        <TextField select label={tr("On")} value={key} onChange={(e) => setKey(e.target.value)} required>
           {allowed.map((x) => <MenuItem key={x.key} value={x.key}>{x.label}</MenuItem>)}
         </TextField>
         <ReasonField value={reason} onChange={setReason} />
@@ -52,17 +52,17 @@ function Holds({ body, onDone }) {
   return (
     <Stack spacing={2}>
       <PlaceHold body={body} onDone={onDone} />
-      <SectionTitle>Open holds</SectionTitle>
-      {p.activeHolds.length === 0 && <Typography variant="body2" color="text.secondary">No hold is open at Benapole.</Typography>}
+      <SectionTitle>{tr("Open holds")}</SectionTitle>
+      {p.activeHolds.length === 0 && <Typography variant="body2" color="text.secondary">{tr("No hold is open at Benapole.")}</Typography>}
       {p.activeHolds.map((h) => (
         <Box key={h.id}>
           <HoldRow hold={h} onLift={h.body === body ? () => setLifting(h.id) : undefined} liftLabel={h.body === 'BGB' ? 'Lift stop' : 'Lift hold'} />
           {h.body !== body && <Typography variant="caption" color="text.secondary">Only {h.body} can lift this hold.</Typography>}
           {lifting === h.id && (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
-              <TextField size="small" label="Reference for the lift" value={ref} onChange={(e) => setRef(e.target.value)} />
-              <Button variant="contained" onClick={() => { p.liftHold(h.id, ref.trim() || undefined); setLifting(null); setRef(''); onDone('Hold lifted. Passes it invalidated stay invalid'); }}>Lift hold</Button>
-              <Button variant="outlined" color="inherit" onClick={() => setLifting(null)}>Cancel</Button>
+              <TextField size="small" label={tr("Reference for the lift")} value={ref} onChange={(e) => setRef(e.target.value)} />
+              <Button variant="contained" onClick={() => { p.liftHold(h.id, ref.trim() || undefined); setLifting(null); setRef(''); onDone('Hold lifted. Passes it invalidated stay invalid'); }}>{tr("Lift hold")}</Button>
+              <Button variant="outlined" color="inherit" onClick={() => setLifting(null)}>{tr("Cancel")}</Button>
             </Stack>
           )}
         </Box>
@@ -78,8 +78,8 @@ function WeightFlags({ onDone }) {
   const [open, setOpen] = useState(null);
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">IBMS flags a weight over tolerance and places no hold of its own. You may place a hold, inspect while the truck waits in the holding area, and record the outcome.</Typography>
-      {flagged.length === 0 && <Typography variant="body2" color="text.secondary">No weight over tolerance is open.</Typography>}
+      <Typography variant="body2" color="text.secondary">{tr("IBMS flags a weight over tolerance and places no hold of its own. You may place a hold, inspect while the truck waits in the holding area, and record the outcome.")}</Typography>
+      {flagged.length === 0 && <Typography variant="body2" color="text.secondary">{tr("No weight over tolerance is open.")}</Typography>}
       {flagged.map((v) => (
         <Card key={v.id} variant="outlined" sx={{ p: 2 }}>
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
@@ -91,13 +91,13 @@ function WeightFlags({ onDone }) {
             <Typography variant="body2" sx={{ mt: 1 }}>Inspection: {v.weigh.inspection.outcome} · {v.weigh.inspection.by}, {formatDateTime(v.weigh.inspection.at)}</Typography>
           ) : open === v.id ? (
             <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-              <ReasonField label="Outcome of the inspection" value={reason} onChange={setReason} />
-              <Stack direction="row" spacing={1}><Button variant="contained" disabled={!reason.trim()} onClick={() => { p.recordInspection(v.id, reason.trim()); setOpen(null); setReason(''); onDone('Inspection outcome recorded'); }}>Record outcome</Button><Button variant="outlined" color="inherit" onClick={() => setOpen(null)}>Cancel</Button></Stack>
+              <ReasonField label={tr("Outcome of the inspection")} value={reason} onChange={setReason} />
+              <Stack direction="row" spacing={1}><Button variant="contained" disabled={!reason.trim()} onClick={() => { p.recordInspection(v.id, reason.trim()); setOpen(null); setReason(''); onDone('Inspection outcome recorded'); }}>{tr("Record outcome")}</Button><Button variant="outlined" color="inherit" onClick={() => setOpen(null)}>{tr("Cancel")}</Button></Stack>
             </Stack>
           ) : (
             <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-              <Button size="small" color="error" variant="outlined" onClick={() => { p.placeHold({ target: { kind: 'truck', id: v.plate, label: `truck ${v.plate}`, manifest: v.manifests[0] }, body: 'Customs', reason: 'Weight over tolerance: goods to be inspected' }); onDone('Customs hold placed on the truck'); }}>Place a hold on the truck</Button>
-              <Button size="small" variant="outlined" color="inherit" onClick={() => setOpen(v.id)}>Record the inspection outcome</Button>
+              <Button size="small" color="error" variant="outlined" onClick={() => { p.placeHold({ target: { kind: 'truck', id: v.plate, label: `truck ${v.plate}`, manifest: v.manifests[0] }, body: 'Customs', reason: 'Weight over tolerance: goods to be inspected' }); onDone('Customs hold placed on the truck'); }}>{tr("Place a hold on the truck")}</Button>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setOpen(v.id)}>{tr("Record the inspection outcome")}</Button>
             </Stack>
           )}
         </Card>
@@ -112,22 +112,22 @@ function CoApprovals({ onDone }) {
   const changes = p.state.truckChanges.filter((t) => !t.done && !t.aro);
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">Your co-approval of a locked load is Customs' allocation of the goods to that truck and signs its Exit Pass. Each approval needs your second sign-in factor.</Typography>
-      {loads.length === 0 && changes.length === 0 && <Typography variant="body2" color="text.secondary">Nothing waits for your co-approval.</Typography>}
+      <Typography variant="body2" color="text.secondary">{tr("Your co-approval of a locked load is Customs' allocation of the goods to that truck and signs its Exit Pass. Each approval needs your second sign-in factor.")}</Typography>
+      {loads.length === 0 && changes.length === 0 && <Typography variant="body2" color="text.secondary">{tr("Nothing waits for your co-approval.")}</Typography>}
       {loads.map(({ d, s, i }) => (
         <Card key={`${d.id}-${i}`} variant="outlined" sx={{ p: 2 }}>
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 1 }}>
             <Plate size="large">{s.plate}</Plate>
             <Typography variant="body2" color="text.secondary">{formatKg(s.load.kg)} locked by {s.load.lockedBy} · {d.id}</Typography>
           </Stack>
-          <ApprovalRow title="Customs Assistant Revenue Officer" approval={null} action={<Button size="small" variant="contained" onClick={() => { p.aroCoApprove(d.id, i); onDone('Load co-approved and Exit Pass signed'); }}>Co-approve load</Button>} />
+          <ApprovalRow title="Customs Assistant Revenue Officer" approval={null} action={<Button size="small" variant="contained" onClick={() => { p.aroCoApprove(d.id, i); onDone('Load co-approved and Exit Pass signed'); }}>{tr("Co-approve load")}</Button>} />
         </Card>
       ))}
       {changes.map((tc) => (
         <Card key={tc.id} variant="outlined" sx={{ p: 2 }}>
           <Typography variant="subtitle2">Truck change on {tc.pass}: {tc.from} to {tc.to}</Typography>
           <Typography variant="body2" color="text.secondary">Proposed by {tc.proposedBy}: {tc.reason}</Typography>
-          <ApprovalRow title="Customs Assistant Revenue Officer" approval={tc.aro} action={<Button size="small" variant="contained" onClick={() => { p.approveTruckChange(tc.id, 'aro'); onDone('Truck change approved'); }}>Approve truck change</Button>} />
+          <ApprovalRow title="Customs Assistant Revenue Officer" approval={tc.aro} action={<Button size="small" variant="contained" onClick={() => { p.approveTruckChange(tc.id, 'aro'); onDone('Truck change approved'); }}>{tr("Approve truck change")}</Button>} />
         </Card>
       ))}
     </Stack>
@@ -141,12 +141,12 @@ function Reweigh({ onDone }) {
   const [reason, setReason] = useState('');
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">A re-weigh flag from the Customs in-charge makes the empty weighing mandatory with no further approval.</Typography>
-      <TextField select label="Truck" value={sel} onChange={(e) => setSel(e.target.value)} sx={{ maxWidth: 360 }}>
+      <Typography variant="body2" color="text.secondary">{tr("A re-weigh flag from the Customs in-charge makes the empty weighing mandatory with no further approval.")}</Typography>
+      <TextField select label={tr("Truck")} value={sel} onChange={(e) => setSel(e.target.value)} sx={{ maxWidth: 360 }}>
         {trucks.map((v) => <MenuItem key={v.id} value={v.id}>{v.plate}{v.reweigh ? ' (flagged)' : ''}</MenuItem>)}
       </TextField>
       <ReasonField value={reason} onChange={setReason} />
-      <Box><Button variant="contained" disabled={!sel || !reason.trim()} onClick={() => { p.flagReweigh(sel, reason.trim()); setSel(''); setReason(''); onDone('Re-weigh flagged'); }}>Flag re-weigh</Button></Box>
+      <Box><Button variant="contained" disabled={!sel || !reason.trim()} onClick={() => { p.flagReweigh(sel, reason.trim()); setSel(''); setReason(''); onDone('Re-weigh flagged'); }}>{tr("Flag re-weigh")}</Button></Box>
     </Stack>
   );
 }
@@ -180,12 +180,12 @@ function PassengerList() {
   const rows = receipts.filter((r) => !k || searchKey(`${r.name} ${r.passport} ${r.id}`).includes(k));
   return (
     <>
-      <TextField size="small" label="Search name, passport or receipt" value={q} onChange={(e) => setQ(e.target.value)} sx={{ mb: 2, maxWidth: 360 }} fullWidth />
-      <ResponsiveTable rowKey={(r) => r.id} rows={rows} empty="No passenger matches." columns={[
+      <TextField size="small" label={tr("Search name, passport or receipt")} value={q} onChange={(e) => setQ(e.target.value)} sx={{ mb: 2, maxWidth: 360 }} fullWidth />
+      <ResponsiveTable rowKey={(r) => r.id} rows={rows} empty={tr("No passenger matches.")} columns={[
         { label: 'Passenger', render: (r) => <><Typography variant="subtitle2">{r.name}</Typography><Typography variant="caption" color="text.secondary">Passport {r.passport} · {r.country.split('-')[1] ?? r.country}</Typography></> },
         { label: 'Fee receipt', render: (r) => r.id },
         { label: 'Paid', priority: 'low', render: (r) => `${r.at} · ${r.method}` },
-        { label: 'Checkpoint', align: 'right', render: (r) => (used.includes(r.id) ? <Label color="success">Ticket used</Label> : <Label>Not yet at the checkpoint</Label>) },
+        { label: 'Checkpoint', align: 'right', render: (r) => (used.includes(r.id) ? <Label color="success">{tr("Ticket used")}</Label> : <Label>{tr("Not yet at the checkpoint")}</Label>) },
       ]} />
     </>
   );
@@ -207,12 +207,12 @@ export default function CustomsWorkspace() {
         title={customs ? t('Customs workspace') : `${body} view`}
         subtitle={customs ? `${role.person}. Every hold and approval is recorded under your own name. Releases and exit notes come from ASYCUDA through BNSW; they are never made here.` : `${role.person}. Read-only, except placing a hold and lifting your own.`}
         action={!BODY_OF_ROLE[role.id] && (
-          <TextField select size="small" label="Acting as (demo)" value={pickedBody} onChange={(e) => { setPickedBody(e.target.value); setTab(0); }} sx={{ minWidth: 200 }}>
+          <TextField select size="small" label={tr("Acting as (demo)")} value={pickedBody} onChange={(e) => { setPickedBody(e.target.value); setTab(0); }} sx={{ minWidth: 200 }}>
             {['Customs', 'BGB', 'Immigration'].map((b) => <MenuItem key={b} value={b}>{b}</MenuItem>)}
           </TextField>
         )}
       />
-      {!customs && <Alert severity="info" sx={{ mb: 2 }}>No immigration status is held in IBMS. Passenger records from the fee counter are on the Passengers tab.</Alert>}
+      {!customs && <Alert severity="info" sx={{ mb: 2 }}>{tr("No immigration status is held in IBMS. Passenger records from the fee counter are on the Passengers tab.")}</Alert>}
       <Card sx={{ px: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
           {tabs.map((x) => <Tab key={x} label={x} />)}

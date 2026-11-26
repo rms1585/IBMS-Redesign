@@ -7,7 +7,7 @@ import { downloadRecord } from './CfExtras';
 import { searchKey } from '../demo/format';
 import { formatBDT, formatKg } from '../demo/format';
 import { Confirmation, Id, Plate, SectionTitle, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-15: the importer sees only its own lines, by consignee BIN, and tags the agency that acts on them.
 function TagControl({ m, bin, onDone }) {
@@ -56,14 +56,14 @@ function FindManifest({ bin, onDone }) {
   return (
     <Card sx={{ p: 3 }}>
       <SectionTitle>Can't find your consignment?</SectionTitle>
-      <TextField size="small" label="Manifest number on your papers" placeholder="2026/601/08852" value={q} onChange={(e) => setQ(e.target.value)} sx={{ maxWidth: 360 }} fullWidth />
-      {q.trim() && !m && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Not in IBMS yet. It appears here when Customs' manifest reaches IBMS through BNSW; at the gate it can be keyed from the Car Pass as an "Other" manifest until then.</Typography>}
+      <TextField size="small" label={tr("Manifest number on your papers")} placeholder="2026/601/08852" value={q} onChange={(e) => setQ(e.target.value)} sx={{ maxWidth: 360 }} fullWidth />
+      {q.trim() && !m && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{tr("Not in IBMS yet. It appears here when Customs' manifest reaches IBMS through BNSW; at the gate it can be keyed from the Car Pass as an \"Other\" manifest until then.")}</Typography>}
       {m && !theirs.length && <Typography variant="body2" sx={{ mt: 1.5 }}>{m.id} already names your BIN; it is listed below.</Typography>}
       {m && theirs.length > 0 && (
         <Stack spacing={1.5} sx={{ mt: 2 }}>
           <Alert severity="warning">{m.id} names {theirs.map(importerName).join(', ')} as consignee, not your BIN {bin}. Only Customs can correct a manifest; raise a case and Customs answers through BNSW.</Alert>
-          <TextField size="small" label="What is wrong" placeholder="Our LC 0417-26-0133 covers line 1" value={note} onChange={(e) => setNote(e.target.value)} />
-          <Box><Button variant="contained" disabled={!note.trim()} onClick={raise}>Raise a BIN mismatch case</Button></Box>
+          <TextField size="small" label={tr("What is wrong")} placeholder="Our LC 0417-26-0133 covers line 1" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Box><Button variant="contained" disabled={!note.trim()} onClick={raise}>{tr("Raise a BIN mismatch case")}</Button></Box>
         </Stack>
       )}
       {mine.length > 0 && (
@@ -89,14 +89,14 @@ export default function TraderPortal() {
         title={t('Importer portal')}
         subtitle={`${importerName(bin)} · BIN ${bin}`}
         action={!role.importer && (
-          <TextField select size="small" label="Viewing as importer (demo)" value={bin} onChange={(e) => setPicked(e.target.value)} sx={{ minWidth: 260 }}>
+          <TextField select size="small" label={tr("Viewing as importer (demo)")} value={bin} onChange={(e) => setPicked(e.target.value)} sx={{ minWidth: 260 }}>
             {p.parties.importers.map((i) => <MenuItem key={i.bin} value={i.bin}>{i.name}</MenuItem>)}
           </TextField>
         )}
       />
       <Stack spacing={2.5}>
         <FindManifest bin={bin} onDone={setMsg} />
-        {mine.length === 0 && <Alert severity="info">No manifest names your BIN yet. When Customs' manifest reaches IBMS through BNSW it appears here, and you tag your C&F agency.</Alert>}
+        {mine.length === 0 && <Alert severity="info">{tr("No manifest names your BIN yet. When Customs' manifest reaches IBMS through BNSW it appears here, and you tag your C&F agency.")}</Alert>}
         {mine.map((m) => {
           const lines = m.lines.filter((l) => l.importer === bin);
           const v = p.visitOfManifest(m.id);
@@ -108,10 +108,10 @@ export default function TraderPortal() {
                 <Typography variant="body2" color="text.secondary">{m.alias}</Typography>
                 {!m.tags[bin] && <StatusPill word="Open" />}
                 <Box sx={{ flex: 1 }} />
-                <Button size="small" variant="outlined" color="inherit" onClick={() => { const v = p.visitOfManifest(m.id); downloadRecord(m, lines, v ? [v] : [], p.state.boes.filter((b) => b.manifest === m.id && b.importer === bin), p.state.events.filter((e) => e.record === m.id)); }}>Download the record</Button>
+                <Button size="small" variant="outlined" color="inherit" onClick={() => { const v = p.visitOfManifest(m.id); downloadRecord(m, lines, v ? [v] : [], p.state.boes.filter((b) => b.manifest === m.id && b.importer === bin), p.state.events.filter((e) => e.record === m.id)); }}>{tr("Download the record")}</Button>
               </Stack>
-              {!m.tags[bin] && <Alert severity="warning" sx={{ mb: 2 }}>No agency is tagged to your lines. Until you tag one, no agency can act and the truck is not admitted.</Alert>}
-              <SectionTitle>Your lines</SectionTitle>
+              {!m.tags[bin] && <Alert severity="warning" sx={{ mb: 2 }}>{tr("No agency is tagged to your lines. Until you tag one, no agency can act and the truck is not admitted.")}</Alert>}
+              <SectionTitle>{tr("Your lines")}</SectionTitle>
               {lines.map((l) => (
                 <Stack key={l.id} direction="row" justifyContent="space-between" spacing={2} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
                   <Typography variant="body2">Line {l.no}: {l.goods}</Typography>
@@ -119,12 +119,12 @@ export default function TraderPortal() {
                 </Stack>
               ))}
               <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1.5 }}>Tagged agency: <strong>{m.tags[bin] ? agencyName(m.tags[bin]) : 'None'}</strong></Typography>
+                <Typography variant="body2" sx={{ mb: 1.5 }}>{tr("Tagged agency:")} <strong>{m.tags[bin] ? agencyName(m.tags[bin]) : 'None'}</strong></Typography>
                 <TagControl m={m} bin={bin} onDone={setMsg} />
               </Box>
               {v && (
                 <>
-                  <SectionTitle>Truck</SectionTitle>
+                  <SectionTitle>{tr("Truck")}</SectionTitle>
                   <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
                     <Plate>{v.plate}</Plate>
                     <StatusPill word={v.stage} />
@@ -134,13 +134,13 @@ export default function TraderPortal() {
               )}
               {bills.length > 0 && (
                 <>
-                  <SectionTitle>Bills</SectionTitle>
+                  <SectionTitle>{tr("Bills")}</SectionTitle>
                   {bills.map((b) => (
                     <Stack key={b.id} direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ py: 0.5 }}>
                       <Id>{b.paymentId}</Id>
                       <Typography variant="body2">{formatBDT(billTotals(b).total)}</Typography>
                       <StatusPill word={b.status} />
-                      {b.status === 'Payment due' && <Button size="small" variant="contained" onClick={() => { p.payBill(b.id); setMsg('Paid. The provider confirmed the payment'); }}>Pay online</Button>}
+                      {b.status === 'Payment due' && <Button size="small" variant="contained" onClick={() => { p.payBill(b.id); setMsg('Paid. The provider confirmed the payment'); }}>{tr("Pay online")}</Button>}
                     </Stack>
                   ))}
                 </>

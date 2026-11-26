@@ -6,7 +6,7 @@ import { useRole } from '../RoleContext';
 import { agencyName, billTotals, importerName, usePort, useStoredState } from '../demo/PortStore';
 import { formatBDT, formatBoe, formatDateTime, searchKey } from '../demo/format';
 import { Confirmation, Id, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 import { MISSING_PAYMENTS } from '../data/finance';
 
 // M-09: bills built from recorded events and the tariff in force. Paid comes only from the provider; paid never means released.
@@ -46,10 +46,10 @@ function BillDetail({ bill, onDone }) {
     <Card variant="outlined" sx={{ p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
         <Box>
-          <Typography variant="subtitle1">Payment ID <Id sx={{ typography: 'subtitle1' }}>{bill.paymentId}</Id></Typography>
+          <Typography variant="subtitle1">{tr("Payment ID")} <Id sx={{ typography: 'subtitle1' }}>{bill.paymentId}</Id></Typography>
           <Typography variant="body2" color="text.secondary">{agencyName(bill.party)} · {bill.for.id} · raised {formatDateTime(bill.raisedAt)} · {p.tariff.version}</Typography>
         </Box>
-        <Stack direction="row" spacing={1}>{bill.adjustment && <Label color="warning">Adjustment bill after outage</Label>}<StatusPill word={bill.status} /></Stack>
+        <Stack direction="row" spacing={1}>{bill.adjustment && <Label color="warning">{tr("Adjustment bill after outage")}</Label>}<StatusPill word={bill.status} /></Stack>
       </Stack>
       <ResponsiveTable
         rowKey={(l) => l.what}
@@ -63,17 +63,17 @@ function BillDetail({ bill, onDone }) {
       />
       <BillTotals bill={bill} tot={tot} />
       <Divider sx={{ mt: 2.5, mb: 2 }} />
-      <Typography variant="body2" color="text.secondary">A billed line never changes. A correcting line is approved by a different person.</Typography>
+      <Typography variant="body2" color="text.secondary">{tr("A billed line never changes. A correcting line is approved by a different person.")}</Typography>
       {correcting ? (
         <Stack spacing={1.5} sx={{ mt: 2 }}>
-          <TextField type="number" label="Correcting amount (BDT, negative for a credit)" value={amount} onChange={(e) => setAmount(e.target.value)} sx={{ maxWidth: 320 }} />
+          <TextField type="number" label={tr("Correcting amount (BDT, negative for a credit)")} value={amount} onChange={(e) => setAmount(e.target.value)} sx={{ maxWidth: 320 }} />
           <ReasonField value={reason} onChange={setReason} />
           <Stack direction="row" spacing={1}>
-            <Button variant="contained" disabled={!Number(amount) || !reason.trim()} onClick={() => { p.requestCorrection({ record: bill.paymentId, field: 'Correcting line', from: '–', to: formatBDT(Number(amount)), reason: reason.trim() }); setCorrecting(false); setAmount(''); setReason(''); onDone('Correcting line sent for approval'); }}>Send for approval</Button>
-            <Button variant="outlined" color="inherit" onClick={() => setCorrecting(false)}>Cancel</Button>
+            <Button variant="contained" disabled={!Number(amount) || !reason.trim()} onClick={() => { p.requestCorrection({ record: bill.paymentId, field: 'Correcting line', from: '–', to: formatBDT(Number(amount)), reason: reason.trim() }); setCorrecting(false); setAmount(''); setReason(''); onDone('Correcting line sent for approval'); }}>{tr("Send for approval")}</Button>
+            <Button variant="outlined" color="inherit" onClick={() => setCorrecting(false)}>{tr("Cancel")}</Button>
           </Stack>
         </Stack>
-      ) : <Button size="small" variant="outlined" sx={{ mt: 1.5 }} onClick={() => setCorrecting(true)}>Add a correcting line</Button>}
+      ) : <Button size="small" variant="outlined" sx={{ mt: 1.5 }} onClick={() => setCorrecting(true)}>{tr("Add a correcting line")}</Button>}
     </Card>
   );
 }
@@ -86,14 +86,14 @@ function ReleaseFromReference({ onDone }) {
   const b = p.boe(boeId);
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">Only in BNSW-down mode. Check Customs' release against the Bill of Entry number, importer and lines, then record its reference. It is marked "Keyed from Customs' reference" and reconciled when BNSW returns. A keyed release is not a per-truck exit note: a loaded truck without one is still held.</Typography>
+      <Typography variant="body2" color="text.secondary">{tr("Only in BNSW-down mode. Check Customs' release against the Bill of Entry number, importer and lines, then record its reference. It is marked \"Keyed from Customs' reference\" and reconciled when BNSW returns. A keyed release is not a per-truck exit note: a loaded truck without one is still held.")}</Typography>
       {!p.state.bnswDown && <Refusal title="Not available now" items={['BNSW is live, so releases arrive from Customs through BNSW. This screen is used only in BNSW-down mode.']} />}
-      <TextField select label="Bill of Entry" value={boeId} onChange={(e) => setBoeId(e.target.value)} disabled={!p.state.bnswDown} sx={{ maxWidth: 420 }}>
+      <TextField select label={tr("Bill of Entry")} value={boeId} onChange={(e) => setBoeId(e.target.value)} disabled={!p.state.bnswDown} sx={{ maxWidth: 420 }}>
         {waiting.map((x) => <MenuItem key={x.id} value={x.id}>{formatBoe(x)} · {importerName(x.importer)}</MenuItem>)}
       </TextField>
       {b && <Typography variant="body2">Importer {importerName(b.importer)} · {b.lines.length} line · agency {agencyName(b.agency)}</Typography>}
-      <TextField label="Customs' release reference" value={ref} onChange={(e) => setRef(e.target.value)} disabled={!p.state.bnswDown} sx={{ maxWidth: 420 }} />
-      <Box><Button variant="contained" disabled={!p.state.bnswDown || !b || !ref.trim()} onClick={() => { p.keyReleaseFromReference(b.id, ref.trim()); setBoeId(''); setRef(''); onDone('Release recorded from Customs\' reference'); }}>Record the release</Button></Box>
+      <TextField label={tr("Customs' release reference")} value={ref} onChange={(e) => setRef(e.target.value)} disabled={!p.state.bnswDown} sx={{ maxWidth: 420 }} />
+      <Box><Button variant="contained" disabled={!p.state.bnswDown || !b || !ref.trim()} onClick={() => { p.keyReleaseFromReference(b.id, ref.trim()); setBoeId(''); setRef(''); onDone('Release recorded from Customs\' reference'); }}>{tr("Record the release")}</Button></Box>
     </Stack>
   );
 }
@@ -105,16 +105,16 @@ function BankCounter({ onDone }) {
   const found = k.length >= 3 ? p.state.bills.filter((b) => searchKey(b.paymentId).includes(k) || searchKey(b.for.id).includes(k)) : [];
   return (
     <Card sx={{ p: 3 }}>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Find a bill by payment ID or Delivery Request. Payment is recorded through the bank interface; the receipt prints once the bank confirms.</Typography>
-      <TextField label="Payment ID or request" value={q} onChange={(e) => setQ(e.target.value)} sx={{ maxWidth: 420, mb: 2 }} fullWidth />
-      {k.length >= 3 && !found.length && <Typography variant="body2" color="text.secondary">Nothing matches. Check the payment ID on the C&F agent's bill.</Typography>}
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("Find a bill by payment ID or Delivery Request. Payment is recorded through the bank interface; the receipt prints once the bank confirms.")}</Typography>
+      <TextField label={tr("Payment ID or request")} value={q} onChange={(e) => setQ(e.target.value)} sx={{ maxWidth: 420, mb: 2 }} fullWidth />
+      {k.length >= 3 && !found.length && <Typography variant="body2" color="text.secondary">{tr("Nothing matches. Check the payment ID on the C&F agent's bill.")}</Typography>}
       <Stack spacing={1.5}>
         {found.map((b) => (
           <Stack key={b.id} direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <Id>{b.paymentId}</Id>
             <Typography variant="body2">{formatBDT(billTotals(b).total)}</Typography>
             <StatusPill word={b.status} />
-            {b.status === 'Payment due' && <Button variant="contained" onClick={() => { p.payBill(b.id); onDone('Payment recorded. The bank confirmed it'); }}>Take payment</Button>}
+            {b.status === 'Payment due' && <Button variant="contained" onClick={() => { p.payBill(b.id); onDone('Payment recorded. The bank confirmed it'); }}>{tr("Take payment")}</Button>}
           </Stack>
         ))}
       </Stack>
@@ -148,8 +148,8 @@ function Supplementary({ onDone }) {
   };
   return (
     <Card sx={{ p: 3 }}>
-      <SectionTitle>Resolved reconciliation cases</SectionTitle>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>A billed line never changes. When a case closes with money owed, raise a supplementary bill; when BLPA owes, raise a credit. Someone other than the person who raised it approves.</Typography>
+      <SectionTitle>{tr("Resolved reconciliation cases")}</SectionTitle>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("A billed line never changes. When a case closes with money owed, raise a supplementary bill; when BLPA owes, raise a credit. Someone other than the person who raised it approves.")}</Typography>
       <ResponsiveTable rowKey={(c) => c.id} rows={RESOLVED_CASES} columns={[
         { label: 'Case', render: (c) => <><Id>{c.id}</Id><Typography variant="caption" color="text.secondary" component="div">{c.record} · {agencyName(c.party)}</Typography></> },
         { label: 'Finding', render: (c) => c.what },
@@ -158,13 +158,13 @@ function Supplementary({ onDone }) {
       ]} />
       {raised.some((r) => r.status === 'Waiting for approval') && (
         <Box sx={{ mt: 3 }}>
-          <SectionTitle>Waiting for a second person</SectionTitle>
+          <SectionTitle>{tr("Waiting for a second person")}</SectionTitle>
           {raised.filter((r) => r.status === 'Waiting for approval').map((r) => (
             <Stack key={r.id} direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap sx={{ py: 1 }}>
               <Id>{r.id}</Id>
               <Typography variant="body2" sx={{ flex: 1 }}>{formatBDT(Math.abs(r.amount))}{r.amount < 0 ? ' credit' : ''} · raised by {r.by}</Typography>
               {approving === r.id
-                ? <Typography variant="caption" color="text.secondary">Approving as the revenue supervisor (demo: a different person)</Typography>
+                ? <Typography variant="caption" color="text.secondary">{tr("Approving as the revenue supervisor (demo: a different person)")}</Typography>
                 : null}
               <Button size="small" variant="contained" onClick={() => (approving === r.id ? approve(r) : setApproving(r.id))}>{approving === r.id ? 'Confirm approval' : 'Approve as revenue supervisor'}</Button>
             </Stack>
@@ -197,17 +197,17 @@ function CustomsDecisions({ onDone }) {
   return (
     <Stack spacing={2}>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Record a Customs decision</SectionTitle>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>For decisions Customs takes outside IBMS. Each is marked "Keyed from Customs' reference" and the bills on that record follow it.</Typography>
+        <SectionTitle>{tr("Record a Customs decision")}</SectionTitle>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("For decisions Customs takes outside IBMS. Each is marked \"Keyed from Customs' reference\" and the bills on that record follow it.")}</Typography>
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0,1fr))' } }}>
-          <TextField select label="Decision" value={kind} onChange={(e) => setKind(e.target.value)}>{DECISION_KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}</TextField>
-          <TextField label="Bill of Entry or lot" placeholder="C 601 C-48211 2026-11-12" value={record} onChange={(e) => setRecord(e.target.value)} />
-          <TextField label="Customs' reference" value={ref} onChange={(e) => setRef(e.target.value)} />
+          <TextField select label={tr("Decision")} value={kind} onChange={(e) => setKind(e.target.value)}>{DECISION_KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}</TextField>
+          <TextField label={tr("Bill of Entry or lot")} placeholder="C 601 C-48211 2026-11-12" value={record} onChange={(e) => setRecord(e.target.value)} />
+          <TextField label={tr("Customs' reference")} value={ref} onChange={(e) => setRef(e.target.value)} />
           <TextField label={kind === 'Temporary-import terms' ? 'Terms (re-export date, guarantee)' : 'Decision'} value={terms} onChange={(e) => setTerms(e.target.value)} />
         </Box>
         <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }}>
-          {why && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{why}</Typography>}
-          <Button variant="contained" disabled={Boolean(why)} onClick={save}>Record the decision</Button>
+          {why && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{tr(why)}</Typography>}
+          <Button variant="contained" disabled={Boolean(why)} onClick={save}>{tr("Record the decision")}</Button>
         </Stack>
       </Card>
       <Card sx={{ p: 3 }}>
@@ -249,7 +249,7 @@ function Finance() {
   return (
     <Stack spacing={2}>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Collections by channel, this month</SectionTitle>
+        <SectionTitle>{tr("Collections by channel, this month")}</SectionTitle>
         <ResponsiveTable rowKey={(c) => c.channel} rows={CHANNELS} columns={[
           { label: 'Channel', render: (c) => c.channel },
           { label: 'Bills paid', align: 'right', render: (c) => c.bills.toLocaleString('en-US') },
@@ -257,17 +257,17 @@ function Finance() {
         ]} />
       </Card>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Bills raised against payments received</SectionTitle>
+        <SectionTitle>{tr("Bills raised against payments received")}</SectionTitle>
         <ResponsiveTable rowKey={(d) => d.day} rows={days} columns={[
           { label: 'Day', render: (d) => d.day },
           { label: 'Raised', align: 'right', nowrap: true, render: (d) => formatBDT(d.raised) },
           { label: 'Received', align: 'right', nowrap: true, render: (d) => formatBDT(d.received) },
           { label: 'Difference', align: 'right', nowrap: true, render: (d) => formatBDT(d.received - d.raised) },
         ]} />
-        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5 }}>A payment can arrive the day after its bill, so a day's difference is not a loss on its own.</Typography>
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5 }}>{tr("A payment can arrive the day after its bill, so a day's difference is not a loss on its own.")}</Typography>
       </Card>
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Payments that did not arrive</SectionTitle>
+        <SectionTitle>{tr("Payments that did not arrive")}</SectionTitle>
         <ResponsiveTable rowKey={(m) => m.id} rows={MISSING_PAYMENTS} columns={[
           { label: 'Case', render: (m) => <><Id>{m.id}</Id><Typography variant="caption" color="text.secondary" component="div">Payment ID {m.paymentId}</Typography></> },
           { label: 'Provider', priority: 'low', render: (m) => m.provider },
@@ -275,7 +275,7 @@ function Finance() {
           { label: 'Open since', priority: 'low', render: (m) => m.since },
           { label: 'Status', render: (m) => m.status },
         ]} />
-        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5 }}>The bill stays unpaid until the provider confirms; no one marks it paid by hand.</Typography>
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5 }}>{tr("The bill stays unpaid until the provider confirms; no one marks it paid by hand.")}</Typography>
       </Card>
     </Stack>
   );
@@ -289,18 +289,18 @@ export default function Billing() {
   const [tab, setTab] = useState(role.id === 'finance' ? 5 : 0);
   const [msg, setMsg] = useState('');
   if (role.id === 'bank') {
-    return (<><PageHeader title="Take payment" subtitle="Bank counter, Benapole" /><BankCounter onDone={setMsg} /><Confirmation text={msg} onClose={() => setMsg('')} /></>);
+    return (<><PageHeader title="Take payment" subtitle={tr("Bank counter, Benapole")} /><BankCounter onDone={setMsg} /><Confirmation text={msg} onClose={() => setMsg('')} /></>);
   }
   const tabs = ['Bills', 'Lines not priced', 'Supplementary bills and credits', 'Customs decisions by reference', 'Release from Customs\' reference', 'Finance', 'Bank counter'];
   return (
     <>
       <PageHeader title={t('Billing and payment')} subtitle={`${p.tariff.version} · VAT 15% per line. No bill is computed from papers and no one marks a bill paid by hand.`} />
       <Card sx={{ px: 2 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>{tabs.map((x) => <Tab key={x} label={x} />)}</Tabs>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>{tabs.map((x) => <Tab key={x} label={t(x)} />)}</Tabs>
       </Card>
       <Box sx={{ mt: 2 }}>
         {tab === 0 && <Stack spacing={2}>{p.state.bills.map((b) => <BillDetail key={b.id} bill={b} onDone={setMsg} />)}</Stack>}
-        {tab === 1 && <Card sx={{ p: 3 }}><SectionTitle>Lines the system could not price</SectionTitle><Typography variant="body2" color="text.secondary">None. A line appears here with its plain reason when no tariff rate applies, and no pass is issued while it sits on a bill.</Typography></Card>}
+        {tab === 1 && <Card sx={{ p: 3 }}><SectionTitle>{tr("Lines the system could not price")}</SectionTitle><Typography variant="body2" color="text.secondary">{tr("None. A line appears here with its plain reason when no tariff rate applies, and no pass is issued while it sits on a bill.")}</Typography></Card>}
         {tab === 2 && <Supplementary onDone={setMsg} />}
         {tab === 3 && <CustomsDecisions onDone={setMsg} />}
         {tab === 4 && <Card sx={{ p: 3 }}><ReleaseFromReference onDone={setMsg} />{p.state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").map((b) => <Alert key={b.id} severity="warning" sx={{ mt: 2 }}>{formatBoe(b)}: release {b.release.ref} <SourceMarker source={b.release.source} /></Alert>)}</Card>}

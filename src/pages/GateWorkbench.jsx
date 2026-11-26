@@ -8,7 +8,7 @@ import { usePortRules } from '../demo/portRules';
 const NO_LIST = [];
 const NO_MAP = {};
 import { ActionFoot, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, SectionTitle, SourceMarker, useKeyAction } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-03 Border gate: admit by plate against the agency's entry and the BNSW manifest; exit lanes run the automated check.
 
@@ -66,7 +66,7 @@ function EntryBench({ onDone }) {
       ]}
       queue={
         <Stack spacing={2}>
-        <TextField size="small" label="Plate read at the lane" value={laneRead} onChange={(e) => setLaneRead(e.target.value)} helperText="Type part of a plate to find the truck" />
+        <TextField size="small" label={tr("Plate read at the lane")} value={laneRead} onChange={(e) => setLaneRead(e.target.value)} helperText={tr("Type part of a plate to find the truck")} />
         {matches.length > 1 && (
           <Alert severity="info" icon={false} sx={{ '& .MuiAlert-message': { width: '100%' } }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>{matches.length} expected trucks match: pick the one on the Car Pass</Typography>
@@ -79,7 +79,7 @@ function EntryBench({ onDone }) {
           items={queue}
           selected={v?.id}
           onSelect={(id) => { setSel(id); setTyping(false); }}
-          empty="No truck expected. Trucks appear here once a tagged agency enters them, or when one arrives with a Car Pass."
+          empty={tr("No truck expected. Trucks appear here once a tagged agency enters them, or when one arrives with a Car Pass.")}
           render={(x) => (
             <>
               <Plate>{x.plate}</Plate>
@@ -90,13 +90,13 @@ function EntryBench({ onDone }) {
         {/* EXC-30: a vehicle with no plate is parked until BLPA rules on it. */}
         {noPlate ? (
           <Stack spacing={1}>
-            <TextField size="small" label="Car Pass number" value={parkPass} onChange={(e) => setParkPass(e.target.value)} />
+            <TextField size="small" label={tr("Car Pass number")} value={parkPass} onChange={(e) => setParkPass(e.target.value)} />
             <Stack direction="row" spacing={1}>
-              <Button size="small" variant="outlined" color="inherit" onClick={() => setNoPlate(false)}>Cancel</Button>
-              <Button size="small" variant="contained" disabled={!parkPass.trim()} onClick={() => { setParked((l) => [...l, { carPass: parkPass.trim(), at: new Date().toISOString() }]); setNoPlate(false); setParkPass(''); onDone('Vehicle with no plate parked until BLPA rules on it (EXC-30)'); }}>Park the vehicle</Button>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setNoPlate(false)}>{tr("Cancel")}</Button>
+              <Button size="small" variant="contained" disabled={!parkPass.trim()} onClick={() => { setParked((l) => [...l, { carPass: parkPass.trim(), at: new Date().toISOString() }]); setNoPlate(false); setParkPass(''); onDone('Vehicle with no plate parked until BLPA rules on it (EXC-30)'); }}>{tr("Park the vehicle")}</Button>
             </Stack>
           </Stack>
-        ) : <Button size="small" variant="outlined" color="inherit" onClick={() => setNoPlate(true)}>Vehicle with no plate</Button>}
+        ) : <Button size="small" variant="outlined" color="inherit" onClick={() => setNoPlate(true)}>{tr("Vehicle with no plate")}</Button>}
         {parked.length > 0 && <Typography variant="caption" color="text.secondary">Parked, waiting for BLPA: {parked.map((x) => `Car Pass ${x.carPass}`).join(', ')}</Typography>}
         </Stack>
       }
@@ -105,12 +105,12 @@ function EntryBench({ onDone }) {
           <Plate size="hero">{v.plate}</Plate>
           {v.late && <Alert severity="warning">The manifest {v.carPassManifest} on the Car Pass is not in IBMS yet. Admit on plate and Car Pass number: the visit is marked "manifest not yet available", is weighed and waits in the holding area until it is matched (EXC-04).</Alert>}
           <Facts cols={3}>
-            <Fact label="Car Pass number">{v.carPass}</Fact>
-            <Fact label="Vehicle class">{v.vehicleClass}, {v.axles} axles</Fact>
-            <Fact label="Driver (from the Car Pass)">{v.driver.name}<br />{v.driver.nid}</Fact>
+            <Fact label={tr("Car Pass number")}>{v.carPass}</Fact>
+            <Fact label={tr("Vehicle class")}>{v.vehicleClass}, {v.axles} axles</Fact>
+            <Fact label={tr("Driver (from the Car Pass)")}>{v.driver.name}<br />{v.driver.nid}</Fact>
 
-            <Fact label="Entered by">{v.enteredBy ? agencyName(v.enteredBy) : '–'}</Fact>
-            <Fact label="Manifests">{v.manifests.join(', ') || v.carPassManifest}</Fact>
+            <Fact label={tr("Entered by")}>{v.enteredBy ? agencyName(v.enteredBy) : '–'}</Fact>
+            <Fact label={tr("Manifests")}>{v.manifests.join(', ') || v.carPassManifest}</Fact>
           </Facts>
           {v.manifests.map((mid) => (
             <Box key={mid}>
@@ -125,39 +125,39 @@ function EntryBench({ onDone }) {
           ))}
           {(rules.fields.driverMobile || rules.fields.truckColour) && (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              {rules.fields.driverMobile && <TextField size="small" label="Driver mobile" inputMode="tel" value={extraOf('driverMobile')} onChange={setExtraOf('driverMobile')} />}
-              {rules.fields.truckColour && <TextField size="small" label="Truck colour" value={extraOf('truckColour')} onChange={setExtraOf('truckColour')} />}
+              {rules.fields.driverMobile && <TextField size="small" label={tr("Driver mobile")} inputMode="tel" value={extraOf('driverMobile')} onChange={setExtraOf('driverMobile')} />}
+              {rules.fields.truckColour && <TextField size="small" label={tr("Truck colour")} value={extraOf('truckColour')} onChange={setExtraOf('truckColour')} />}
             </Stack>
           )}
           {needKeyed && !otherOff && (
             <Box>
-              <SectionTitle>Manifest lines keyed from the Car Pass (BNSW down)</SectionTitle>
+              <SectionTitle>{tr("Manifest lines keyed from the Car Pass (BNSW down)")}</SectionTitle>
               {keyedForV.map((l, i) => <Stack key={i} direction="row" justifyContent="space-between" sx={{ py: 0.5 }}><Typography variant="body2">Line {i + 1}: {l.goods}</Typography><Stack direction="row" spacing={1} alignItems="center"><Typography variant="body2">{formatKg(l.kg)}</Typography><SourceMarker source="Keyed at the gate" /></Stack></Stack>)}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
-                <TextField size="small" label="Goods" value={lineGoods} onChange={(e) => setLineGoods(e.target.value)} />
-                <TextField size="small" label="Declared kg" inputMode="numeric" value={lineKg} onChange={(e) => setLineKg(e.target.value.replace(/\D/g, ''))} />
-                <Button size="small" variant="outlined" color="inherit" disabled={!lineGoods.trim() || !lineKg} onClick={() => { setKeyedLines((all) => ({ ...all, [v.id]: [...(all[v.id] ?? []), { goods: lineGoods.trim(), kg: Number(lineKg) }] })); setLineGoods(''); setLineKg(''); }}>Add the line</Button>
+                <TextField size="small" label={tr("Goods")} value={lineGoods} onChange={(e) => setLineGoods(e.target.value)} />
+                <TextField size="small" label={tr("Declared kg")} inputMode="numeric" value={lineKg} onChange={(e) => setLineKg(e.target.value.replace(/\D/g, ''))} />
+                <Button size="small" variant="outlined" color="inherit" disabled={!lineGoods.trim() || !lineKg} onClick={() => { setKeyedLines((all) => ({ ...all, [v.id]: [...(all[v.id] ?? []), { goods: lineGoods.trim(), kg: Number(lineKg) }] })); setLineGoods(''); setLineKg(''); }}>{tr("Add the line")}</Button>
               </Stack>
             </Box>
           )}
           {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
           {typing ? (
             <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-              <Typography variant="subtitle2">Type the plate the camera could not read</Typography>
-              <TextField label="Plate" value={typedPlate} onChange={(e) => setTypedPlate(e.target.value)} />
+              <Typography variant="subtitle2">{tr("Type the plate the camera could not read")}</Typography>
+              <TextField label={tr("Plate")} value={typedPlate} onChange={(e) => setTypedPlate(e.target.value)} />
               <ReasonField value={reason} onChange={setReason} helper="The failed read and the typed plate are logged." />
-              {typedPlate && typedPlate.replace(/\s/g, '').toUpperCase() !== v.plate.replace(/\s/g, '') && <Alert severity="error">The typed plate does not match the selected truck.</Alert>}
-              <Box><Button variant="outlined" color="inherit" onClick={() => setTyping(false)}>Use the camera read</Button></Box>
+              {typedPlate && typedPlate.replace(/\s/g, '').toUpperCase() !== v.plate.replace(/\s/g, '') && <Alert severity="error">{tr("The typed plate does not match the selected truck.")}</Alert>}
+              <Box><Button variant="outlined" color="inherit" onClick={() => setTyping(false)}>{tr("Use the camera read")}</Button></Box>
             </Stack>
           ) : (
-            <Box><Button size="small" variant="outlined" color="inherit" onClick={() => setTyping(true)}>Camera could not read the plate</Button></Box>
+            <Box><Button size="small" variant="outlined" color="inherit" onClick={() => setTyping(true)}>{tr("Camera could not read the plate")}</Button></Box>
           )}
         </Stack>
-      ) : <Typography variant="body2" color="text.secondary">Select a truck from the queue.</Typography>}
+      ) : <Typography variant="body2" color="text.secondary">{tr("Select a truck from the queue.")}</Typography>}
       right={v ? (
         <>
           <CameraStill lane="Lane 2" read={typing ? null : v.plate} expected={v.plate} />
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Checks</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("Checks")}</Typography>
           <Checklist checks={checks} />
           <ActionFoot
             checks={checks}
@@ -193,19 +193,19 @@ function ExitBench({ onDone }) {
         { label: 'Lane', value: 'Lane 4 (exit, automated)' },
         { label: 'Waiting to leave', value: queue.length },
       ]}
-      queue={<QueueList title="At the exit lane" items={queue} selected={v?.id} onSelect={setSel} empty="No foreign truck is waiting to leave." render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">Unloaded {formatDateTime(x.receipt?.at)}</Typography></>} />}
+      queue={<QueueList title="At the exit lane" items={queue} selected={v?.id} onSelect={setSel} empty={tr("No foreign truck is waiting to leave.")} render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">Unloaded {formatDateTime(x.receipt?.at)}</Typography></>} />}
       center={v ? (
         <Stack spacing={2}>
           <Plate size="hero">{v.plate}</Plate>
-          <Typography variant="body2" color="text.secondary">The system decides; the operator watches. Payment is not checked for a foreign truck that unloaded here: its charges are finalized on the visit and carried on its importers' bills.</Typography>
+          <Typography variant="body2" color="text.secondary">{tr("The system decides; the operator watches. Payment is not checked for a foreign truck that unloaded here: its charges are finalized on the visit and carried on its importers' bills.")}</Typography>
           {checks.some((c) => c.state === 'fail') && <Alert severity="error">Held at the barrier: {checks.find((c) => c.state === 'fail').text}</Alert>}
         </Stack>
-      ) : <Typography variant="body2" color="text.secondary">No truck at the exit lane.</Typography>}
+      ) : <Typography variant="body2" color="text.secondary">{tr("No truck at the exit lane.")}</Typography>}
       right={v ? (
         <>
           <CameraStill lane="Lane 4" read={v.plate} expected={v.plate} />
           <Checklist checks={checks} />
-          <ActionFoot checks={checks} label="Run the exit check" keyHint="E" onClick={read} />
+          <ActionFoot checks={checks} label={tr("Run the exit check")} keyHint="E" onClick={read} />
         </>
       ) : null}
     />
@@ -222,8 +222,8 @@ export default function GateWorkbench() {
         title={t('Border gate')}
         action={
           <ToggleButtonGroup exclusive size="small" value={tab} onChange={(_, v) => v && setTab(v)} aria-label="Border gate view">
-            <ToggleButton value="entry">Entry</ToggleButton>
-            <ToggleButton value="exit">Exit lanes</ToggleButton>
+            <ToggleButton value="entry">{tr("Entry")}</ToggleButton>
+            <ToggleButton value="exit">{tr("Exit lanes")}</ToggleButton>
           </ToggleButtonGroup>
         }
       />

@@ -6,7 +6,7 @@ import Label from '../components/Label';
 import { usePortRules } from '../demo/portRules';
 import { billableTonnes, formatDateTime, formatDuration, formatKg, formatTonnes } from '../demo/format';
 import { ActionFoot, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-04: the reading comes from the scale against the visit opened at the gate. Over tolerance is a flag, never a hold.
 
@@ -65,7 +65,7 @@ export default function Weighbridge() {
             items={queue}
             selected={item?.id}
             onSelect={(id) => { setSel(id); setTyping(false); }}
-            empty="No truck to weigh. Admitted trucks appear here in order."
+            empty={tr("No truck to weigh. Admitted trucks appear here in order.")}
             render={(x) => (
               <>
                 <Plate>{x.plate}</Plate>
@@ -79,31 +79,31 @@ export default function Weighbridge() {
             <Plate size="hero">{v.plate}</Plate>
             <Card variant="outlined" sx={{ p: 2.5, textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">{typing ? 'Weight typed by hand' : 'Live weight from Scale 2'}</Typography>
-              <Typography variant="h2">{kg ? kg.toLocaleString('en-US') : '–'} <Typography component="span" variant="h5">kg</Typography></Typography>
+              <Typography variant="h2">{kg ? kg.toLocaleString('en-US') : '–'} <Typography component="span" variant="h5">{tr("kg")}</Typography></Typography>
               {item.job !== 'empty' && <Typography variant="body2" color="text.secondary">Billable {formatTonnes(billableTonnes(kg))} (rounded up to the next whole tonne)</Typography>}
             </Card>
             {item.job !== 'empty' && !v.late && (
               <Facts cols={3}>
-                <Fact label="Declared weight">{formatKg(declared)}</Fact>
-                <Fact label="Difference">{kg ? `${(kg - declared).toLocaleString('en-US')} kg (${(((kg - declared) / declared) * 100).toFixed(1)}%)` : '–'}</Fact>
-                <Fact label="Tolerance">{p.port.tolerancePct}%</Fact>
+                <Fact label={tr("Declared weight")}>{formatKg(declared)}</Fact>
+                <Fact label={tr("Difference")}>{kg ? `${(kg - declared).toLocaleString('en-US')} kg (${(((kg - declared) / declared) * 100).toFixed(1)}%)` : '–'}</Fact>
+                <Fact label={tr("Tolerance")}>{p.port.tolerancePct}%</Fact>
               </Facts>
             )}
-            {rules.fields.sealNumber && item.job !== 'empty' && <TextField size="small" label="Seal number" value={seal} onChange={(e) => setSeal(e.target.value)} helperText="Shown because this port records seal numbers (Port setup)" sx={{ maxWidth: 280 }} />}
-            {over && <Alert severity="warning">Weight over tolerance. Capturing it flags the reading to the BLPA and Customs officials; IBMS places no hold of its own. An authorized official may place one.</Alert>}
+            {rules.fields.sealNumber && item.job !== 'empty' && <TextField size="small" label={tr("Seal number")} value={seal} onChange={(e) => setSeal(e.target.value)} helperText={tr("Shown because this port records seal numbers (Port setup)")} sx={{ maxWidth: 280 }} />}
+            {over && <Alert severity="warning">{tr("Weight over tolerance. Capturing it flags the reading to the BLPA and Customs officials; IBMS places no hold of its own. An authorized official may place one.")}</Alert>}
             {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
             {typing ? (
               <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                <Typography variant="subtitle2">Scale down: type the weight</Typography>
-                <TextField label="Weight (kg)" type="number" value={typedKg} onChange={(e) => setTypedKg(e.target.value)} />
+                <Typography variant="subtitle2">{tr("Scale down: type the weight")}</Typography>
+                <TextField label={tr("Weight (kg)")} type="number" value={typedKg} onChange={(e) => setTypedKg(e.target.value)} />
                 <ReasonField value={reason} onChange={setReason} helper="The weight is flagged for review; the failed reading and the typed entry are logged." />
-                <Box><Button variant="outlined" color="inherit" onClick={() => setTyping(false)}>Use the scale reading</Button></Box>
+                <Box><Button variant="outlined" color="inherit" onClick={() => setTyping(false)}>{tr("Use the scale reading")}</Button></Box>
               </Stack>
             ) : (
-              <Box><Button size="small" variant="outlined" color="inherit" onClick={() => setTyping(true)}>Scale or plate reader down</Button></Box>
+              <Box><Button size="small" variant="outlined" color="inherit" onClick={() => setTyping(true)}>{tr("Scale or plate reader down")}</Button></Box>
             )}
           </Stack>
-        ) : <Typography variant="body2" color="text.secondary">Select a truck from the worklist.</Typography>}
+        ) : <Typography variant="body2" color="text.secondary">{tr("Select a truck from the worklist.")}</Typography>}
         right={v ? (
           <>
             <CameraStill lane="Scale 2" read={typing ? null : v.plate} expected={v.plate} />
@@ -121,7 +121,7 @@ export default function Weighbridge() {
       <UnmatchedReadings visits={queue} onDone={setMsg} />
       <StoneWeighBack onDone={setMsg} />
       <Card sx={{ p: 3, mt: 3 }}>
-        <SectionTitle>Weighing history</SectionTitle>
+        <SectionTitle>{tr("Weighing history")}</SectionTitle>
         <ResponsiveTable
           rowKey={(x) => x.id}
           rows={history}
@@ -167,17 +167,17 @@ function UnmatchedReadings({ visits, onDone }) {
   const waiting = readings.filter((r) => r.status === 'Waiting');
   return (
     <Card sx={{ p: 3, mt: 3 }}>
-      <SectionTitle>Unmatched readings · supervisor</SectionTitle>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>The scale sent these readings with no plate that matches an open visit. A reading becomes a weight only when the supervisor ties it to a visit; otherwise it is voided with a reason. Both are logged.</Typography>
-      {readings.length === 0 ? <Typography variant="body2" color="text.secondary">No unmatched reading.</Typography> : (
+      <SectionTitle>{tr("Unmatched readings · supervisor")}</SectionTitle>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("The scale sent these readings with no plate that matches an open visit. A reading becomes a weight only when the supervisor ties it to a visit; otherwise it is voided with a reason. Both are logged.")}</Typography>
+      {readings.length === 0 ? <Typography variant="body2" color="text.secondary">{tr("No unmatched reading.")}</Typography> : (
         <ResponsiveTable rowKey={(r) => r.id} rows={readings} columns={[
           { label: 'Reading', render: (r) => <><Typography variant="subtitle2">{r.id}</Typography><Typography variant="caption" color="text.secondary">{formatDateTime(r.at)}</Typography></> },
           { label: 'Plate read', render: (r) => r.plateRead },
           { label: 'Weight', align: 'right', render: (r) => formatKg(r.kg) },
           { label: 'Status', align: 'right', render: (r) => (r.status === 'Waiting' ? (
             <Stack direction="row" spacing={1} justifyContent="flex-end">
-              <Button size="small" variant="outlined" color="inherit" onClick={() => { setOpen({ r, act: 'tie' }); setVisitId(visits.find((v) => v.job === 'loaded')?.id ?? ''); }}>Tie to a visit</Button>
-              <Button size="small" variant="outlined" color="inherit" onClick={() => setOpen({ r, act: 'void' })}>Void</Button>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => { setOpen({ r, act: 'tie' }); setVisitId(visits.find((v) => v.job === 'loaded')?.id ?? ''); }}>{tr("Tie to a visit")}</Button>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setOpen({ r, act: 'void' })}>{tr("Void")}</Button>
             </Stack>
           ) : <Label color={r.status === 'Tied' ? 'success' : 'default'}>{r.status}{r.note ? `: ${r.note}` : ''}</Label>) },
         ]} />
@@ -186,13 +186,13 @@ function UnmatchedReadings({ visits, onDone }) {
         <Stack spacing={1.5} sx={{ mt: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
           <Typography variant="subtitle2">{open.act === 'tie' ? `Tie ${open.r.id} (${formatKg(open.r.kg)}) to a visit` : `Void ${open.r.id}`}</Typography>
           {open.act === 'tie' && (
-            <TextField select size="small" label="Visit on the scale worklist" value={visitId} onChange={(e) => setVisitId(e.target.value)}>
+            <TextField select size="small" label={tr("Visit on the scale worklist")} value={visitId} onChange={(e) => setVisitId(e.target.value)}>
               {visits.filter((v) => v.job === 'loaded').map((v) => <MenuItem key={v.id} value={v.id}>{v.plate} · {v.carPass}</MenuItem>)}
             </TextField>
           )}
           <ReasonField value={reason} onChange={setReason} helper={open.act === 'tie' ? 'For example: deck camera shows the truck; plate reader missed it.' : 'For example: second pass of a truck already weighed.'} />
           <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-            <Button variant="outlined" color="inherit" onClick={close}>Cancel</Button>
+            <Button variant="outlined" color="inherit" onClick={close}>{tr("Cancel")}</Button>
             <Button variant="contained" disabled={!reason.trim() || (open.act === 'tie' && !visitId)} onClick={() => (open.act === 'tie' ? tie(open.r) : (settle(open.r, 'Voided', reason.trim()), onDone(`Reading ${open.r.id} voided`)))}>{open.act === 'tie' ? 'Tie the reading' : 'Void the reading'}</Button>
           </Stack>
         </Stack>
@@ -227,14 +227,14 @@ function StoneWeighBack({ onDone }) {
   };
   return (
     <Card sx={{ p: 3, mt: 3 }}>
-      <SectionTitle>Stone trucks back from the unloading zone</SectionTitle>
-      <Alert severity="info" sx={{ mb: 2 }}>Preview for Bhomra and Burimari. The stone route stays disabled in IBMS until NBR and BLPA decide its control; Benapole has no outside yard.</Alert>
+      <SectionTitle>{tr("Stone trucks back from the unloading zone")}</SectionTitle>
+      <Alert severity="info" sx={{ mb: 2 }}>{tr("Preview for Bhomra and Burimari. The stone route stays disabled in IBMS until NBR and BLPA decide its control; Benapole has no outside yard.")}</Alert>
       <ResponsiveTable rowKey={(t) => t.id} rows={trucks} columns={[
         { label: 'Truck', render: (t) => <><Plate>{t.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{t.port} · prepaid {t.prepaidT} t, Tk {t.prepaidTk.toLocaleString('en-US')}</Typography></> },
         { label: 'Loaded weight', align: 'right', priority: 'low', render: (t) => formatKg(t.loadedKg) },
         { label: 'Empty weight', align: 'right', render: (t) => (t.emptyKg ? formatKg(t.emptyKg) : '–') },
         { label: 'Top-up', align: 'right', render: (t) => {
-          if (!t.emptyKg) return <Button size="small" variant="outlined" color="inherit" onClick={() => weigh(t)}>Weigh empty</Button>;
+          if (!t.emptyKg) return <Button size="small" variant="outlined" color="inherit" onClick={() => weigh(t)}>{tr("Weigh empty")}</Button>;
           const { netT, topUp } = topUpOf(t);
           if (t.topUpRaised !== undefined) return <Label color={t.topUpRaised ? 'warning' : 'success'}>{t.topUpRaised ? `Top-up Tk ${t.topUpRaised.toLocaleString('en-US')} raised` : 'Nothing above the prepaid bill'}</Label>;
           return <Stack alignItems="flex-end" spacing={0.5}><Typography variant="caption" color="text.secondary">{netT} t net{t.nights ? `, ${t.nights} night` : ''}: Tk {topUp.toLocaleString('en-US')} above prepaid</Typography><Button size="small" variant="contained" onClick={() => raise(t)}>{topUp ? 'Raise top-up bill' : 'Confirm no top-up'}</Button></Stack>;

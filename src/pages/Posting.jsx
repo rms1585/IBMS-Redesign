@@ -9,7 +9,7 @@ import { billableTonnes, formatDuration, formatKg } from '../demo/format';
 import { ActionFoot, Bench, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, StatusPill, useKeyAction } from '../demo/ui';
 
 const NO_MAP = {};
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-05: route each line, check free space, propose a shed; the holding area is only for trucks with nowhere to go.
 
@@ -91,7 +91,7 @@ function PostingBench() {
             items={queue}
             selected={v?.id}
             onSelect={(id) => { setSel(id); setShed(''); setAsking(null); setReason(''); }}
-            empty="No weighed truck is waiting for a posting."
+            empty={tr("No weighed truck is waiting for a posting.")}
             render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">Weighed {formatDuration(x.weigh.at)} ago{sentBack[x.id] ? ' · sent back' : ''}{escalated[x.id] ? ' · escalated' : ''}</Typography></>}
           />
         }
@@ -99,13 +99,13 @@ function PostingBench() {
           <Stack spacing={2.5}>
             <Plate size="hero">{v.plate}</Plate>
             <Facts cols={2}>
-              <Fact label="Weight">{formatKg(v.weigh.kg)}</Fact>
-              <Fact label="Billable">{needT} t</Fact>
-              <Fact label="Category">{category}</Fact>
+              <Fact label={tr("Weight")}>{formatKg(v.weigh.kg)}</Fact>
+              <Fact label={tr("Billable")}>{needT} t</Fact>
+              <Fact label={tr("Category")}>{category}</Fact>
             </Facts>
-            {v.weigh.overTolerance && <Alert severity="warning">Weight over tolerance is flagged to the officials. If one places a hold, the truck waits in the holding area while the goods are inspected.</Alert>}
+            {v.weigh.overTolerance && <Alert severity="warning">{tr("Weight over tolerance is flagged to the officials. If one places a hold, the truck waits in the holding area while the goods are inspected.")}</Alert>}
             {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
-            <SectionTitle>Lines</SectionTitle>
+            <SectionTitle>{tr("Lines")}</SectionTitle>
             {lines.map((l) => (
               <Stack key={l.id} direction="row" justifyContent="space-between" spacing={2}>
                 <Typography variant="body2">Line {l.no}: {l.goods} · {importerName(l.importer)}</Typography>
@@ -113,13 +113,13 @@ function PostingBench() {
               </Stack>
             ))}
             {category !== 'perishable' && (
-              <TextField select label="Propose a shed or zone" value={chosen} onChange={(e) => setShed(e.target.value)} helperText={chosen !== suggested ? 'Not the suggested place: the shed in-charge sees why when deciding.' : 'Suggested from the goods category and the product list.'} sx={{ maxWidth: 360 }}>
+              <TextField select label={tr("Propose a shed or zone")} value={chosen} onChange={(e) => setShed(e.target.value)} helperText={chosen !== suggested ? 'Not the suggested place: the shed in-charge sees why when deciding.' : 'Suggested from the goods category and the product list.'} sx={{ maxWidth: 360 }}>
                 {space.map((s) => <MenuItem key={s.id} value={s.id}>{s.id} · {s.freeT} t free · takes {s.takes}</MenuItem>)}
               </TextField>
             )}
             {dropPoints.length > 1 && (
               <Box>
-                <SectionTitle>Drop points, in order</SectionTitle>
+                <SectionTitle>{tr("Drop points, in order")}</SectionTitle>
                 <Stack component="ol" spacing={0.5} sx={{ m: 0, pl: 2.5 }}>{dropPoints.map((d) => <Typography key={d} component="li" variant="body2">{d}: {lines.filter((l) => (l.category === 'perishable' ? 'Transshipment' : l === lines[0] ? chosen : ROUTE[l.category]) === d).map((l) => `line ${l.no}`).join(', ')}</Typography>)}</Stack>
               </Box>
             )}
@@ -129,7 +129,7 @@ function PostingBench() {
                 <Typography variant="subtitle2">{asking === 'back' ? 'Send back down the queue' : asking === 'escalate' ? 'Escalate to the supervisor' : `Supervisor override: ${category} goods into ${chosen}`}</Typography>
                 <ReasonField value={reason} onChange={setReason} helper={asking === 'override' ? 'Signed by the supervisor and logged against the storage rule.' : 'Logged on the visit.'} />
                 <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-                  <Button variant="outlined" color="inherit" onClick={() => { setAsking(null); setReason(''); }}>Cancel</Button>
+                  <Button variant="outlined" color="inherit" onClick={() => { setAsking(null); setReason(''); }}>{tr("Cancel")}</Button>
                   <Button variant="contained" disabled={!reason.trim()} onClick={() => {
                     const why = reason.trim();
                     if (asking === 'back') { setSentBack((m) => ({ ...m, [v.id]: new Date().toISOString() })); setSel(queue.find((x) => x.id !== v.id)?.id); setMsg(`${v.plate} sent back down the queue`); }
@@ -141,19 +141,19 @@ function PostingBench() {
               </Stack>
             ) : (
               <Stack direction="row" flexWrap="wrap" gap={1}>
-                {queue.length > 1 && <Button size="small" variant="outlined" color="inherit" onClick={() => setAsking('back')}>Send back down the queue</Button>}
-                {!escalated[v.id] && <Button size="small" variant="outlined" color="inherit" onClick={() => setAsking('escalate')}>Escalate to supervisor</Button>}
-                {ruleBroken && !override && <Button size="small" variant="outlined" color="inherit" onClick={() => setAsking('override')}>Supervisor override</Button>}
+                {queue.length > 1 && <Button size="small" variant="outlined" color="inherit" onClick={() => setAsking('back')}>{tr("Send back down the queue")}</Button>}
+                {!escalated[v.id] && <Button size="small" variant="outlined" color="inherit" onClick={() => setAsking('escalate')}>{tr("Escalate to supervisor")}</Button>}
+                {ruleBroken && !override && <Button size="small" variant="outlined" color="inherit" onClick={() => setAsking('override')}>{tr("Supervisor override")}</Button>}
               </Stack>
             )}
             {noSpace && (
               <Box>
-                <Button variant="outlined" onClick={() => { p.sendToHolding(v.id, `No free space in ${chosen}`); setMsg('Placed in the holding area'); }}>Place in the holding area</Button>
+                <Button variant="outlined" onClick={() => { p.sendToHolding(v.id, `No free space in ${chosen}`); setMsg('Placed in the holding area'); }}>{tr("Place in the holding area")}</Button>
               </Box>
             )}
           </Stack>
-        ) : <Typography variant="body2" color="text.secondary">Select a truck.</Typography>}
-        right={v ? (<><Typography variant="subtitle2" sx={{ mb: 1 }}>Checks</Typography><Checklist checks={checks} /><ActionFoot checks={checks} label="Propose posting" keyHint="P" onClick={propose} /></>) : null}
+        ) : <Typography variant="body2" color="text.secondary">{tr("Select a truck.")}</Typography>}
+        right={v ? (<><Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("Checks")}</Typography><Checklist checks={checks} /><ActionFoot checks={checks} label={tr("Propose posting")} keyHint="P" onClick={propose} /></>) : null}
       />
       <Card sx={{ p: 3, mt: 3 }}>
         <SectionTitle>Holding area · {holding.length} of {rules.holdingPlaces} places</SectionTitle>
@@ -161,7 +161,7 @@ function PostingBench() {
         <ResponsiveTable
           rowKey={(x) => x.id}
           rows={holding}
-          empty="The holding area is empty."
+          empty={tr("The holding area is empty.")}
           columns={[
             { label: 'Place', render: (x) => holding.indexOf(x) + 1 },
             { label: 'Plate', render: (x) => <Plate>{x.plate}</Plate> },
@@ -170,8 +170,8 @@ function PostingBench() {
             {
               label: 'Action',
               render: (x) => (x.stage === 'Manifest not yet available'
-                ? <Typography variant="caption" color="text.secondary">Waits until the manifest is matched</Typography>
-                : <Button size="small" variant="outlined" onClick={() => { p.callForward(x.id); setMsg(`${x.plate} called forward`); }}>Call forward</Button>),
+                ? <Typography variant="caption" color="text.secondary">{tr("Waits until the manifest is matched")}</Typography>
+                : <Button size="small" variant="outlined" onClick={() => { p.callForward(x.id); setMsg(`${x.plate} called forward`); }}>{tr("Call forward")}</Button>),
             },
           ]}
         />

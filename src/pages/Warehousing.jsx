@@ -10,7 +10,7 @@ import { useRole } from '../RoleContext';
 import { importerName, usePort, useStoredState } from '../demo/PortStore';
 import { daysSince, formatBoe, formatDateTime, formatKg } from '../demo/format';
 import { ActionFoot, ApprovalRow, Bench, Checklist, Confirmation, Fact, Facts, HoldRow, Id, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-06: shed work on the handheld; the warehouse manager enters job times; loads lock with the Customs ARO's co-approval.
 
@@ -40,14 +40,14 @@ function JobTimes({ v, onDone }) {
   const [end, setEnd] = useState(toLocalInput(v.receipt?.times?.end));
   const bad = start && end && end < start;
   if (v.receipt?.times && !canEnter) return <Typography variant="body2">Unloading {formatDateTime(v.receipt.times.start)} to {formatDateTime(v.receipt.times.end)} · entered by {v.receipt.times.by}</Typography>;
-  if (!canEnter) return <Typography variant="body2" color="text.secondary">The warehouse manager enters the start and end times of the unloading. The handheld has no Start or End button.</Typography>;
+  if (!canEnter) return <Typography variant="body2" color="text.secondary">{tr("The warehouse manager enters the start and end times of the unloading. The handheld has no Start or End button.")}</Typography>;
   return (
     <Stack spacing={1.5}>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-        <TextField type="datetime-local" label="Unloading started" value={start} onChange={(e) => setStart(e.target.value)} InputLabelProps={{ shrink: true }} />
-        <TextField type="datetime-local" label="Unloading ended" value={end} onChange={(e) => setEnd(e.target.value)} InputLabelProps={{ shrink: true }} error={Boolean(bad)} helperText={bad ? 'The end cannot be earlier than the start.' : ' '} />
+        <TextField type="datetime-local" label={tr("Unloading started")} value={start} onChange={(e) => setStart(e.target.value)} InputLabelProps={{ shrink: true }} />
+        <TextField type="datetime-local" label={tr("Unloading ended")} value={end} onChange={(e) => setEnd(e.target.value)} InputLabelProps={{ shrink: true }} error={Boolean(bad)} helperText={bad ? 'The end cannot be earlier than the start.' : ' '} />
       </Box>
-      <Box><Button variant="outlined" disabled={!start || !end || Boolean(bad)} onClick={() => { p.setJobTimes(v.id, fromLocalInput(start), fromLocalInput(end)); onDone('Unloading times entered'); }}>Enter times</Button></Box>
+      <Box><Button variant="outlined" disabled={!start || !end || Boolean(bad)} onClick={() => { p.setJobTimes(v.id, fromLocalInput(start), fromLocalInput(end)); onDone('Unloading times entered'); }}>{tr("Enter times")}</Button></Box>
     </Stack>
   );
 }
@@ -92,33 +92,33 @@ function UnloadingBench({ onDone }) {
   return (
     <Bench
       context={[{ label: 'Port', value: 'Benapole' }, { label: 'Shed', value: 'All sheds (demo)' }, { label: 'Arriving', value: queue.length }]}
-      queue={<QueueList title="Proposed to this shed" items={queue} selected={v?.id} onSelect={(id) => { setSel(id); setRejecting(false); setExceptions({}); }} empty="No truck is posted to this shed." render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.posting.shed} · {x.posting.accepted === null ? 'Proposal to decide' : 'Accepted, to receive'}</Typography></>} />}
+      queue={<QueueList title="Proposed to this shed" items={queue} selected={v?.id} onSelect={(id) => { setSel(id); setRejecting(false); setExceptions({}); }} empty={tr("No truck is posted to this shed.")} render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.posting.shed} · {x.posting.accepted === null ? 'Proposal to decide' : 'Accepted, to receive'}</Typography></>} />}
       center={v ? (
         <Stack spacing={2.5}>
           <Plate size="hero">{v.plate}</Plate>
           <Facts cols={2}>
-            <Fact label="Proposed place">{v.posting.shed}</Fact>
-            <Fact label="Weighbridge net">{formatKg(v.weigh?.kg)}</Fact>
-            <Fact label="Proposed by">{v.posting.proposedBy ?? '–'}</Fact>
+            <Fact label={tr("Proposed place")}>{v.posting.shed}</Fact>
+            <Fact label={tr("Weighbridge net")}>{formatKg(v.weigh?.kg)}</Fact>
+            <Fact label={tr("Proposed by")}>{v.posting.proposedBy ?? '–'}</Fact>
           </Facts>
           {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
           {deciding ? (
             rejecting ? (
               <Stack spacing={1.5}>
-                <ReasonField value={reason} onChange={setReason} label="Reason for the rejection" />
+                <ReasonField value={reason} onChange={setReason} label={tr("Reason for the rejection")} />
                 <Stack direction="row" spacing={1}>
-                  <Button variant="contained" color="error" disabled={!reason.trim()} onClick={() => { p.decidePosting(v.id, false, reason.trim()); setRejecting(false); setReason(''); onDone('Posting rejected'); }}>Reject posting</Button>
-                  <Button variant="outlined" color="inherit" onClick={() => setRejecting(false)}>Cancel</Button>
+                  <Button variant="contained" color="error" disabled={!reason.trim()} onClick={() => { p.decidePosting(v.id, false, reason.trim()); setRejecting(false); setReason(''); onDone('Posting rejected'); }}>{tr("Reject posting")}</Button>
+                  <Button variant="outlined" color="inherit" onClick={() => setRejecting(false)}>{tr("Cancel")}</Button>
                 </Stack>
               </Stack>
-            ) : <Box><Button variant="outlined" color="inherit" onClick={() => setRejecting(true)}>Reject with a reason</Button></Box>
+            ) : <Box><Button variant="outlined" color="inherit" onClick={() => setRejecting(true)}>{tr("Reject with a reason")}</Button></Box>
           ) : (
             <>
-              <SectionTitle>Labour association</SectionTitle>
-              <TextField select label="Tag the labour association to this job" value={v.receipt?.association ?? ''} onChange={(e) => { p.tagAssociation(v.id, e.target.value); onDone('Labour association tagged and notified'); }} helperText="The association chooses who comes. IBMS never tags individual labourers." sx={{ maxWidth: 420 }}>
+              <SectionTitle>{tr("Labour association")}</SectionTitle>
+              <TextField select label={tr("Tag the labour association to this job")} value={v.receipt?.association ?? ''} onChange={(e) => { p.tagAssociation(v.id, e.target.value); onDone('Labour association tagged and notified'); }} helperText={tr("The association chooses who comes. IBMS never tags individual labourers.")} sx={{ maxWidth: 420 }}>
                 {ASSOCIATIONS.map((a) => <MenuItem key={a} value={a}>{a}</MenuItem>)}
               </TextField>
-              <SectionTitle>Receipt per line</SectionTitle>
+              <SectionTitle>{tr("Receipt per line")}</SectionTitle>
               {lines.map((l) => {
                 const c = counts[l.id] ?? { packages: l.packages, counted: true };
                 const receiptKg = single ? Math.max(l.declaredKg, v.weigh?.kg ?? 0) : l.declaredKg;
@@ -126,8 +126,8 @@ function UnloadingBench({ onDone }) {
                   <Card key={l.id} variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="subtitle2">Line {l.no}: {l.goods} · {importerName(l.importer)}</Typography>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} sx={{ mt: 1.5 }}>
-                      <TextField size="small" type="number" label="Packages counted" value={c.packages} disabled={!c.counted} onChange={(e) => setCounts({ ...counts, [l.id]: { ...c, packages: Number(e.target.value) } })} sx={{ width: 180 }} />
-                      <FormControlLabel control={<Checkbox checked={!c.counted} onChange={(e) => setCounts({ ...counts, [l.id]: { packages: l.packages, counted: !e.target.checked } })} />} label="Taken from the declaration" />
+                      <TextField size="small" type="number" label={tr("Packages counted")} value={c.packages} disabled={!c.counted} onChange={(e) => setCounts({ ...counts, [l.id]: { ...c, packages: Number(e.target.value) } })} sx={{ width: 180 }} />
+                      <FormControlLabel control={<Checkbox checked={!c.counted} onChange={(e) => setCounts({ ...counts, [l.id]: { packages: l.packages, counted: !e.target.checked } })} />} label={tr("Taken from the declaration")} />
                       {!c.counted && <SourceMarker source="Declared" />}
                     </Stack>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Receipt weight {formatKg(receiptKg)}: {single ? 'the higher of the declared weight and the weighbridge net.' : 'this line\'s own declared weight.'}</Typography>
@@ -137,19 +137,19 @@ function UnloadingBench({ onDone }) {
               })}
               {!single && diff !== 0 && <Alert severity="warning">The truck weighed {formatKg(Math.abs(diff))} {diff > 0 ? 'more' : 'less'} than its lines declare. The difference is flagged on the truck and never spread over the lines; each importer pays on its own line's weight.</Alert>}
               <EquipmentRequisition v={v} onDone={onDone} />
-              <SectionTitle>Job times</SectionTitle>
+              <SectionTitle>{tr("Job times")}</SectionTitle>
               <JobTimes v={v} onDone={onDone} />
             </>
           )}
         </Stack>
-      ) : <Typography variant="body2" color="text.secondary">Nothing to receive.</Typography>}
+      ) : <Typography variant="body2" color="text.secondary">{tr("Nothing to receive.")}</Typography>}
       right={v ? (
         deciding ? (
           <>
             <Checklist checks={[{ label: 'Free space confirmed by posting', state: 'pass', text: v.posting.shed }]} />
-            <ActionFoot label="Accept posting" keyHint="A" onClick={accept} />
+            <ActionFoot label={tr("Accept posting")} keyHint="A" onClick={accept} />
           </>
-        ) : (<><Checklist checks={checks} /><ActionFoot checks={checks} label="Lock receipt" keyHint="L" onClick={lock} /></>)
+        ) : (<><Checklist checks={checks} /><ActionFoot checks={checks} label={tr("Lock receipt")} keyHint="L" onClick={lock} /></>)
       ) : null}
     />
   );
@@ -184,28 +184,28 @@ function LoadingBench({ onDone }) {
     <>
       <Bench
         context={[{ label: 'Port', value: 'Benapole' }, { label: 'Local trucks to load', value: queue.length }]}
-        queue={<QueueList title="Local trucks inside" items={queue} selected={item?.id} onSelect={setSel} empty="No local truck is waiting to load. Trucks appear once admitted at the inland gate on an Entry Pass." render={(x) => <><Plate>{x.s.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.s.entryPass}</Typography></>} />}
+        queue={<QueueList title="Local trucks inside" items={queue} selected={item?.id} onSelect={setSel} empty={tr("No local truck is waiting to load. Trucks appear once admitted at the inland gate on an Entry Pass.")} render={(x) => <><Plate>{x.s.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.s.entryPass}</Typography></>} />}
         center={item ? (
           <Stack spacing={2.5}>
             <Plate size="hero">{item.s.plate}</Plate>
             <Facts cols={2}>
-              <Fact label="Delivery Request">{item.d.id}</Fact>
-              <Fact label="Bill of Entry"><Id>{formatBoe(b)}</Id></Fact>
-              <Fact label="Left on the request">{formatKg(drLeft)}</Fact>
+              <Fact label={tr("Delivery Request")}>{item.d.id}</Fact>
+              <Fact label={tr("Bill of Entry")}><Id>{formatBoe(b)}</Id></Fact>
+              <Fact label={tr("Left on the request")}>{formatKg(drLeft)}</Fact>
             </Facts>
-            <TextField type="number" label="Quantity loaded (kg)" value={kg} onChange={(e) => setKg(e.target.value)} sx={{ maxWidth: 260 }} />
-            <Typography variant="body2" color="text.secondary">Locking the load approves the Exit Pass for these goods as shed in-charge. The Customs Assistant Revenue Officer co-approves it in the Customs workspace.</Typography>
+            <TextField type="number" label={tr("Quantity loaded (kg)")} value={kg} onChange={(e) => setKg(e.target.value)} sx={{ maxWidth: 260 }} />
+            <Typography variant="body2" color="text.secondary">{tr("Locking the load approves the Exit Pass for these goods as shed in-charge. The Customs Assistant Revenue Officer co-approves it in the Customs workspace.")}</Typography>
           </Stack>
-        ) : <Typography variant="body2" color="text.secondary">No truck selected.</Typography>}
-        right={item ? (<><Checklist checks={checks} /><ActionFoot checks={checks} label="Lock load" keyHint="L" onClick={lockLoad} disabled={!n} /></>) : null}
+        ) : <Typography variant="body2" color="text.secondary">{tr("No truck selected.")}</Typography>}
+        right={item ? (<><Checklist checks={checks} /><ActionFoot checks={checks} label={tr("Lock load")} keyHint="L" onClick={lockLoad} disabled={!n} /></>) : null}
       />
       {changes.length > 0 && (
         <Card sx={{ p: 3, mt: 3 }}>
-          <SectionTitle>Truck changes waiting for the shed in-charge</SectionTitle>
+          <SectionTitle>{tr("Truck changes waiting for the shed in-charge")}</SectionTitle>
           {changes.map((tc) => (
             <Box key={tc.id} sx={{ mb: 2 }}>
               <Typography variant="body2">{tc.pass}: {tc.from} to {tc.to}. {tc.reason} (proposed by {tc.proposedBy})</Typography>
-              <ApprovalRow title="Shed in-charge" approval={tc.shed} action={<Button size="small" variant="contained" onClick={() => { p.approveTruckChange(tc.id, 'shed'); onDone('Truck change approved'); }}>Approve truck change</Button>} />
+              <ApprovalRow title="Shed in-charge" approval={tc.shed} action={<Button size="small" variant="contained" onClick={() => { p.approveTruckChange(tc.id, 'shed'); onDone('Truck change approved'); }}>{tr("Approve truck change")}</Button>} />
             </Box>
           ))}
         </Card>
@@ -232,7 +232,7 @@ function Custody({ onDone }) {
       <ResponsiveTable
         rowKey={(r) => r.l.id}
         rows={lots}
-        empty="No cargo in custody."
+        empty={tr("No cargo in custody.")}
         columns={[
           { label: 'Line', render: (r) => <Id>{r.l.id}</Id> },
           { label: 'Goods', render: (r) => r.l.goods },
@@ -241,14 +241,14 @@ function Custody({ onDone }) {
           { label: 'Storage', align: 'right', priority: 'low', render: (r) => `${daysSince(r.v.receipt.at)} days` },
           { label: 'Aging', priority: 'low', render: (r) => <AgingFlag days={daysSince(r.v.receipt.at)} flagAt={flagAt} referAt={referAt} /> },
           { label: 'Status', render: (r) => { const h = p.holdsOnManifest(r.l.manifest); return <StatusPill word={h.length ? 'Customs hold' : r.b?.release ? 'Released' : 'Awaiting Customs'} />; } },
-          { label: '', align: 'right', render: (r) => <Button size="small" variant="outlined" color="inherit" onClick={() => setShifting(r)}>Shift</Button> },
+          { label: '', align: 'right', render: (r) => <Button size="small" variant="outlined" color="inherit" onClick={() => setShifting(r)}>{tr("Shift")}</Button> },
         ]}
       />
     </Card>
     {shifting && <ShiftForm r={shifting} from={placeOf(shifting)} onCancel={() => setShifting(null)} onShift={(shift) => { setShifts((all) => [...all, shift]); setShifting(null); onDone(`Line ${shifting.l.no} shifted to ${shift.to}`); }} />}
     {shifts.length > 0 && (
       <Card sx={{ p: 3 }}>
-        <SectionTitle>Shifts inside the port</SectionTitle>
+        <SectionTitle>{tr("Shifts inside the port")}</SectionTitle>
         <ResponsiveTable rowKey={(x) => x.id} rows={[...shifts].reverse()} columns={[
           { label: 'Line', render: (x) => <Id>{x.line}</Id> },
           { label: 'From → to', render: (x) => `${x.from} → ${x.to}` },
@@ -285,19 +285,19 @@ function ShiftForm({ r, from, onCancel, onShift }) {
       <SectionTitle>Shift line {r.l.no}: {r.l.goods}</SectionTitle>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Now in {from}. Owner: {importerName(r.l.importer)}.</Typography>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' } }}>
-        <TextField select label="Shift to" value={to} onChange={(e) => setTo(e.target.value)}>
+        <TextField select label={tr("Shift to")} value={to} onChange={(e) => setTo(e.target.value)}>
           {PLACES.filter((x) => x.id !== from).map((x) => <MenuItem key={x.id} value={x.id}>{x.id} · {x.blocked ? `blocked: ${x.blocked}` : `takes ${x.takes}`}</MenuItem>)}
         </TextField>
-        <TextField label="Lifts" inputMode="numeric" value={lifts} onChange={(e) => setLifts(e.target.value.replace(/\D/g, ''))} />
+        <TextField label={tr("Lifts")} inputMode="numeric" value={lifts} onChange={(e) => setLifts(e.target.value.replace(/\D/g, ''))} />
       </Box>
       <Stack spacing={2} sx={{ mt: 2 }}>
         <ReasonField value={reason} onChange={setReason} />
-        {breaksRule && <ReasonField label="Supervisor's approval" value={approval} onChange={setApproval} helper="The supervisor approves the storage-rule exception; it is logged with their name." />}
+        {breaksRule && <ReasonField label={tr("Supervisor's approval")} value={approval} onChange={setApproval} helper="The supervisor approves the storage-rule exception; it is logged with their name." />}
       </Stack>
       <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }}>
-        {why && <Typography variant="caption" color={place?.blocked ? 'error.text' : 'text.secondary'} role="status" sx={{ flex: 1 }}>{why}</Typography>}
-        <Button variant="outlined" color="inherit" onClick={onCancel}>Cancel</Button>
-        <Button variant="contained" disabled={Boolean(why)} onClick={() => onShift({ id: `SH-${Date.now()}`, line: r.l.id, from, to, lifts: Number(lifts), reason: reason.trim(), approval: breaksRule ? approval.trim() : '', owner: importerName(r.l.importer), by: role.person, at: new Date().toISOString() })}>Record the shift</Button>
+        {why && <Typography variant="caption" color={place?.blocked ? 'error.text' : 'text.secondary'} role="status" sx={{ flex: 1 }}>{tr(why)}</Typography>}
+        <Button variant="outlined" color="inherit" onClick={onCancel}>{tr("Cancel")}</Button>
+        <Button variant="contained" disabled={Boolean(why)} onClick={() => onShift({ id: `SH-${Date.now()}`, line: r.l.id, from, to, lifts: Number(lifts), reason: reason.trim(), approval: breaksRule ? approval.trim() : '', owner: importerName(r.l.importer), by: role.person, at: new Date().toISOString() })}>{tr("Record the shift")}</Button>
       </Stack>
     </Card>
   );
@@ -307,7 +307,7 @@ function ShiftForm({ r, from, onCancel, onShift }) {
 function LineException({ value, onChange }) {
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} sx={{ mt: 1.5 }}>
-      <TextField select size="small" label="Shortage or damage" value={value.kind} onChange={(e) => onChange({ ...value, kind: e.target.value })} sx={{ width: 200 }}>
+      <TextField select size="small" label={tr("Shortage or damage")} value={value.kind} onChange={(e) => onChange({ ...value, kind: e.target.value })} sx={{ width: 200 }}>
         {EXCEPTION_KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}
       </TextField>
       {value.kind !== 'None' && (
@@ -331,12 +331,12 @@ function EquipmentRequisition({ v, onDone }) {
   const mine = requisitions[v.id] ?? NO_LIST;
   return (
     <>
-      <SectionTitle>Equipment</SectionTitle>
+      <SectionTitle>{tr("Equipment")}</SectionTitle>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'flex-start' }}>
-        <TextField select size="small" label="Requisition equipment" value={code} onChange={(e) => setCode(e.target.value)} sx={{ minWidth: 260 }} helperText="Charged at the tariff order's rate for its unit">
+        <TextField select size="small" label={tr("Requisition equipment")} value={code} onChange={(e) => setCode(e.target.value)} sx={{ minWidth: 260 }} helperText={tr("Charged at the tariff order's rate for its unit")}>
           {machines.map((m) => <MenuItem key={m.code} value={m.code} disabled={!m.available}>{m.name} · {m.unit.toLowerCase()}{m.available ? '' : ` · unavailable: ${m.reason}`}</MenuItem>)}
         </TextField>
-        <Button variant="outlined" color="inherit" disabled={!code} onClick={() => { const m = machines.find((x) => x.code === code); setRequisitions((all) => ({ ...all, [v.id]: [...(all[v.id] ?? []), { code, name: m.name, at: new Date().toISOString() }] })); setCode(''); onDone(`${m.name} requisitioned`); }}>Requisition</Button>
+        <Button variant="outlined" color="inherit" disabled={!code} onClick={() => { const m = machines.find((x) => x.code === code); setRequisitions((all) => ({ ...all, [v.id]: [...(all[v.id] ?? []), { code, name: m.name, at: new Date().toISOString() }] })); setCode(''); onDone(`${m.name} requisitioned`); }}>{tr("Requisition")}</Button>
       </Stack>
       {mine.length > 0 && <Typography variant="body2" color="text.secondary">Requisitioned: {mine.map((m) => `${m.name} (${formatDateTime(m.at)})`).join(', ')}</Typography>}
     </>
@@ -356,9 +356,9 @@ export default function Warehousing() {
         title={t('Warehousing')}
         action={
           <ToggleButtonGroup exclusive size="small" value={tab} onChange={(_, v) => v && setTab(v)} aria-label="Warehousing view">
-            <ToggleButton value="unload">Unloading</ToggleButton>
-            <ToggleButton value="load">Loading</ToggleButton>
-            <ToggleButton value="custody">Custody</ToggleButton>
+            <ToggleButton value="unload">{tr("Unloading")}</ToggleButton>
+            <ToggleButton value="load">{tr("Loading")}</ToggleButton>
+            <ToggleButton value="custody">{tr("Custody")}</ToggleButton>
             <ToggleButton value="aging">{t('Aging and auction')}</ToggleButton>
           </ToggleButtonGroup>
         }

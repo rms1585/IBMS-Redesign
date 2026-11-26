@@ -4,7 +4,7 @@ import { PageHeader } from '../components/common';
 import { usePort, useStoredState } from '../demo/PortStore';
 import { dayKey } from '../demo/format';
 import { Confirmation, Fact, Facts, SectionTitle, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-18: licence evidence and the validity gate. IBMS records and verifies; it never issues or renews a licence.
 
@@ -34,11 +34,11 @@ function AgencyLicence({ agency, onDone }) {
         <StatusPill word={word} />
       </Stack>
       <Facts cols={4}>
-        <Fact label="Licence number">{l.number}</Fact>
-        <Fact label="Issuer">{l.issuer}</Fact>
-        <Fact label="Valid to">{l.validTo}</Fact>
-        <Fact label="Verified by">{l.verifiedBy ?? '–'}</Fact>
-        <Fact label="Evidence">{doc ? `${doc.file} · ${doc.ref}` : 'No document on file'}</Fact>
+        <Fact label={tr("Licence number")}>{l.number}</Fact>
+        <Fact label={tr("Issuer")}>{l.issuer}</Fact>
+        <Fact label={tr("Valid to")}>{l.validTo}</Fact>
+        <Fact label={tr("Verified by")}>{l.verifiedBy ?? '–'}</Fact>
+        <Fact label={tr("Evidence")}>{doc ? `${doc.file} · ${doc.ref}` : 'No document on file'}</Fact>
       </Facts>
       {word !== 'Verified' && (
         <Typography variant="body2" color="error.text" sx={{ mt: 2 }}>
@@ -46,16 +46,16 @@ function AgencyLicence({ agency, onDone }) {
         </Typography>
       )}
       <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap" useFlexGap>
-        {l.status === 'Unverified' && <Button variant="contained" onClick={() => { p.verifyLicence(agency.ain); onDone(`Licence ${l.number} verified`); }}>Verify licence</Button>}
-        {!editing && <Button variant="outlined" onClick={() => setEditing(true)}>Record a renewed licence</Button>}
+        {l.status === 'Unverified' && <Button variant="contained" onClick={() => { p.verifyLicence(agency.ain); onDone(`Licence ${l.number} verified`); }}>{tr("Verify licence")}</Button>}
+        {!editing && <Button variant="outlined" onClick={() => setEditing(true)}>{tr("Record a renewed licence")}</Button>}
       </Stack>
       {editing && (
         <Box sx={{ mt: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-          <Typography variant="subtitle2" gutterBottom>Renewed licence, as issued by the licensing authority</Typography>
+          <Typography variant="subtitle2" gutterBottom>{tr("Renewed licence, as issued by the licensing authority")}</Typography>
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-            <TextField required label="Licence number" value={number} onChange={(e) => setNumber(e.target.value)} />
-            <TextField required label="Valid to" type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} InputLabelProps={{ shrink: true }} />
-            <TextField required label="Authority's reference" placeholder="NBR licensing letter or portal ID" value={authRef} onChange={(e) => setAuthRef(e.target.value)} helperText="Checked against the licensing authority, not the copy alone" />
+            <TextField required label={tr("Licence number")} value={number} onChange={(e) => setNumber(e.target.value)} />
+            <TextField required label={tr("Valid to")} type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} InputLabelProps={{ shrink: true }} />
+            <TextField required label={tr("Authority's reference")} placeholder="NBR licensing letter or portal ID" value={authRef} onChange={(e) => setAuthRef(e.target.value)} helperText={tr("Checked against the licensing authority, not the copy alone")} />
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Button component="label" variant="outlined" color="inherit">
                 {file ? 'Replace licence copy' : 'Upload licence copy'}
@@ -65,8 +65,8 @@ function AgencyLicence({ agency, onDone }) {
             </Stack>
           </Box>
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-            <Button variant="contained" disabled={!number.trim() || !validTo || !file || !authRef.trim()} onClick={() => { p.recordLicence(agency.ain, { number: number.trim(), validTo }); setEvidence((all) => ({ ...all, [agency.ain]: { file, ref: authRef.trim() } })); setEditing(false); setNumber(''); setValidTo(''); setFile(''); setAuthRef(''); onDone('Licence recorded with its evidence. It stays unverified until checked'); }}>Record licence</Button>
-            <Button variant="outlined" color="inherit" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button variant="contained" disabled={!number.trim() || !validTo || !file || !authRef.trim()} onClick={() => { p.recordLicence(agency.ain, { number: number.trim(), validTo }); setEvidence((all) => ({ ...all, [agency.ain]: { file, ref: authRef.trim() } })); setEditing(false); setNumber(''); setValidTo(''); setFile(''); setAuthRef(''); onDone('Licence recorded with its evidence. It stays unverified until checked'); }}>{tr("Record licence")}</Button>
+            <Button variant="outlined" color="inherit" onClick={() => setEditing(false)}>{tr("Cancel")}</Button>
           </Stack>
         </Box>
       )}
@@ -80,8 +80,8 @@ export default function Licences() {
   const [msg, setMsg] = useState('');
   return (
     <>
-      <PageHeader title={t('C&F licences')} subtitle="Each check reads the one status at NDC Agargaon, so an expiry or a suspension applies at every port at once." />
-      <SectionTitle>Agencies onboarded on AIN</SectionTitle>
+      <PageHeader title={t('C&F licences')} subtitle={tr("Each check reads the one status at NDC Agargaon, so an expiry or a suspension applies at every port at once.")} />
+      <SectionTitle>{tr("Agencies onboarded on AIN")}</SectionTitle>
       <Stack spacing={2}>
         {p.parties.agencies.map((a) => <AgencyLicence key={a.ain} agency={a} onDone={setMsg} />)}
       </Stack>

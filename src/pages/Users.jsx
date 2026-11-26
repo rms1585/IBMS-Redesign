@@ -55,14 +55,14 @@ function InviteForm({ open, onClose, onInvite }) {
       )}
     >
       <Stack spacing={2.5} component="form" noValidate onSubmit={(e) => { e.preventDefault(); if (ready) onInvite(f, sensitive); }}>
-        <Typography variant="subtitle2">Person</Typography>
+        <Typography variant="subtitle2">{tr("Person")}</Typography>
         <TextField fullWidth required autoFocus label={tr("Full name")} value={f.name} onChange={set('name')} />
         <TextField select fullWidth label={tr("Organisation or person type")} value={f.type} onChange={set('type')}>
           {['BLPA staff', 'C&F agency', 'Importer / exporter', 'Bank staff'].map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
         </TextField>
         <TextField fullWidth required type="email" label={tr("Email")} value={f.email} onChange={set('email')} error={Boolean(f.email) && !emailOk} helperText={f.email && !emailOk ? 'Enter a valid email, for example name@blpa.gov.bd' : 'The invitation goes to this address'} />
         <TextField fullWidth type="tel" label={tr("Mobile (optional)")} value={f.mobile} onChange={set('mobile')} />
-        <Typography variant="subtitle2" sx={{ pt: 1 }}>Access</Typography>
+        <Typography variant="subtitle2" sx={{ pt: 1 }}>{tr("Access")}</Typography>
         <Stack direction="row" spacing={2}>
           <TextField select label={tr("Port")} value={f.port} onChange={set('port')} sx={{ width: 120, flexShrink: 0 }}>{ports.map((p) => <MenuItem key={p.code} value={p.code}>{p.code}</MenuItem>)}</TextField>
           <TextField select fullWidth label={tr("Role")} value={f.role} onChange={set('role')}>{roles.map((r) => <MenuItem key={r.name} value={r.name}>{r.name}</MenuItem>)}</TextField>
@@ -80,9 +80,9 @@ function RowMenu({ user, onDeactivate, onAssign }) {
     <>
       <IconButton size="small" aria-label={`Actions for ${user.name}`} onClick={(e) => { e.stopPropagation(); setA(e.currentTarget); }}><MoreVertRoundedIcon fontSize="small" /></IconButton>
       <Menu anchorEl={a} open={Boolean(a)} onClose={() => setA(null)}>
-        <MenuItem onClick={() => { setA(null); onAssign(user); }}>Add role assignment</MenuItem>
-        <MenuItem onClick={() => setA(null)}>Resend invitation</MenuItem>
-        <MenuItem disabled={user.status === 'Deactivated'} onClick={() => { setA(null); onDeactivate(user); }} sx={{ color: 'error.text' }}>Deactivate…</MenuItem>
+        <MenuItem onClick={() => { setA(null); onAssign(user); }}>{tr("Add role assignment")}</MenuItem>
+        <MenuItem onClick={() => setA(null)}>{tr("Resend invitation")}</MenuItem>
+        <MenuItem disabled={user.status === 'Deactivated'} onClick={() => { setA(null); onDeactivate(user); }} sx={{ color: 'error.text' }}>{tr("Deactivate…")}</MenuItem>
       </Menu>
     </>
   );

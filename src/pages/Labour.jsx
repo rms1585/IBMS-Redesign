@@ -5,7 +5,7 @@ import { PageHeader } from '../components/common';
 import { usePort, useStoredState } from '../demo/PortStore';
 import { formatBDT, formatDateTime, formatKg } from '../demo/format';
 import { Confirmation, Plate, ReasonField, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 
 // M-19: the labour association is tagged to each job; IBMS never tags individual labourers.
 // Attendance shows present or absent only; raw card reads never appear on a screen.
@@ -37,7 +37,7 @@ export default function Labour() {
   const total = CONTRACT.reduce((s, l) => s + l.qty * l.rate, 0);
   return (
     <>
-      <PageHeader title={t('Labour and roster')} subtitle="Labourers enter on RFID cards. The association chooses who comes; the job records the labour and equipment actually used." />
+      <PageHeader title={t('Labour and roster')} subtitle={tr("Labourers enter on RFID cards. The association chooses who comes; the job records the labour and equipment actually used.")} />
       <Card sx={{ px: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
           {['Tagged jobs', 'Attendance', 'Workers', 'Contractor bill'].map((x) => <Tab key={x} label={x} />)}
@@ -48,7 +48,7 @@ export default function Labour() {
           <ResponsiveTable
             rowKey={(r) => r.v.id}
             rows={jobs}
-            empty="No job is tagged yet. The shed tags the association as soon as a consignment is posted."
+            empty={tr("No job is tagged yet. The shed tags the association as soon as a consignment is posted.")}
             columns={[
               { label: 'Truck', render: (r) => <Plate>{r.v.plate}</Plate> },
               { label: 'Place', render: (r) => r.v.posting?.shed },
@@ -69,14 +69,14 @@ export default function Labour() {
               { label: 'Card', render: (w) => w.card },
               { label: 'Association', priority: 'low', render: (w) => w.association },
               { label: 'Shift', priority: 'low', render: (w) => w.shift },
-              { label: 'Card status', render: (w) => (w.blocked ? <Label color="error">Blocked: {w.blocked}</Label> : <Label color="success">Active</Label>) },
+              { label: 'Card status', render: (w) => (w.blocked ? <Label color="error">Blocked: {w.blocked}</Label> : <Label color="success">{tr("Active")}</Label>) },
             ]}
           />
         )}
         {tab === 3 && (
           <>
-            <SectionTitle>Labour and equipment contractor · November 2026</SectionTitle>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Built from the association tags, requisitions and each lift and shift, at the contract rates. It is not a wage calculation; BLPA accounts approve it for payment outside IBMS.</Typography>
+            <SectionTitle>{tr("Labour and equipment contractor · November 2026")}</SectionTitle>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("Built from the association tags, requisitions and each lift and shift, at the contract rates. It is not a wage calculation; BLPA accounts approve it for payment outside IBMS.")}</Typography>
             <ResponsiveTable
               rowKey={(l) => l.what}
               rows={CONTRACT}
@@ -117,11 +117,11 @@ function Attendance({ workers, setWorkers, onDone }) {
   };
   return (
     <>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>From the card readers at labour points. A card has one active use at a time and is read again at exit. Nobody is marked present without a device record or a recorded reason.</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("From the card readers at labour points. A card has one active use at a time and is read again at exit. Nobody is marked present without a device record or a recorded reason.")}</Typography>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'flex-start' }} sx={{ mb: 2 }}>
-        <TextField size="small" label="Card read at the labour gate" placeholder="RF-BEN-0588" value={card} onChange={(e) => { setCard(e.target.value); setRefusal(''); }} error={Boolean(refusal)} helperText={refusal || 'Demo reader: type a card number'} sx={{ minWidth: 280 }} />
-        <Button variant="outlined" color="inherit" disabled={!card.trim()} onClick={() => read('in')}>Read in</Button>
-        <Button variant="outlined" color="inherit" disabled={!card.trim()} onClick={() => read('out')}>Read out</Button>
+        <TextField size="small" label={tr("Card read at the labour gate")} placeholder="RF-BEN-0588" value={card} onChange={(e) => { setCard(e.target.value); setRefusal(''); }} error={Boolean(refusal)} helperText={refusal || 'Demo reader: type a card number'} sx={{ minWidth: 280 }} />
+        <Button variant="outlined" color="inherit" disabled={!card.trim()} onClick={() => read('in')}>{tr("Read in")}</Button>
+        <Button variant="outlined" color="inherit" disabled={!card.trim()} onClick={() => read('out')}>{tr("Read out")}</Button>
       </Stack>
       <ResponsiveTable
         rowKey={(r) => r.card}
@@ -132,7 +132,7 @@ function Attendance({ workers, setWorkers, onDone }) {
           { label: 'Shift', priority: 'low', render: (r) => r.shift },
           { label: 'Record', priority: 'low', render: (r) => (r.manual ? `By hand: ${r.manual}` : r.inAt ? `In ${formatDateTime(r.inAt)}${r.outAt ? `, out ${formatDateTime(r.outAt)}` : ''}` : 'No read today') },
           { label: 'Status', align: 'right', render: (r) => (present(r) ? <StatusPill word="Present" /> : (
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end"><StatusPill word="Absent" />{!r.blocked && <Button size="small" color="inherit" onClick={() => { setManualFor(r); setReason(''); }}>Mark present</Button>}</Stack>
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end"><StatusPill word="Absent" />{!r.blocked && <Button size="small" color="inherit" onClick={() => { setManualFor(r); setReason(''); }}>{tr("Mark present")}</Button>}</Stack>
           )) },
         ]}
       />
@@ -141,8 +141,8 @@ function Attendance({ workers, setWorkers, onDone }) {
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Mark {manualFor.name} present without a card read</Typography>
           <ReasonField value={reason} onChange={setReason} helper="For example: reader at point 2 out of order. Recorded as marked by hand." />
           <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ mt: 1.5 }}>
-            <Button variant="outlined" color="inherit" onClick={() => setManualFor(null)}>Cancel</Button>
-            <Button variant="contained" disabled={!reason.trim()} onClick={() => { update(manualFor.card, { manual: reason.trim() }); onDone(`${manualFor.name} marked present by hand`); setManualFor(null); }}>Mark present</Button>
+            <Button variant="outlined" color="inherit" onClick={() => setManualFor(null)}>{tr("Cancel")}</Button>
+            <Button variant="contained" disabled={!reason.trim()} onClick={() => { update(manualFor.card, { manual: reason.trim() }); onDone(`${manualFor.name} marked present by hand`); setManualFor(null); }}>{tr("Mark present")}</Button>
           </Stack>
         </Box>
       )}

@@ -45,7 +45,7 @@ export default function Auction() {
   return (
     <>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{tr('Uncleared goods turn yellow at one month and red at two months.')}</Typography>
-      <AssumptionNote code="F28" sx={{ mb: 3 }}>The minutes don't state the auction-list age. Here the notice is due at two months.</AssumptionNote>
+      <AssumptionNote code="F28" sx={{ mb: 3 }}>{tr("The minutes don't state the auction-list age. Here the notice is due at two months.")}</AssumptionNote>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 4 }}><KpiCard title={tr("One month or more")} value={inStock.filter((l) => l.ageDays >= ONE_MONTH && l.ageDays < TWO_MONTHS).length} color="warning" /></Grid>
         <Grid size={{ xs: 12, sm: 4 }}><KpiCard title={tr("Two months or more")} value={inStock.filter((l) => l.ageDays >= TWO_MONTHS).length} color="error" /></Grid>
@@ -53,12 +53,12 @@ export default function Auction() {
       </Grid>
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
         <Tab value="ageing" label={tr("Ageing stock")} />
-        <Tab value="destruction" label={<Stack direction="row" spacing={1} alignItems="center"><span>Destruction list</span><Label>{listed.filter((l) => l.stage === 'listed').length}</Label></Stack>} />
+        <Tab value="destruction" label={<Stack direction="row" spacing={1} alignItems="center"><span>{tr("Destruction list")}</span><Label>{listed.filter((l) => l.stage === 'listed').length}</Label></Stack>} />
       </Tabs>
       {tab === 'ageing' ? (
         <DataTable rows={inStock} searchKeys={['id', 'product', 'manifest']} searchPlaceholder={tr("Search lot, goods or manifest")} rowKey={(r) => r.id} columns={[
           ...lotColumns,
-          { key: 'notice', label: 'Auction notice', render: (r) => (r.notice ? <Label color="success">Sent</Label> : r.ageDays >= TWO_MONTHS ? <Label color="error">Due</Label> : <Label>Not due</Label>) },
+          { key: 'notice', label: 'Auction notice', render: (r) => (r.notice ? <Label color="success">{tr("Sent")}</Label> : r.ageDays >= TWO_MONTHS ? <Label color="error">{tr("Due")}</Label> : <Label>{tr("Not due")}</Label>) },
           // One actions column: the two buttons sit side by side and stack when the table is narrow, so the
           // table never scrolls sideways.
           {
@@ -73,7 +73,7 @@ export default function Auction() {
       ) : (
         <DataTable rows={listed} searchKeys={['id', 'product']} searchPlaceholder={tr("Search lot or goods")} rowKey={(r) => r.id} columns={[
           ...lotColumns,
-          { key: 'stage', label: 'Status', render: (r) => (r.stage === 'destroyed' ? <Label color="error">Destroyed</Label> : <Label color="warning">Listed</Label>) },
+          { key: 'stage', label: 'Status', render: (r) => (r.stage === 'destroyed' ? <Label color="error">{tr("Destroyed")}</Label> : <Label color="warning">{tr("Listed")}</Label>) },
           { key: 'a', label: '', render: (r) => (r.stage === 'listed' ? <Button size="small" variant="outlined" color="error" onClick={() => setDestroying(r)}>{tr("Record as destroyed")}</Button> : <Typography variant="caption" color="text.secondary">Removed from stock{r.decision ? ` · ${r.decision}` : ''}</Typography>) },
         ]} />
       )}

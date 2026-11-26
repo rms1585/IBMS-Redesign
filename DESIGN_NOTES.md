@@ -539,3 +539,10 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
     used at the checkpoint.
   - Bangla: 150 strings already set up for translation got Bangla, including every C&F 3e string. Many headings
     and help texts added in step 4 are still plain English in the code and are not translated yet.
+- **Step 4 Bangla pass:**
+  - The fixed text on the step 4 screens is now set up for translation and has Bangla: about 435 strings, on top of
+    the 150 from batch 4. That covers headings, help text, labels, buttons, table columns, checks, the bench context
+    strip, Billing tabs, Port setup steps, the override rules and the disabled-action reasons.
+  - `Bench` and `Checklist` now translate their context labels and check descriptions.
+  - Still in English on purpose: record data (names, plates, goods, audit entries) and sentences built with live
+    values, such as "4,000 kg is left unexplained".

@@ -3,7 +3,7 @@ import { Alert, Box, Button, Card, Stack, TextField, Typography } from '@mui/mat
 import { PageHeader } from '../components/common';
 import { formatDateTime, formatKg } from '../demo/format';
 import { Checklist, Confirmation, Fact, Facts, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
-import { useT } from '../i18n/LanguageContext';
+import { useT, tr } from '../i18n/LanguageContext';
 import { usePort, useStoredState } from '../demo/PortStore';
 
 // M-16: a train is known by its train and wagon numbers and its railway receipt, not by a plate.
@@ -30,23 +30,23 @@ export default function RailCargo() {
   const [released, setReleased] = useStoredState('railEmptyRelease', null);
   return (
     <>
-      <PageHeader title={t('Rail cargo')} subtitle="Rail module is on at Benapole and Bhomra. BLPA bills storage and handling only; freight and demurrage are settled outside IBMS." />
+      <PageHeader title={t('Rail cargo')} subtitle={tr("Rail module is on at Benapole and Bhomra. BLPA bills storage and handling only; freight and demurrage are settled outside IBMS.")} />
       <Stack spacing={3}>
         <Card sx={{ p: 3 }}>
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 2 }}>
-            <Typography variant="h6">Rake record RK-BEN-112</Typography>
+            <Typography variant="h6">{tr("Rake record RK-BEN-112")}</Typography>
             <StatusPill word={signed ? 'Closed' : 'Open'} />
           </Stack>
           <Facts cols={4}>
-            <Fact label="Train">Up goods 4417, Petrapole to Benapole</Fact>
-            <Fact label="Railway receipt">RR-ER-2026-558120</Fact>
-            <Fact label="Manifest">2026/601/08902 · from BNSW</Fact>
-            <Fact label="Wagons">{wagons.length}</Fact>
+            <Fact label={tr("Train")}>{tr("Up goods 4417, Petrapole to Benapole")}</Fact>
+            <Fact label={tr("Railway receipt")}>{tr("RR-ER-2026-558120")}</Fact>
+            <Fact label={tr("Manifest")}>{tr("2026/601/08902 · from BNSW")}</Fact>
+            <Fact label={tr("Wagons")}>{wagons.length}</Fact>
           </Facts>
         </Card>
         <Card sx={{ p: 3 }}>
-          <SectionTitle>Joint check at the hand-over</SectionTitle>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>BLPA and the railway check each wagon's seal and condition against the wagon list. Any difference is recorded with a photo.</Typography>
+          <SectionTitle>{tr("Joint check at the hand-over")}</SectionTitle>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{tr("BLPA and the railway check each wagon's seal and condition against the wagon list. Any difference is recorded with a photo.")}</Typography>
           <ResponsiveTable
             rowKey={(w) => w.wagon}
             rows={wagons}
@@ -59,8 +59,8 @@ export default function RailCargo() {
                 label: 'Check',
                 render: (w) => (w.checked ? <Typography variant="body2">{w.checked}</Typography> : (
                   <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="outlined" onClick={() => check(w.wagon, true)}>Seal intact</Button>
-                    <Button size="small" variant="outlined" color="inherit" onClick={() => check(w.wagon, false)}>Record a difference</Button>
+                    <Button size="small" variant="outlined" onClick={() => check(w.wagon, true)}>{tr("Seal intact")}</Button>
+                    <Button size="small" variant="outlined" color="inherit" onClick={() => check(w.wagon, false)}>{tr("Record a difference")}</Button>
                   </Stack>
                 )),
               },
@@ -68,25 +68,25 @@ export default function RailCargo() {
           />
         </Card>
         <Card sx={{ p: 3 }}>
-          <SectionTitle>Sign the joint wagon list</SectionTitle>
+          <SectionTitle>{tr("Sign the joint wagon list")}</SectionTitle>
           {signed ? (
             <Typography variant="body2">Signed by Anwar Hossain, rail siding officer, and {signed}, railway representative, on the officer's device with a signature image.</Typography>
           ) : (
             <Stack spacing={2}>
-              {!allChecked && <Alert severity="info">Check every wagon before the hand-over is signed. The rake record cannot close while a wagon is unaccounted for.</Alert>}
-              <TextField label="Railway representative's name and organisation" value={rep} onChange={(e) => setRep(e.target.value)} sx={{ maxWidth: 480 }} helperText="The representative has no IBMS account and countersigns on the officer's device." />
-              <Box><Button variant="contained" disabled={!allChecked || !rep.trim()} onClick={() => { setSigned(rep.trim()); setMsg('Joint wagon list signed'); }}>Sign wagon list</Button></Box>
+              {!allChecked && <Alert severity="info">{tr("Check every wagon before the hand-over is signed. The rake record cannot close while a wagon is unaccounted for.")}</Alert>}
+              <TextField label={tr("Railway representative's name and organisation")} value={rep} onChange={(e) => setRep(e.target.value)} sx={{ maxWidth: 480 }} helperText={tr("The representative has no IBMS account and countersigns on the officer's device.")} />
+              <Box><Button variant="contained" disabled={!allChecked || !rep.trim()} onClick={() => { setSigned(rep.trim()); setMsg('Joint wagon list signed'); }}>{tr("Sign wagon list")}</Button></Box>
             </Stack>
           )}
         </Card>
         <Card sx={{ p: 3 }}>
-          <SectionTitle>Release of empty wagons</SectionTitle>
+          <SectionTitle>{tr("Release of empty wagons")}</SectionTitle>
           {released ? (
             <Typography variant="body2">Notice {released.id} sent to Bangladesh Railway, {formatDateTime(released.at)}: {released.count} empty wagons released. The rake record closes when they leave.</Typography>
           ) : (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>{signed ? 'Unloading and pass-through are recorded. Send the railway the release notice for the empty wagons.' : 'Available once the joint wagon list is signed.'}</Typography>
-              <Button variant="outlined" color="inherit" disabled={!signed} onClick={() => { setReleased({ id: 'ERN-BEN-2026-0218', count: wagons.filter((w) => !w.handling.startsWith('Pass-through')).length, at: new Date().toISOString() }); setMsg('Empty wagon release notice sent to the railway'); }}>Release empty wagons</Button>
+              <Button variant="outlined" color="inherit" disabled={!signed} onClick={() => { setReleased({ id: 'ERN-BEN-2026-0218', count: wagons.filter((w) => !w.handling.startsWith('Pass-through')).length, at: new Date().toISOString() }); setMsg('Empty wagon release notice sent to the railway'); }}>{tr("Release empty wagons")}</Button>
             </Stack>
           )}
         </Card>
@@ -112,20 +112,20 @@ function TrainArrivals({ onDone }) {
   const why = !down ? 'BNSW is live: train arrivals come from BNSW.' : !train.trim() ? 'Enter the train number.' : !rr.trim() ? 'Enter the railway receipt number.' : !Number(count) ? 'Enter the number of wagons.' : '';
   return (
     <Card sx={{ p: 3 }}>
-      <SectionTitle>Train arrivals</SectionTitle>
+      <SectionTitle>{tr("Train arrivals")}</SectionTitle>
       <Stack spacing={1} sx={{ mb: 2 }}>
-        <Stack direction="row" spacing={1.5} alignItems="center"><Typography variant="body2" sx={{ flex: 1 }}>Up goods 4417 · RR-ER-2026-558120 · 4 wagons</Typography><SourceMarker source="BNSW" always /></Stack>
+        <Stack direction="row" spacing={1.5} alignItems="center"><Typography variant="body2" sx={{ flex: 1 }}>{tr("Up goods 4417 · RR-ER-2026-558120 · 4 wagons")}</Typography><SourceMarker source="BNSW" always /></Stack>
         {keyed.map((k) => <Stack key={k.rr} direction="row" spacing={1.5} alignItems="center"><Typography variant="body2" sx={{ flex: 1 }}>{k.train} · {k.rr} · {k.count} wagons · {formatDateTime(k.at)}</Typography><SourceMarker source="Keyed at the gate" /></Stack>)}
       </Stack>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>Key a train arrival (BNSW-down mode)</Typography>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>{tr("Key a train arrival (BNSW-down mode)")}</Typography>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0,1fr))' } }}>
-        <TextField size="small" label="Train number" value={train} onChange={(e) => setTrain(e.target.value)} disabled={!down} />
-        <TextField size="small" label="Railway receipt" value={rr} onChange={(e) => setRr(e.target.value)} disabled={!down} />
-        <TextField size="small" label="Wagons" inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))} disabled={!down} />
+        <TextField size="small" label={tr("Train number")} value={train} onChange={(e) => setTrain(e.target.value)} disabled={!down} />
+        <TextField size="small" label={tr("Railway receipt")} value={rr} onChange={(e) => setRr(e.target.value)} disabled={!down} />
+        <TextField size="small" label={tr("Wagons")} inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))} disabled={!down} />
       </Box>
       <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }}>
-        {why && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{why}</Typography>}
-        <Button variant="contained" disabled={Boolean(why)} onClick={() => { setKeyed((l) => [...l, { train: train.trim(), rr: rr.trim(), count: Number(count), at: new Date().toISOString() }]); setTrain(''); setRr(''); setCount(''); onDone('Train arrival keyed; it is checked against BNSW when BNSW returns'); }}>Record the arrival</Button>
+        {why && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{tr(why)}</Typography>}
+        <Button variant="contained" disabled={Boolean(why)} onClick={() => { setKeyed((l) => [...l, { train: train.trim(), rr: rr.trim(), count: Number(count), at: new Date().toISOString() }]); setTrain(''); setRr(''); setCount(''); onDone('Train arrival keyed; it is checked against BNSW when BNSW returns'); }}>{tr("Record the arrival")}</Button>
       </Stack>
     </Card>
   );
@@ -154,7 +154,7 @@ function ExportTrain({ onDone }) {
   const blocked = checks.some((c) => c.state === 'fail');
   return (
     <Card sx={{ p: 3 }}>
-      <SectionTitle>Export train EX-BEN-031 · Bill of Export E 601 E-11208</SectionTitle>
+      <SectionTitle>{tr("Export train EX-BEN-031 · Bill of Export E 601 E-11208")}</SectionTitle>
       <Stack spacing={2}>
         {EXPORT_WAGONS.map((w) => {
           const l = state.loads[w.wagon];
@@ -163,9 +163,9 @@ function ExportTrain({ onDone }) {
               <Box sx={{ flex: 1 }}><Typography variant="subtitle2">{w.wagon}</Typography><Typography variant="caption" color="text.secondary">{w.goods} · declared {formatKg(w.declaredKg)}</Typography></Box>
               {l ? <Typography variant="body2">Loaded {formatKg(l.kg)} · seal {l.seal} · {formatDateTime(l.at)}</Typography> : (
                 <>
-                  <TextField size="small" label="Loaded (kg)" inputMode="numeric" value={kg[w.wagon] ?? ''} onChange={(e) => setKg({ ...kg, [w.wagon]: e.target.value.replace(/\D/g, '') })} />
-                  <TextField size="small" label="Seal number" value={seal[w.wagon] ?? ''} onChange={(e) => setSeal({ ...seal, [w.wagon]: e.target.value })} />
-                  <Button variant="outlined" color="inherit" disabled={!Number(kg[w.wagon]) || !seal[w.wagon]?.trim()} onClick={() => lock(w)}>Lock load and seal</Button>
+                  <TextField size="small" label={tr("Loaded (kg)")} inputMode="numeric" value={kg[w.wagon] ?? ''} onChange={(e) => setKg({ ...kg, [w.wagon]: e.target.value.replace(/\D/g, '') })} />
+                  <TextField size="small" label={tr("Seal number")} value={seal[w.wagon] ?? ''} onChange={(e) => setSeal({ ...seal, [w.wagon]: e.target.value })} />
+                  <Button variant="outlined" color="inherit" disabled={!Number(kg[w.wagon]) || !seal[w.wagon]?.trim()} onClick={() => lock(w)}>{tr("Lock load and seal")}</Button>
                 </>
               )}
             </Stack>
@@ -176,10 +176,10 @@ function ExportTrain({ onDone }) {
           <Alert severity="success">Handed over to the railway and departed {formatDateTime(state.departedAt)}. The export rake record is closed.</Alert>
         ) : (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
-            {!state.released && <Button size="small" color="inherit" onClick={() => { set({ released: true }); onDone("Customs' release received through BNSW (simulated)"); }}>Simulate Customs' release via BNSW</Button>}
+            {!state.released && <Button size="small" color="inherit" onClick={() => { set({ released: true }); onDone("Customs' release received through BNSW (simulated)"); }}>{tr("Simulate Customs' release via BNSW")}</Button>}
             <Box sx={{ flex: 1 }} />
             {blocked && <Typography variant="caption" color="error.text" role="status">Hand-over refused. {checks.find((c) => c.state === 'fail').label}: {checks.find((c) => c.state === 'fail').text}.</Typography>}
-            <Button variant="contained" disabled={blocked} onClick={() => { set({ departedAt: new Date().toISOString() }); onDone('Export train handed over and departure recorded'); }}>Hand over and record departure</Button>
+            <Button variant="contained" disabled={blocked} onClick={() => { set({ departedAt: new Date().toISOString() }); onDone('Export train handed over and departure recorded'); }}>{tr("Hand over and record departure")}</Button>
           </Stack>
         )}
       </Stack>

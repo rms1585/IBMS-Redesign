@@ -53,7 +53,7 @@ export function Checklist({ checks }) {
               <Box component="span" sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{c.state === 'pass' ? `${t('Passed')}: ` : c.state === 'fail' ? `${t('Failed')}: ` : `${t('Information')}: `}</Box>
               {t(c.label)}
             </Typography>
-            {c.text && <Typography variant="body2" color="text.secondary">{c.text}</Typography>}
+            {c.text && <Typography variant="body2" color="text.secondary">{typeof c.text === 'string' ? t(c.text) : c.text}</Typography>}
           </Box>
         </Stack>
       ))}
@@ -87,6 +87,7 @@ export function ActionFoot({ checks = [], label, onClick, keyHint, disabled, ext
 const BENCH_TWO = '@container main (min-width: 600px)';
 const BENCH_THREE = '@container main (min-width: 860px)';
 export function Bench({ context, queue, center, right }) {
+  const t = useT();
   return (
     <Stack spacing={2}>
       {context && (
@@ -94,7 +95,7 @@ export function Bench({ context, queue, center, right }) {
           <Stack direction="row" flexWrap="wrap" columnGap={4} rowGap={1} alignItems="center">
             {context.map((c) => (
               <Box key={c.label}>
-                <Typography variant="caption" color="text.secondary" component="div">{c.label}</Typography>
+                <Typography variant="caption" color="text.secondary" component="div">{t(c.label)}</Typography>
                 <Typography variant="subtitle2">{c.value}</Typography>
               </Box>
             ))}

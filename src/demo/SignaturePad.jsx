@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { tr } from '../i18n/LanguageContext';
 
 // A named approval is signed on the device: the record keeps the name, the time and the signature image, and the
 // approver confirms a second sign-in factor (M-13; Section 4.15). The code check is simulated in the demo.
@@ -50,7 +51,7 @@ export default function SignAndConfirm({ person, onChange }) {
       <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
           <Typography variant="caption" color="text.secondary">Signature of {person}</Typography>
-          <Button size="small" color="inherit" onClick={clear} disabled={!image}>Clear</Button>
+          <Button size="small" color="inherit" onClick={clear} disabled={!image}>{tr("Clear")}</Button>
         </Stack>
         <Box
           component="canvas"
@@ -67,11 +68,11 @@ export default function SignAndConfirm({ person, onChange }) {
       </Box>
       <TextField
         size="small"
-        label="Code from your authenticator"
+        label={tr("Code from your authenticator")}
         inputMode="numeric"
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-        helperText="Second sign-in factor for a named approval. Demo: any six digits."
+        helperText={tr("Second sign-in factor for a named approval. Demo: any six digits.")}
         sx={{ maxWidth: 280 }}
       />
     </Stack>
