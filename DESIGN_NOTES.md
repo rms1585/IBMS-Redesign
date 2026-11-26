@@ -566,4 +566,6 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   - Not changed, because they conflict with later product-owner decisions:
     - The drawers (D1): kept on 2026-11-25, after the M2 ruling.
     - Lookup and port on the left (C1): asked for on 2026-11-25, after the M2 ruling.
-    - The primary green (C9): a colour token change, which needs the product owner's confirmation.
+    - The primary green (C9): on 2026-11-26 the product owner chose to keep #008F40 for filled buttons and green
+      text, knowing white on it is 4.20:1 and green on its tint 3.79:1, against Annex 24.8's 4.5:1. Treat this as
+      a change request to Annex 24.8, like the drawers.
