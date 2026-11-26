@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert, Box, Button, Stack, Typography, IconButton, Tooltip, Badge, ListSubheader, ButtonBase, Divider,
   Menu, MenuItem, ListItemIcon, ListItemText, Collapse, Drawer, Paper, TextField, useMediaQuery,
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { flatNav, navConfig } from './navConfig';
@@ -183,6 +184,8 @@ function Header({ navWidth, onOpenNav }) {
   const [anchor, setAnchor] = useState(null);
   const items = state.events.slice(0, 10);
   const [userAnchor, setUserAnchor] = useState(null);
+  // Reset wipes the demo record in this browser and cannot be undone, so it asks first (Annex 24.4).
+  const [confirmReset, setConfirmReset] = useState(false);
   const { role, setRole } = useRole();
   const fullScreen = () => {
     if (document.fullscreenElement) document.exitFullscreen?.();
@@ -256,7 +259,7 @@ function Header({ navWidth, onOpenNav }) {
         <MenuItem onClick={() => { setUserAnchor(null); navigate('/external'); }}>BNSW simulator (demo tool)</MenuItem>
         {/* Only the presenter role offers Reset, so a demo isn't wiped by accident mid-journey. */}
         {role.id === 'super-admin' && (
-          <MenuItem onClick={() => { reset(); setUserAnchor(null); navigate(role.landing); }}>
+          <MenuItem onClick={() => { setUserAnchor(null); setConfirmReset(true); }}>
             <ListItemText primary={t('Reset demo')} secondary="Restores the starting data in this browser" primaryTypographyProps={{ variant: 'body2' }} secondaryTypographyProps={{ variant: 'caption' }} />
           </MenuItem>
         )}
@@ -279,6 +282,16 @@ function Header({ navWidth, onOpenNav }) {
           </MenuItem>
         ))}
       </Menu>
+      <Dialog open={confirmReset} onClose={() => setConfirmReset(false)} aria-labelledby="reset-demo-title" maxWidth="xs" fullWidth>
+        <DialogTitle id="reset-demo-title">{t('Reset demo data?')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{t('Every change made in this browser is removed and the starting demo data comes back. This cannot be undone.')}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" color="inherit" autoFocus onClick={() => setConfirmReset(false)}>{t('Cancel')}</Button>
+          <Button variant="contained" color="error" onClick={() => { reset(); setConfirmReset(false); navigate(role.landing); }}>{t('Reset demo data')}</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

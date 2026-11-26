@@ -569,3 +569,8 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
     - The primary green (C9): on 2026-11-26 the product owner chose to keep #008F40 for filled buttons and green
       text, knowing white on it is 4.20:1 and green on its tint 3.79:1, against Annex 24.8's 4.5:1. Treat this as
       a change request to Annex 24.8, like the drawers.
+- **M2 recheck 2 (2026-11-26):**
+  - "Reset demo" now asks first, in a pop-up titled "Reset demo data?" with Cancel and "Reset demo data". Annex
+    24.4 allows a pop-up for an action that cannot be undone.
+  - FormDrawer's panel has `role="dialog"` and `aria-modal="true"`, so screen readers announce it as a dialog with
+    its title.

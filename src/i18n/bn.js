@@ -1050,6 +1050,9 @@ const bn = {
   'Reload': 'রিলোড করুন',
   'Go to Home': 'হোমে যান',
   'Export storage is on at Benapole: export cargo can wait in a shed before it leaves.': 'বেনাপোলে রপ্তানি সংরক্ষণ চালু: রপ্তানি মালামাল বের হওয়ার আগে শেডে অপেক্ষা করতে পারে।',
+  'Reset demo data?': 'ডেমো ডেটা রিসেট করবেন?',
+  'Every change made in this browser is removed and the starting demo data comes back. This cannot be undone.': 'এই ব্রাউজারে করা সব পরিবর্তন মুছে যাবে এবং শুরুর ডেমো ডেটা ফিরে আসবে। এটি আর ফেরানো যাবে না।',
+  'Reset demo data': 'ডেমো ডেটা রিসেট করুন',
 };
 
 export default bn;

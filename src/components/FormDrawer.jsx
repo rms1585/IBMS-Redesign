@@ -34,7 +34,7 @@ export default function FormDrawer({ open, onClose, title: titleText, subtitle: 
       transitionDuration={{ enter: 300, exit: 250 }}
       // A light grey veil instead of MUI's 50% black, so the page stays readable behind the form.
       sx={{ '& .MuiBackdrop-root': { bgcolor: (t) => alpha(t.palette.grey[800], 0.24) } }}
-      PaperProps={{ 'aria-labelledby': titleId, sx: { width: { xs: '100%', sm: width }, display: 'flex', flexDirection: 'column', boxShadow: (t) => t.customShadows.dialog } }}
+      PaperProps={{ role: 'dialog', 'aria-modal': true, 'aria-labelledby': titleId, sx: { width: { xs: '100%', sm: width }, display: 'flex', flexDirection: 'column', boxShadow: (t) => t.customShadows.dialog } }}
     >
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} sx={{ px: 3, pt: 3, pb: 2 }}>
         <Box sx={{ minWidth: 0 }}>
