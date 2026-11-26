@@ -1,8 +1,11 @@
 import { useCallback, useState } from 'react';
 import { Alert, Box, Button, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
-import { agencyName, importerName, usePort } from '../demo/PortStore';
-import { formatDateTime, formatDuration, formatKg } from '../demo/format';
+import { agencyName, importerName, usePort, useStoredState } from '../demo/PortStore';
+import { formatDateTime, formatDuration, formatKg, searchKey } from '../demo/format';
+
+const NO_LIST = [];
+const NO_MAP = {};
 import { ActionFoot, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, SectionTitle, SourceMarker, useKeyAction } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
 
@@ -16,8 +19,25 @@ function EntryBench({ onDone }) {
   const [typing, setTyping] = useState(false);
   const [typedPlate, setTypedPlate] = useState('');
   const [reason, setReason] = useState('');
+  const [laneRead, setLaneRead] = useState('');
+  const [noPlate, setNoPlate] = useState(false);
+  const [parkPass, setParkPass] = useState('');
+  const [parked, setParked] = useStoredState('gateParkedNoPlate', NO_LIST);
+  const [keyedLines, setKeyedLines] = useStoredState('gateKeyedLines', NO_MAP);
+  const [lineGoods, setLineGoods] = useState('');
+  const [lineKg, setLineKg] = useState('');
+  // The read plate can match several expected trucks (two Car Passes, similar plates): a short list to pick from.
+  const matches = searchKey(laneRead).length >= 2 ? queue.filter((x) => searchKey(x.plate).includes(searchKey(laneRead))) : [];
   const v = p.visit(sel) ?? queue[0];
-  const checks = v ? p.admissionChecks(v) : [];
+  // EXC-03: a plate that already has an open visit is a hard stop.
+  const openTwin = v ? p.state.visits.find((x) => x.id !== v.id && x.plate === v.plate && x.gateIn && x.stage !== 'Exited') : null;
+  const keyedForV = v ? keyedLines[v.id] ?? NO_LIST : NO_LIST;
+  const needKeyed = v && v.late && p.state.bnswDown;
+  const checks = v ? [
+    ...p.admissionChecks(v),
+    ...(openTwin ? [{ label: 'One open visit per plate', state: 'fail', text: `${v.plate} already has an open visit (${openTwin.id}). Second gate-in refused and the supervisor alerted (EXC-03).` }] : []),
+    ...(needKeyed ? [{ label: 'Manifest lines keyed from the Car Pass', state: keyedForV.length ? 'pass' : 'fail', text: keyedForV.length ? `${keyedForV.length} line${keyedForV.length === 1 ? '' : 's'} keyed (BNSW-down mode).` : 'BNSW is down: key the manifest lines written on the Car Pass.' }] : []),
+  ] : [];
   const blocked = checks.some((c) => c.state === 'fail');
   const admit = useCallback(() => {
     if (!v || blocked) return;
@@ -38,6 +58,15 @@ function EntryBench({ onDone }) {
         { label: 'Admitted today', value: p.state.visits.filter((x) => x.gateIn && formatDateTime(x.gateIn.at).startsWith('Today')).length },
       ]}
       queue={
+        <Stack spacing={2}>
+        <TextField size="small" label="Plate read at the lane" value={laneRead} onChange={(e) => setLaneRead(e.target.value)} helperText="Type part of a plate to find the truck" />
+        {matches.length > 1 && (
+          <Alert severity="info" icon={false} sx={{ '& .MuiAlert-message': { width: '100%' } }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>{matches.length} expected trucks match: pick the one on the Car Pass</Typography>
+            <Stack spacing={1}>{matches.map((x) => <Button key={x.id} size="small" variant="outlined" color="inherit" onClick={() => { setSel(x.id); setLaneRead(''); }} sx={{ justifyContent: 'flex-start', textAlign: 'left' }}><Box><Box component="span" sx={{ display: 'block', fontWeight: 600 }}>{x.plate}</Box><Box component="span" sx={{ display: 'block', typography: 'caption', color: 'text.secondary' }}>{x.carPass}</Box></Box></Button>)}</Stack>
+          </Alert>
+        )}
+        {matches.length === 1 && matches[0].id !== v?.id && <Button size="small" variant="outlined" color="inherit" onClick={() => { setSel(matches[0].id); setLaneRead(''); }}>Select {matches[0].plate}</Button>}
         <QueueList
           title="Expected trucks"
           items={queue}
@@ -51,6 +80,18 @@ function EntryBench({ onDone }) {
             </>
           )}
         />
+        {/* EXC-30: a vehicle with no plate is parked until BLPA rules on it. */}
+        {noPlate ? (
+          <Stack spacing={1}>
+            <TextField size="small" label="Car Pass number" value={parkPass} onChange={(e) => setParkPass(e.target.value)} />
+            <Stack direction="row" spacing={1}>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setNoPlate(false)}>Cancel</Button>
+              <Button size="small" variant="contained" disabled={!parkPass.trim()} onClick={() => { setParked((l) => [...l, { carPass: parkPass.trim(), at: new Date().toISOString() }]); setNoPlate(false); setParkPass(''); onDone('Vehicle with no plate parked until BLPA rules on it (EXC-30)'); }}>Park the vehicle</Button>
+            </Stack>
+          </Stack>
+        ) : <Button size="small" variant="outlined" color="inherit" onClick={() => setNoPlate(true)}>Vehicle with no plate</Button>}
+        {parked.length > 0 && <Typography variant="caption" color="text.secondary">Parked, waiting for BLPA: {parked.map((x) => `Car Pass ${x.carPass}`).join(', ')}</Typography>}
+        </Stack>
       }
       center={v ? (
         <Stack spacing={2.5}>
@@ -74,6 +115,17 @@ function EntryBench({ onDone }) {
               ))}
             </Box>
           ))}
+          {needKeyed && (
+            <Box>
+              <SectionTitle>Manifest lines keyed from the Car Pass (BNSW down)</SectionTitle>
+              {keyedForV.map((l, i) => <Stack key={i} direction="row" justifyContent="space-between" sx={{ py: 0.5 }}><Typography variant="body2">Line {i + 1}: {l.goods}</Typography><Stack direction="row" spacing={1} alignItems="center"><Typography variant="body2">{formatKg(l.kg)}</Typography><SourceMarker source="Keyed at the gate" /></Stack></Stack>)}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
+                <TextField size="small" label="Goods" value={lineGoods} onChange={(e) => setLineGoods(e.target.value)} />
+                <TextField size="small" label="Declared kg" inputMode="numeric" value={lineKg} onChange={(e) => setLineKg(e.target.value.replace(/\D/g, ''))} />
+                <Button size="small" variant="outlined" color="inherit" disabled={!lineGoods.trim() || !lineKg} onClick={() => { setKeyedLines((all) => ({ ...all, [v.id]: [...(all[v.id] ?? []), { goods: lineGoods.trim(), kg: Number(lineKg) }] })); setLineGoods(''); setLineKg(''); }}>Add the line</Button>
+              </Stack>
+            </Box>
+          )}
           {p.holdsOnVisit(v).map((h) => <HoldRow key={h.id} hold={h} />)}
           {typing ? (
             <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>

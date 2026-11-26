@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
-import { Alert, Box, Button, Card, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
-import { tareValid, usePort } from '../demo/PortStore';
+import { tareValid, usePort, useStoredState } from '../demo/PortStore';
+import Label from '../components/Label';
 import { billableTonnes, formatDateTime, formatDuration, formatKg, formatTonnes } from '../demo/format';
 import { ActionFoot, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
@@ -113,6 +114,8 @@ export default function Weighbridge() {
           </>
         ) : null}
       />
+      <UnmatchedReadings visits={queue} onDone={setMsg} />
+      <StoneWeighBack onDone={setMsg} />
       <Card sx={{ p: 3, mt: 3 }}>
         <SectionTitle>Weighing history</SectionTitle>
         <ResponsiveTable
@@ -130,5 +133,109 @@ export default function Weighbridge() {
       </Card>
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>
+  );
+}
+
+// A reading the scale sent with no plate that matches an open visit (plate unread, truck not admitted, a second
+// pass). It never becomes a weight on its own: the supervisor ties it to a visit or voids it with a reason (M-04).
+const SEED_UNMATCHED = [
+  { id: 'RAW-2026-0418', at: new Date(Date.now() - 42 * 60000).toISOString(), kg: 18640, plateRead: 'WB 2? D 11??', status: 'Waiting' },
+  { id: 'RAW-2026-0421', at: new Date(Date.now() - 12 * 60000).toISOString(), kg: 7380, plateRead: 'No plate read', status: 'Waiting' },
+];
+
+function UnmatchedReadings({ visits, onDone }) {
+  const p = usePort();
+  const [readings, setReadings] = useStoredState('unmatchedReadings', SEED_UNMATCHED);
+  const [open, setOpen] = useState(null);
+  const [visitId, setVisitId] = useState('');
+  const [reason, setReason] = useState('');
+  const close = () => { setOpen(null); setVisitId(''); setReason(''); };
+  const settle = (r, status, note) => {
+    setReadings((all) => all.map((x) => (x.id === r.id ? { ...x, status, note } : x)));
+    close();
+  };
+  const tie = (r) => {
+    const v = p.visit(visitId);
+    p.captureWeight(v.id, r.kg, { typedReason: `Tied by the supervisor from unmatched reading ${r.id}: ${reason}` });
+    settle(r, 'Tied', `${v.plate}`);
+    onDone(`Reading ${r.id} tied to ${v.plate}`);
+  };
+  const waiting = readings.filter((r) => r.status === 'Waiting');
+  return (
+    <Card sx={{ p: 3, mt: 3 }}>
+      <SectionTitle>Unmatched readings · supervisor</SectionTitle>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>The scale sent these readings with no plate that matches an open visit. A reading becomes a weight only when the supervisor ties it to a visit; otherwise it is voided with a reason. Both are logged.</Typography>
+      {readings.length === 0 ? <Typography variant="body2" color="text.secondary">No unmatched reading.</Typography> : (
+        <ResponsiveTable rowKey={(r) => r.id} rows={readings} columns={[
+          { label: 'Reading', render: (r) => <><Typography variant="subtitle2">{r.id}</Typography><Typography variant="caption" color="text.secondary">{formatDateTime(r.at)}</Typography></> },
+          { label: 'Plate read', render: (r) => r.plateRead },
+          { label: 'Weight', align: 'right', render: (r) => formatKg(r.kg) },
+          { label: 'Status', align: 'right', render: (r) => (r.status === 'Waiting' ? (
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button size="small" variant="outlined" color="inherit" onClick={() => { setOpen({ r, act: 'tie' }); setVisitId(visits.find((v) => v.job === 'loaded')?.id ?? ''); }}>Tie to a visit</Button>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setOpen({ r, act: 'void' })}>Void</Button>
+            </Stack>
+          ) : <Label color={r.status === 'Tied' ? 'success' : 'default'}>{r.status}{r.note ? `: ${r.note}` : ''}</Label>) },
+        ]} />
+      )}
+      {open && (
+        <Stack spacing={1.5} sx={{ mt: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <Typography variant="subtitle2">{open.act === 'tie' ? `Tie ${open.r.id} (${formatKg(open.r.kg)}) to a visit` : `Void ${open.r.id}`}</Typography>
+          {open.act === 'tie' && (
+            <TextField select size="small" label="Visit on the scale worklist" value={visitId} onChange={(e) => setVisitId(e.target.value)}>
+              {visits.filter((v) => v.job === 'loaded').map((v) => <MenuItem key={v.id} value={v.id}>{v.plate} · {v.carPass}</MenuItem>)}
+            </TextField>
+          )}
+          <ReasonField value={reason} onChange={setReason} helper={open.act === 'tie' ? 'For example: deck camera shows the truck; plate reader missed it.' : 'For example: second pass of a truck already weighed.'} />
+          <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+            <Button variant="outlined" color="inherit" onClick={close}>Cancel</Button>
+            <Button variant="contained" disabled={!reason.trim() || (open.act === 'tie' && !visitId)} onClick={() => (open.act === 'tie' ? tie(open.r) : (settle(open.r, 'Voided', reason.trim()), onDone(`Reading ${open.r.id} voided`)))}>{open.act === 'tie' ? 'Tie the reading' : 'Void the reading'}</Button>
+          </Stack>
+        </Stack>
+      )}
+      {waiting.length > 0 && <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>{waiting.length} waiting</Typography>}
+    </Card>
+  );
+}
+
+// Stone route (Bhomra and Burimari, where the port has an outside yard): the shipment is billed up front, so the
+// truck back from the unloading zone is weighed empty first and only a charge above the prepaid bill goes on a
+// top-up bill, paid before the final exit (I5.8, N-I8.3). The route stays disabled until NBR and BLPA decide its
+// control (Section 3.4.5), so this is shown as a preview with demo trucks.
+const STONE_RATE_PER_T = 140;
+const SEED_STONE = [
+  { id: 'ST-BHO-0091', plate: 'WB 51 K 2208', port: 'Bhomra', loadedKg: 24300, prepaidT: 13, prepaidTk: 13 * STONE_RATE_PER_T + 300, nights: 1 },
+  { id: 'ST-BHO-0094', plate: 'WB 49 H 7715', port: 'Bhomra', loadedKg: 21900, prepaidT: 15, prepaidTk: 15 * STONE_RATE_PER_T + 300, nights: 0 },
+];
+
+function StoneWeighBack({ onDone }) {
+  const [trucks, setTrucks] = useStoredState('stoneWeighBack', SEED_STONE);
+  const weigh = (t) => setTrucks((all) => all.map((x) => (x.id === t.id ? { ...x, emptyKg: 7400 + (x.id.endsWith('1') ? 60 : -40) } : x)));
+  const topUpOf = (t) => {
+    const netT = Math.ceil((t.loadedKg - t.emptyKg) / 1000);
+    const due = netT * STONE_RATE_PER_T + 300 + t.nights * 250;
+    return { netT, due, topUp: Math.max(0, due - t.prepaidTk) };
+  };
+  const raise = (t) => {
+    const { topUp } = topUpOf(t);
+    setTrucks((all) => all.map((x) => (x.id === t.id ? { ...x, topUpRaised: topUp } : x)));
+    onDone(topUp ? `Top-up bill of Tk ${topUp.toLocaleString('en-US')} raised for ${t.plate}` : `No top-up due for ${t.plate}; the exit lock waits only on Customs' release`);
+  };
+  return (
+    <Card sx={{ p: 3, mt: 3 }}>
+      <SectionTitle>Stone trucks back from the unloading zone</SectionTitle>
+      <Alert severity="info" sx={{ mb: 2 }}>Preview for Bhomra and Burimari. The stone route stays disabled in IBMS until NBR and BLPA decide its control; Benapole has no outside yard.</Alert>
+      <ResponsiveTable rowKey={(t) => t.id} rows={trucks} columns={[
+        { label: 'Truck', render: (t) => <><Plate>{t.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{t.port} · prepaid {t.prepaidT} t, Tk {t.prepaidTk.toLocaleString('en-US')}</Typography></> },
+        { label: 'Loaded weight', align: 'right', priority: 'low', render: (t) => formatKg(t.loadedKg) },
+        { label: 'Empty weight', align: 'right', render: (t) => (t.emptyKg ? formatKg(t.emptyKg) : '–') },
+        { label: 'Top-up', align: 'right', render: (t) => {
+          if (!t.emptyKg) return <Button size="small" variant="outlined" color="inherit" onClick={() => weigh(t)}>Weigh empty</Button>;
+          const { netT, topUp } = topUpOf(t);
+          if (t.topUpRaised !== undefined) return <Label color={t.topUpRaised ? 'warning' : 'success'}>{t.topUpRaised ? `Top-up Tk ${t.topUpRaised.toLocaleString('en-US')} raised` : 'Nothing above the prepaid bill'}</Label>;
+          return <Stack alignItems="flex-end" spacing={0.5}><Typography variant="caption" color="text.secondary">{netT} t net{t.nights ? `, ${t.nights} night` : ''}: Tk {topUp.toLocaleString('en-US')} above prepaid</Typography><Button size="small" variant="contained" onClick={() => raise(t)}>{topUp ? 'Raise top-up bill' : 'Confirm no top-up'}</Button></Stack>;
+        } },
+      ]} />
+    </Card>
   );
 }

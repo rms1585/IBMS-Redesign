@@ -98,7 +98,7 @@ export function createSeed() {
     // Trucks further along, so every queue opens with work in it.
     {
       id: '2026/601/08886', alias: 'LC 0417-26-0133', source: 'BNSW', receivedAt: ago(9), exporter: 'Arvind Mills, Ahmedabad',
-      lines: [line('2026/601/08886', 1, '000456789-0404', 'Viscose woven fabric', 140, 11200)],
+      lines: [line('2026/601/08886', 1, '000456789-0404', 'Viscose woven fabric', 140, 9000), line('2026/601/08886', 2, '000456789-0404', 'Loom spare parts, cast iron', 12, 2200, 'heavy')],
       tags: { '000456789-0404': '301112' },
     },
     {

@@ -65,7 +65,8 @@ export function Checklist({ checks }) {
 export function ActionFoot({ checks = [], label, onClick, keyHint, disabled, extraBlocker, color = 'primary' }) {
   const blocker = extraBlocker ?? checks.find((c) => c.state === 'fail');
   return (
-    <Stack spacing={1} sx={{ pt: 1.5, mt: 'auto', borderTop: 1, borderColor: 'divider' }}>
+    // Sticks to the bottom of the window while its card runs below it, so the main action is in reach at 1366×768 (M2 B2).
+    <Stack spacing={1} sx={{ pt: 1.5, pb: 0.5, mt: 'auto', borderTop: 1, borderColor: 'divider', position: 'sticky', bottom: 0, zIndex: 1, bgcolor: 'background.paper' }}>
       {blocker && (
         <Typography variant="body2" color="error.text" role="status">
           <Box component="span" sx={{ fontWeight: 600 }}>{blocker.label ?? 'Blocked'}: </Box>{blocker.text}
@@ -110,7 +111,7 @@ export function Bench({ context, queue, center, right }) {
         <Card sx={{ p: 2, minWidth: 0 }}>{queue}</Card>
         {/* A size container, so the hero plate can scale to the card. */}
         <Card sx={{ p: { xs: 2, sm: 3 }, minWidth: 0, containerType: 'inline-size' }}>{center}</Card>
-        <Card sx={{ p: 2.5, minWidth: 0, display: 'flex', flexDirection: 'column', [BENCH_TWO]: { gridColumn: '1 / -1' }, [BENCH_THREE]: { gridColumn: 'auto', minHeight: 440 } }}>{right}</Card>
+        <Card sx={{ p: 2.5, minWidth: 0, overflow: 'visible', display: 'flex', flexDirection: 'column', [BENCH_TWO]: { gridColumn: '1 / -1' }, [BENCH_THREE]: { gridColumn: 'auto', minHeight: 440 } }}>{right}</Card>
       </Box>
     </Stack>
   );

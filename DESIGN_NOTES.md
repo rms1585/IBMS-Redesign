@@ -450,3 +450,20 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   receiving-truck plates; documents are uploaded and their fields shown against the record (the demo misreads the
   weight on purpose); "Download the record" saves a CSV of the consignment. All actions are refused while the
   agency's licence is not valid. Bangla for these new screens is still to do.
+- **Step 4 batch 1, gate, weighbridge and posting (B2–B4):**
+  - Border gate:
+    - "Plate read at the lane" shows a short list to pick from when the plate matches several expected trucks.
+    - A plate that already has an open visit is a hard stop (EXC-03).
+    - "Vehicle with no plate" parks the vehicle under its Car Pass number until BLPA rules on it (EXC-30).
+    - In BNSW-down mode the gate keys the Car Pass manifest lines for a late truck. Admission waits on those lines.
+    - The action bar of every bench sticks to the bottom of the window, so "Admit truck" is in view at 1366×768.
+  - Weighbridge:
+    - The supervisor ties each unmatched raw reading to a visit or voids it, with a reason.
+    - The stone weigh-back weighs the empty truck back from the unloading zone before any top-up bill. It is a
+      preview for Bhomra and Burimari: the stone route stays disabled until NBR and BLPA decide its control.
+  - Posting:
+    - A truck whose lines take different routes shows its drop points in order. The transshipment bay comes last.
+    - Posting staff can send a truck back down the queue or escalate it to the supervisor, each with a reason.
+    - A place whose storage rule does not take the goods category blocks the posting until the supervisor
+      overrides it with a reason.
+    - Demo manifest 2026/601/08886 now has a second line (cast-iron parts) to show two drop points.
