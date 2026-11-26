@@ -14,7 +14,7 @@ import { tr } from '../i18n/LanguageContext';
 const UNITS = ['Per hour', 'Per shift', 'Per movement', 'Per lift', 'Per tonne'];
 const BASES = ['Shed 5', 'Shed 7', 'Shed 9', 'Shed 12', 'Shed 31', 'Open yard 1', 'Open yard B', 'Port-wide'];
 
-const initialEquipment = [
+export const initialEquipment = [
   { code: 'EQ-FL3', name: 'Forklift 3 t', unit: 'Per hour', count: 4, base: 'Shed 5', available: true },
   { code: 'EQ-FL5', name: 'Forklift 5 t', unit: 'Per hour', count: 2, base: 'Shed 12', available: true },
   { code: 'EQ-MC25', name: 'Mobile crane 25 t', unit: 'Per lift', count: 1, base: 'Open yard 1', available: false, reason: 'Hydraulic leak, repair ordered 2026-11-20' },

@@ -3,7 +3,7 @@ import Label from '../components/Label';
 import { Alert, Box, Button, Card, Divider, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
-import { agencyName, billTotals, importerName, usePort } from '../demo/PortStore';
+import { agencyName, billTotals, importerName, usePort, useStoredState } from '../demo/PortStore';
 import { formatBDT, formatBoe, formatDateTime, searchKey } from '../demo/format';
 import { Confirmation, Id, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
@@ -121,6 +121,168 @@ function BankCounter({ onDone }) {
   );
 }
 
+const NO_LIST = [];
+
+// A reconciliation case that is resolved with money owed either way becomes a supplementary bill or a credit,
+// raised from the case and approved by a second person (Annex 7.9; RC-3). Demo cases.
+const RESOLVED_CASES = [
+  { id: 'RC-BEN-2026-031', what: 'Storage counted 4 days short during the 21 Nov outage', record: 'C 601 C-48211 2026-11-12', party: '301112', amount: 3840 },
+  { id: 'RC-BEN-2026-034', what: 'Weighbridge charged twice for WB 11 C 4420', record: 'V-26-4420', party: '301112', amount: -150 },
+];
+
+function Supplementary({ onDone }) {
+  const { role } = useRole();
+  const [raised, setRaised] = useStoredState('supplementaryBills', NO_LIST);
+  const [approving, setApproving] = useState(null);
+  const raise = (c) => {
+    const credit = c.amount < 0;
+    const id = `${credit ? 'CR' : 'SB'}-BEN-2026-${String(41 + raised.length).padStart(4, '0')}`;
+    setRaised((all) => [...all, { id, caseId: c.id, amount: c.amount, by: role.person, at: new Date().toISOString(), status: 'Waiting for approval' }]);
+    onDone(`${credit ? 'Credit' : 'Supplementary bill'} ${id} raised from ${c.id}; a second person approves it`);
+  };
+  const approve = (r) => {
+    setRaised((all) => all.map((x) => (x.id === r.id ? { ...x, status: r.amount < 0 ? 'Credited' : 'Payment due', approvedBy: 'Nasrin Akter (revenue supervisor)', paymentId: r.amount < 0 ? undefined : `BLPA-BEN-${r.id.slice(-4)}-7` } : x)));
+    setApproving(null);
+    onDone(`${r.id} approved`);
+  };
+  return (
+    <Card sx={{ p: 3 }}>
+      <SectionTitle>Resolved reconciliation cases</SectionTitle>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>A billed line never changes. When a case closes with money owed, raise a supplementary bill; when BLPA owes, raise a credit. Someone other than the person who raised it approves.</Typography>
+      <ResponsiveTable rowKey={(c) => c.id} rows={RESOLVED_CASES} columns={[
+        { label: 'Case', render: (c) => <><Id>{c.id}</Id><Typography variant="caption" color="text.secondary" component="div">{c.record} · {agencyName(c.party)}</Typography></> },
+        { label: 'Finding', render: (c) => c.what },
+        { label: 'Amount', align: 'right', nowrap: true, render: (c) => `${c.amount < 0 ? 'Credit ' : ''}${formatBDT(Math.abs(c.amount))}` },
+        { label: '', align: 'right', render: (c) => { const r = raised.find((x) => x.caseId === c.id); return r ? <Label color={r.status === 'Waiting for approval' ? 'warning' : 'success'}>{r.id}: {r.status}</Label> : <Button size="small" variant="outlined" color="inherit" sx={{ whiteSpace: 'nowrap' }} onClick={() => raise(c)}>{c.amount < 0 ? 'Raise credit' : 'Raise supplementary bill'}</Button>; } },
+      ]} />
+      {raised.some((r) => r.status === 'Waiting for approval') && (
+        <Box sx={{ mt: 3 }}>
+          <SectionTitle>Waiting for a second person</SectionTitle>
+          {raised.filter((r) => r.status === 'Waiting for approval').map((r) => (
+            <Stack key={r.id} direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap sx={{ py: 1 }}>
+              <Id>{r.id}</Id>
+              <Typography variant="body2" sx={{ flex: 1 }}>{formatBDT(Math.abs(r.amount))}{r.amount < 0 ? ' credit' : ''} · raised by {r.by}</Typography>
+              {approving === r.id
+                ? <Typography variant="caption" color="text.secondary">Approving as the revenue supervisor (demo: a different person)</Typography>
+                : null}
+              <Button size="small" variant="contained" onClick={() => (approving === r.id ? approve(r) : setApproving(r.id))}>{approving === r.id ? 'Confirm approval' : 'Approve as revenue supervisor'}</Button>
+            </Stack>
+          ))}
+        </Box>
+      )}
+    </Card>
+  );
+}
+
+// Customs decisions taken outside IBMS are recorded by the revenue desk with their reference (Annex 7.9).
+const DECISION_KINDS = ['Temporary-import terms', 'Disposal decision', "Settlement of BLPA's dues on a lot"];
+const SEED_DECISIONS = [
+  { id: 'CD-1', kind: 'Temporary-import terms', record: 'C 601 C-47920 2026-10-30', ref: 'Customs TI-BEN-2026-118', terms: 'Re-export by 2027-01-28; bank guarantee BDT 420,000', by: 'Rokeya Begum', at: new Date(Date.now() - 6 * 86400000).toISOString() },
+];
+
+function CustomsDecisions({ onDone }) {
+  const { role } = useRole();
+  const [decisions, setDecisions] = useStoredState('customsDecisions', SEED_DECISIONS);
+  const [kind, setKind] = useState(DECISION_KINDS[0]);
+  const [record, setRecord] = useState('');
+  const [ref, setRef] = useState('');
+  const [terms, setTerms] = useState('');
+  const why = !record.trim() ? 'Enter the Bill of Entry or lot.' : !ref.trim() ? "Enter Customs' reference." : !terms.trim() ? 'Enter the terms or decision.' : '';
+  const save = () => {
+    setDecisions((all) => [...all, { id: `CD-${all.length + 1}`, kind, record: record.trim(), ref: ref.trim(), terms: terms.trim(), by: role.person, at: new Date().toISOString() }]);
+    setRecord(''); setRef(''); setTerms('');
+    onDone(`${kind} recorded against ${record.trim()}`);
+  };
+  return (
+    <Stack spacing={2}>
+      <Card sx={{ p: 3 }}>
+        <SectionTitle>Record a Customs decision</SectionTitle>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>For decisions Customs takes outside IBMS. Each is marked "Keyed from Customs' reference" and the bills on that record follow it.</Typography>
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0,1fr))' } }}>
+          <TextField select label="Decision" value={kind} onChange={(e) => setKind(e.target.value)}>{DECISION_KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}</TextField>
+          <TextField label="Bill of Entry or lot" placeholder="C 601 C-48211 2026-11-12" value={record} onChange={(e) => setRecord(e.target.value)} />
+          <TextField label="Customs' reference" value={ref} onChange={(e) => setRef(e.target.value)} />
+          <TextField label={kind === 'Temporary-import terms' ? 'Terms (re-export date, guarantee)' : 'Decision'} value={terms} onChange={(e) => setTerms(e.target.value)} />
+        </Box>
+        <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }}>
+          {why && <Typography variant="caption" color="text.secondary" role="status" sx={{ flex: 1 }}>{why}</Typography>}
+          <Button variant="contained" disabled={Boolean(why)} onClick={save}>Record the decision</Button>
+        </Stack>
+      </Card>
+      <Card sx={{ p: 3 }}>
+        <ResponsiveTable rowKey={(d) => d.id} rows={[...decisions].reverse()} columns={[
+          { label: 'Decision', render: (d) => <><Typography variant="subtitle2">{d.kind}</Typography><Typography variant="caption" color="text.secondary">{d.record}</Typography></> },
+          { label: 'Terms', render: (d) => d.terms },
+          { label: 'Reference', render: (d) => <Stack spacing={0.5} alignItems="flex-start">{d.ref}<SourceMarker source="Keyed from Customs' reference" /></Stack> },
+          { label: 'Recorded', priority: 'low', render: (d) => `${d.by}, ${formatDateTime(d.at)}` },
+        ]} />
+      </Card>
+    </Stack>
+  );
+}
+
+// Finance: collections by channel, bills raised against payments received each day, and payments that did not
+// arrive. Demo figures for the past days; today adds the live record.
+const DAYS = [
+  { day: '20 Nov', raised: 2184300, received: 2102650 },
+  { day: '21 Nov', raised: 1406900, received: 1311200 },
+  { day: '22 Nov', raised: 2311750, received: 2298400 },
+  { day: '23 Nov', raised: 2057600, received: 2061900 },
+  { day: '24 Nov', raised: 2245100, received: 2190350 },
+  { day: '25 Nov', raised: 1987420, received: 1950800 },
+];
+const CHANNELS = [
+  { channel: 'Sonali Bank e-payment', bills: 412, amount: 8423100 },
+  { channel: 'Bank counter at the port', bills: 167, amount: 2611850 },
+  { channel: 'Online payment gateway', bills: 88, amount: 1210350 },
+];
+const MISSING = [
+  { id: 'PC-BEN-2026-012', paymentId: 'BLPA-BEN-0391-2', provider: 'Online payment gateway', amount: 18420, since: '24 Nov, 15:10', status: 'Provider asked for its settlement file' },
+  { id: 'PC-BEN-2026-013', paymentId: 'BLPA-BEN-0402-6', provider: 'Sonali Bank e-payment', amount: 6230, since: '25 Nov, 11:42', status: 'Agent shows a debit; bank checking' },
+];
+
+function Finance() {
+  const p = usePort();
+  const today = p.state.bills.reduce((acc, b) => {
+    const tot = billTotals(b);
+    return { raised: acc.raised + tot.total, received: acc.received + tot.paid };
+  }, { raised: 0, received: 0 });
+  const days = [...DAYS, { day: 'Today so far (demo record)', ...today }];
+  return (
+    <Stack spacing={2}>
+      <Card sx={{ p: 3 }}>
+        <SectionTitle>Collections by channel, this month</SectionTitle>
+        <ResponsiveTable rowKey={(c) => c.channel} rows={CHANNELS} columns={[
+          { label: 'Channel', render: (c) => c.channel },
+          { label: 'Bills paid', align: 'right', render: (c) => c.bills.toLocaleString('en-US') },
+          { label: 'Collected', align: 'right', nowrap: true, render: (c) => formatBDT(c.amount) },
+        ]} />
+      </Card>
+      <Card sx={{ p: 3 }}>
+        <SectionTitle>Bills raised against payments received</SectionTitle>
+        <ResponsiveTable rowKey={(d) => d.day} rows={days} columns={[
+          { label: 'Day', render: (d) => d.day },
+          { label: 'Raised', align: 'right', nowrap: true, render: (d) => formatBDT(d.raised) },
+          { label: 'Received', align: 'right', nowrap: true, render: (d) => formatBDT(d.received) },
+          { label: 'Difference', align: 'right', nowrap: true, render: (d) => formatBDT(d.received - d.raised) },
+        ]} />
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5 }}>A payment can arrive the day after its bill, so a day's difference is not a loss on its own.</Typography>
+      </Card>
+      <Card sx={{ p: 3 }}>
+        <SectionTitle>Payments that did not arrive</SectionTitle>
+        <ResponsiveTable rowKey={(m) => m.id} rows={MISSING} columns={[
+          { label: 'Case', render: (m) => <><Id>{m.id}</Id><Typography variant="caption" color="text.secondary" component="div">Payment ID {m.paymentId}</Typography></> },
+          { label: 'Provider', priority: 'low', render: (m) => m.provider },
+          { label: 'Amount', align: 'right', nowrap: true, render: (m) => formatBDT(m.amount) },
+          { label: 'Open since', priority: 'low', render: (m) => m.since },
+          { label: 'Status', render: (m) => m.status },
+        ]} />
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5 }}>The bill stays unpaid until the provider confirms; no one marks it paid by hand.</Typography>
+      </Card>
+    </Stack>
+  );
+}
+
 export default function Billing() {
   const p = usePort();
   const t = useT();
@@ -130,7 +292,7 @@ export default function Billing() {
   if (role.id === 'bank') {
     return (<><PageHeader title="Take payment" subtitle="Bank counter, Benapole" /><BankCounter onDone={setMsg} /><Confirmation text={msg} onClose={() => setMsg('')} /></>);
   }
-  const tabs = ['Bills', 'Lines not priced', 'Release from Customs\' reference', 'Bank counter'];
+  const tabs = ['Bills', 'Lines not priced', 'Supplementary bills and credits', 'Customs decisions by reference', 'Release from Customs\' reference', 'Finance', 'Bank counter'];
   return (
     <>
       <PageHeader title={t('Billing and payment')} subtitle={`${p.tariff.version} · VAT 15% per line. No bill is computed from papers and no one marks a bill paid by hand.`} />
@@ -140,8 +302,11 @@ export default function Billing() {
       <Box sx={{ mt: 2 }}>
         {tab === 0 && <Stack spacing={2}>{p.state.bills.map((b) => <BillDetail key={b.id} bill={b} onDone={setMsg} />)}</Stack>}
         {tab === 1 && <Card sx={{ p: 3 }}><SectionTitle>Lines the system could not price</SectionTitle><Typography variant="body2" color="text.secondary">None. A line appears here with its plain reason when no tariff rate applies, and no pass is issued while it sits on a bill.</Typography></Card>}
-        {tab === 2 && <Card sx={{ p: 3 }}><ReleaseFromReference onDone={setMsg} />{p.state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").map((b) => <Alert key={b.id} severity="warning" sx={{ mt: 2 }}>{formatBoe(b)}: release {b.release.ref} <SourceMarker source={b.release.source} /></Alert>)}</Card>}
-        {tab === 3 && <BankCounter onDone={setMsg} />}
+        {tab === 2 && <Supplementary onDone={setMsg} />}
+        {tab === 3 && <CustomsDecisions onDone={setMsg} />}
+        {tab === 4 && <Card sx={{ p: 3 }}><ReleaseFromReference onDone={setMsg} />{p.state.boes.filter((b) => b.release?.source === "Keyed from Customs' reference").map((b) => <Alert key={b.id} severity="warning" sx={{ mt: 2 }}>{formatBoe(b)}: release {b.release.ref} <SourceMarker source={b.release.source} /></Alert>)}</Card>}
+        {tab === 5 && <Finance />}
+        {tab === 6 && <BankCounter onDone={setMsg} />}
       </Box>
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>

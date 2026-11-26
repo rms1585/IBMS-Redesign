@@ -467,3 +467,22 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
     - A place whose storage rule does not take the goods category blocks the posting until the supervisor
       overrides it with a reason.
     - Demo manifest 2026/601/08886 now has a second line (cast-iron parts) to show two drop points.
+- **Step 4 batch 2, warehousing, transshipment and billing (B5, B6, B9):**
+  - Warehousing:
+    - A shortage or damage at receipt needs a photo before the receipt locks, and Custody shows it on the lot.
+    - The shed requisitions equipment from the port's list. A machine marked unavailable cannot be chosen.
+    - Custody shows aging flags: flagged at 30 days, referred to the port in-charge at 60. These are demo limits
+      until batch 4 adds them to Port setup.
+    - A shift records the place, the lifts, the reason and the owner. A blocked bay is refused outright, and a bay
+      whose storage rule does not take the goods needs the supervisor's approval.
+    - Recording a disposal needs the disposal decision reference.
+  - Transshipment:
+    - Each receiving truck's Exit Pass is approved for the goods it took.
+    - The warehouse manager enters each transfer's start and end times. The end may not come before the start.
+    - Damaged, short or refused cargo is raised as an exception, and the agency is told.
+    - The request cannot close while any balance is unexplained.
+  - Billing has three new tabs:
+    - Supplementary bills and credits: raised from resolved reconciliation cases and approved by a second person.
+    - Customs decisions by reference: temporary-import terms, disposal and dues settlement.
+    - Finance: collections by channel, bills raised against payments received each day, and payments that did
+      not arrive.

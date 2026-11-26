@@ -2,14 +2,32 @@ import { useCallback, useState } from 'react';
 import { Alert, Box, Button, Card, Checkbox, FormControlLabel, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import Auction from './Auction';
+import { initialEquipment } from './Equipment';
+import Label from '../components/Label';
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
-import { importerName, usePort } from '../demo/PortStore';
+import { importerName, usePort, useStoredState } from '../demo/PortStore';
 import { daysSince, formatBoe, formatDateTime, formatKg } from '../demo/format';
 import { ActionFoot, ApprovalRow, Bench, Checklist, Confirmation, Fact, Facts, HoldRow, Id, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, SourceMarker, StatusPill, useKeyAction } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
 
 // M-06: shed work on the handheld; the warehouse manager enters job times; loads lock with the Customs ARO's co-approval.
+
+const NO_MAP = {};
+const NO_LIST = [];
+const EXCEPTION_KINDS = ['None', 'Shortage', 'Damage'];
+
+// Places inside the port a lot can be shifted to, with the storage rule each follows. A blocked bay takes no cargo.
+const PLACES = [
+  { id: 'Shed 12 · Bay A', takes: 'general' },
+  { id: 'Shed 12 · Bay C', takes: 'general', blocked: 'Roof repair until 2026-12-05' },
+  { id: 'Shed 7 · Bay B', takes: 'general' },
+  { id: 'Shed 31 · Bay 2', takes: 'chemicals' },
+  { id: 'Open yard B · Row 4', takes: 'heavy' },
+];
+// Aging limits for this port (BLPA sets them per port): flagged at one month, referred to the port in-charge at two.
+const AGING_FLAG_DAYS = 30;
+const AGING_REFER_DAYS = 60;
 
 const ASSOCIATIONS = ['Benapole Port Labour Association No. 1', 'Benapole Port Labour Association No. 2', 'Benapole Port Labour Association No. 3'];
 
@@ -44,19 +62,26 @@ function UnloadingBench({ onDone }) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
   const [counts, setCounts] = useState({});
+  const [exceptions, setExceptions] = useState({});
+  const [, setSavedExceptions] = useStoredState('receiptExceptions', NO_MAP);
   const lines = v ? p.linesOfVisit(v) : [];
+  const exceptionOf = (l) => exceptions[l.id] ?? { kind: 'None', photo: '', note: '' };
+  const missingPhoto = lines.filter((l) => exceptionOf(l).kind !== 'None' && !exceptionOf(l).photo);
   const deciding = v && v.posting.accepted === null;
   const checks = v && !deciding ? [
     { label: 'Labour association tagged', state: v.receipt?.association ? 'pass' : 'fail', text: v.receipt?.association ?? 'Tag the labour association to the job first.' },
     { label: 'Each line counted or taken from the declaration', state: 'pass', text: `${lines.length} line${lines.length === 1 ? '' : 's'}` },
+    ...(lines.some((l) => exceptionOf(l).kind !== 'None') ? [{ label: 'Shortage or damage photographed', state: missingPhoto.length ? 'fail' : 'pass', text: missingPhoto.length ? `Add a photo for line ${missingPhoto.map((l) => l.no).join(', ')}.` : 'Photo attached; the agency is told.' }] : []),
     { label: 'Unloading times', state: 'info', text: v.receipt?.times ? 'Entered by the warehouse manager' : 'The warehouse manager can enter them after the lock.' },
   ] : [];
   const lock = useCallback(() => {
     if (!v || deciding || checks.some((c) => c.state === 'fail')) return;
     p.lockReceipt(v.id, counts);
-    onDone(`Receipt of ${v.plate} locked`);
-    setCounts({});
-  }, [v, deciding, checks, counts, p, onDone]);
+    const recorded = Object.fromEntries(Object.entries(exceptions).filter(([, e]) => e.kind !== 'None'));
+    if (Object.keys(recorded).length) setSavedExceptions((all) => ({ ...all, ...recorded }));
+    onDone(`Receipt of ${v.plate} locked${Object.keys(recorded).length ? ', with shortage or damage recorded' : ''}`);
+    setCounts({}); setExceptions({});
+  }, [v, deciding, checks, counts, exceptions, setSavedExceptions, p, onDone]);
   useKeyAction('l', lock, Boolean(v) && !deciding);
   const accept = useCallback(() => {
     if (!v || !deciding) return;
@@ -69,7 +94,7 @@ function UnloadingBench({ onDone }) {
   return (
     <Bench
       context={[{ label: 'Port', value: 'Benapole' }, { label: 'Shed', value: 'All sheds (demo)' }, { label: 'Arriving', value: queue.length }]}
-      queue={<QueueList title="Proposed to this shed" items={queue} selected={v?.id} onSelect={(id) => { setSel(id); setRejecting(false); }} empty="No truck is posted to this shed." render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.posting.shed} · {x.posting.accepted === null ? 'Proposal to decide' : 'Accepted, to receive'}</Typography></>} />}
+      queue={<QueueList title="Proposed to this shed" items={queue} selected={v?.id} onSelect={(id) => { setSel(id); setRejecting(false); setExceptions({}); }} empty="No truck is posted to this shed." render={(x) => <><Plate>{x.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.posting.shed} · {x.posting.accepted === null ? 'Proposal to decide' : 'Accepted, to receive'}</Typography></>} />}
       center={v ? (
         <Stack spacing={2.5}>
           <Plate size="hero">{v.plate}</Plate>
@@ -108,10 +133,12 @@ function UnloadingBench({ onDone }) {
                       {!c.counted && <SourceMarker source="Declared" />}
                     </Stack>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Receipt weight {formatKg(receiptKg)}: {single ? 'the higher of the declared weight and the weighbridge net.' : 'this line\'s own declared weight.'}</Typography>
+                    <LineException value={exceptionOf(l)} onChange={(e) => setExceptions({ ...exceptions, [l.id]: e })} />
                   </Card>
                 );
               })}
               {!single && diff !== 0 && <Alert severity="warning">The truck weighed {formatKg(Math.abs(diff))} {diff > 0 ? 'more' : 'less'} than its lines declare. The difference is flagged on the truck and never spread over the lines; each importer pays on its own line's weight.</Alert>}
+              <EquipmentRequisition v={v} onDone={onDone} />
               <SectionTitle>Job times</SectionTitle>
               <JobTimes v={v} onDone={onDone} />
             </>
@@ -189,11 +216,17 @@ function LoadingBench({ onDone }) {
   );
 }
 
-function Custody() {
+function Custody({ onDone }) {
   const p = usePort();
+  const [shifts, setShifts] = useStoredState('cargoShifts', NO_LIST);
+  const [exceptions] = useStoredState('receiptExceptions', NO_MAP);
+  const [shifting, setShifting] = useState(null);
+  const placeOf = (r) => [...shifts].reverse().find((x) => x.line === r.l.id)?.to ?? r.v.posting?.shed;
   const lots = p.state.visits.filter((v) => v.receipt?.locked).flatMap((v) => p.linesOfVisit(v).map((l) => ({ v, l, b: p.boeOfLine(l.id) }))).filter(({ b }) => !b?.closed);
   return (
+    <Stack spacing={3}>
     <Card sx={{ p: 3 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Aging limits at this port: flagged at {AGING_FLAG_DAYS} days, referred to the port in-charge at {AGING_REFER_DAYS} days.</Typography>
       <ResponsiveTable
         rowKey={(r) => r.l.id}
         rows={lots}
@@ -201,13 +234,110 @@ function Custody() {
         columns={[
           { label: 'Line', render: (r) => <Id>{r.l.id}</Id> },
           { label: 'Goods', render: (r) => r.l.goods },
-          { label: 'Place', render: (r) => r.v.posting?.shed },
+          { label: 'Place', render: (r) => <>{placeOf(r)}{exceptions[r.l.id] && <Typography variant="caption" color="warning.text" component="div">{exceptions[r.l.id].kind} recorded at receipt</Typography>}</> },
           { label: 'In custody', align: 'right', render: (r) => formatKg(r.v.receipt.lines[r.l.id].receiptKg - (r.b?.deliveredKg ?? 0)) },
           { label: 'Storage', align: 'right', priority: 'low', render: (r) => `${daysSince(r.v.receipt.at)} days` },
-          { label: 'Status', render: (r) => { const h = p.holdsOnManifest(r.l.manifest); const d = daysSince(r.v.receipt.at); return <StatusPill word={h.length ? 'Customs hold' : d > 30 ? 'Overdue' : r.b?.release ? 'Released' : 'Awaiting Customs'} />; } },
+          { label: 'Aging', priority: 'low', render: (r) => <AgingFlag days={daysSince(r.v.receipt.at)} /> },
+          { label: 'Status', render: (r) => { const h = p.holdsOnManifest(r.l.manifest); return <StatusPill word={h.length ? 'Customs hold' : r.b?.release ? 'Released' : 'Awaiting Customs'} />; } },
+          { label: '', align: 'right', render: (r) => <Button size="small" variant="outlined" color="inherit" onClick={() => setShifting(r)}>Shift</Button> },
         ]}
       />
     </Card>
+    {shifting && <ShiftForm r={shifting} from={placeOf(shifting)} onCancel={() => setShifting(null)} onShift={(shift) => { setShifts((all) => [...all, shift]); setShifting(null); onDone(`Line ${shifting.l.no} shifted to ${shift.to}`); }} />}
+    {shifts.length > 0 && (
+      <Card sx={{ p: 3 }}>
+        <SectionTitle>Shifts inside the port</SectionTitle>
+        <ResponsiveTable rowKey={(x) => x.id} rows={[...shifts].reverse()} columns={[
+          { label: 'Line', render: (x) => <Id>{x.line}</Id> },
+          { label: 'From → to', render: (x) => `${x.from} → ${x.to}` },
+          { label: 'Lifts', align: 'right', render: (x) => x.lifts },
+          { label: 'Reason', render: (x) => <>{x.reason}{x.approval && <Typography variant="caption" color="text.secondary" component="div">Supervisor approved: {x.approval}</Typography>}</> },
+          { label: 'Owner', priority: 'low', render: (x) => x.owner },
+          { label: 'When', priority: 'low', render: (x) => formatDateTime(x.at) },
+        ]} />
+      </Card>
+    )}
+    </Stack>
+  );
+}
+
+function AgingFlag({ days }) {
+  if (days >= AGING_REFER_DAYS) return <Label color="error">{days} days · refer</Label>;
+  if (days >= AGING_FLAG_DAYS) return <Label color="warning">{days} days · flagged</Label>;
+  return <Label>{days} days</Label>;
+}
+
+// A shift records each lift, the reason and the owner. A blocked bay is refused outright; a bay whose storage rule
+// does not take the goods needs the supervisor's approval (Annex 7.6, Table 51).
+function ShiftForm({ r, from, onCancel, onShift }) {
+  const { role } = useRole();
+  const [to, setTo] = useState('');
+  const [lifts, setLifts] = useState('');
+  const [reason, setReason] = useState('');
+  const [approval, setApproval] = useState('');
+  const place = PLACES.find((x) => x.id === to);
+  const breaksRule = place && !place.blocked && place.takes !== r.l.category;
+  const why = !place ? 'Choose where the goods go.' : place.blocked ? `${place.id} is blocked: ${place.blocked}. It takes no cargo.` : !Number(lifts) ? 'Enter the number of lifts.' : !reason.trim() ? 'Give the reason for the shift.' : breaksRule && !approval.trim() ? `${place.id} takes ${place.takes} goods, not ${r.l.category}. The supervisor must approve.` : '';
+  return (
+    <Card sx={{ p: 3 }}>
+      <SectionTitle>Shift line {r.l.no}: {r.l.goods}</SectionTitle>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Now in {from}. Owner: {importerName(r.l.importer)}.</Typography>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' } }}>
+        <TextField select label="Shift to" value={to} onChange={(e) => setTo(e.target.value)}>
+          {PLACES.filter((x) => x.id !== from).map((x) => <MenuItem key={x.id} value={x.id}>{x.id} · {x.blocked ? `blocked: ${x.blocked}` : `takes ${x.takes}`}</MenuItem>)}
+        </TextField>
+        <TextField label="Lifts" inputMode="numeric" value={lifts} onChange={(e) => setLifts(e.target.value.replace(/\D/g, ''))} />
+      </Box>
+      <Stack spacing={2} sx={{ mt: 2 }}>
+        <ReasonField value={reason} onChange={setReason} />
+        {breaksRule && <ReasonField label="Supervisor's approval" value={approval} onChange={setApproval} helper="The supervisor approves the storage-rule exception; it is logged with their name." />}
+      </Stack>
+      <Stack direction="row" spacing={1.5} justifyContent="flex-end" alignItems="center" sx={{ mt: 2 }}>
+        {why && <Typography variant="caption" color={place?.blocked ? 'error.text' : 'text.secondary'} role="status" sx={{ flex: 1 }}>{why}</Typography>}
+        <Button variant="outlined" color="inherit" onClick={onCancel}>Cancel</Button>
+        <Button variant="contained" disabled={Boolean(why)} onClick={() => onShift({ id: `SH-${Date.now()}`, line: r.l.id, from, to, lifts: Number(lifts), reason: reason.trim(), approval: breaksRule ? approval.trim() : '', owner: importerName(r.l.importer), by: role.person, at: new Date().toISOString() })}>Record the shift</Button>
+      </Stack>
+    </Card>
+  );
+}
+
+// Shortage or damage at receipt needs a photo; the agency is told (Annex 7.6).
+function LineException({ value, onChange }) {
+  return (
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} sx={{ mt: 1.5 }}>
+      <TextField select size="small" label="Shortage or damage" value={value.kind} onChange={(e) => onChange({ ...value, kind: e.target.value })} sx={{ width: 200 }}>
+        {EXCEPTION_KINDS.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}
+      </TextField>
+      {value.kind !== 'None' && (
+        <>
+          <Button component="label" size="small" variant="outlined" color="inherit">
+            {value.photo ? 'Replace photo' : 'Add photo'}
+            <input hidden type="file" accept="image/*" capture="environment" onChange={(e) => { const f = e.target.files?.[0]; if (f) onChange({ ...value, photo: f.name }); e.target.value = ''; }} />
+          </Button>
+          <Typography variant="caption" color={value.photo ? 'text.secondary' : 'error.text'}>{value.photo || 'A photo is required'}</Typography>
+        </>
+      )}
+    </Stack>
+  );
+}
+
+// The shed requisitions equipment for the job from the port's list; a machine marked unavailable cannot be chosen.
+function EquipmentRequisition({ v, onDone }) {
+  const [machines] = useStoredState('equipmentCategories', initialEquipment);
+  const [requisitions, setRequisitions] = useStoredState('equipmentRequisitions', NO_MAP);
+  const [code, setCode] = useState('');
+  const mine = requisitions[v.id] ?? NO_LIST;
+  return (
+    <>
+      <SectionTitle>Equipment</SectionTitle>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'flex-start' }}>
+        <TextField select size="small" label="Requisition equipment" value={code} onChange={(e) => setCode(e.target.value)} sx={{ minWidth: 260 }} helperText="Charged at the tariff order's rate for its unit">
+          {machines.map((m) => <MenuItem key={m.code} value={m.code} disabled={!m.available}>{m.name} · {m.unit.toLowerCase()}{m.available ? '' : ` · unavailable: ${m.reason}`}</MenuItem>)}
+        </TextField>
+        <Button variant="outlined" color="inherit" disabled={!code} onClick={() => { const m = machines.find((x) => x.code === code); setRequisitions((all) => ({ ...all, [v.id]: [...(all[v.id] ?? []), { code, name: m.name, at: new Date().toISOString() }] })); setCode(''); onDone(`${m.name} requisitioned`); }}>Requisition</Button>
+      </Stack>
+      {mine.length > 0 && <Typography variant="body2" color="text.secondary">Requisitioned: {mine.map((m) => `${m.name} (${formatDateTime(m.at)})`).join(', ')}</Typography>}
+    </>
   );
 }
 
@@ -233,7 +363,7 @@ export default function Warehousing() {
       />
       {tab === 'unload' && <UnloadingBench onDone={setMsg} />}
       {tab === 'load' && <LoadingBench onDone={setMsg} />}
-      {tab === 'custody' && <Custody />}
+      {tab === 'custody' && <Custody onDone={setMsg} />}
       {tab === 'aging' && <Auction />}
       <Confirmation text={msg} onClose={() => setMsg('')} />
     </>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Tabs, Tab, Typography, Alert, Snackbar, Stack, Grid2 as Grid } from '@mui/material';
+import { Button, Tabs, Tab, TextField, Typography, Alert, Snackbar, Stack, Grid2 as Grid } from '@mui/material';
 import { KpiCard, AssumptionNote, ReasonDialog, formatKg } from '../components/common';
 import DataTable from '../components/DataTable';
 import Label from '../components/Label';
@@ -29,6 +29,7 @@ export default function Auction() {
   const [tab, setTab] = useState('ageing');
   const [listing, setListing] = useState(null);
   const [destroying, setDestroying] = useState(null);
+  const [decision, setDecision] = useState('');
   const [toast, setToast] = useState('');
   const update = (id, change) => setLots((ls) => ls.map((l) => (l.id === id ? { ...l, ...change } : l)));
   const inStock = lots.filter((l) => l.stage === 'stock');
@@ -73,7 +74,7 @@ export default function Auction() {
         <DataTable rows={listed} searchKeys={['id', 'product']} searchPlaceholder={tr("Search lot or goods")} rowKey={(r) => r.id} columns={[
           ...lotColumns,
           { key: 'stage', label: 'Status', render: (r) => (r.stage === 'destroyed' ? <Label color="error">Destroyed</Label> : <Label color="warning">Listed</Label>) },
-          { key: 'a', label: '', render: (r) => (r.stage === 'listed' ? <Button size="small" variant="outlined" color="error" onClick={() => setDestroying(r)}>{tr("Record as destroyed")}</Button> : <Typography variant="caption" color="text.secondary">Removed from stock</Typography>) },
+          { key: 'a', label: '', render: (r) => (r.stage === 'listed' ? <Button size="small" variant="outlined" color="error" onClick={() => setDestroying(r)}>{tr("Record as destroyed")}</Button> : <Typography variant="caption" color="text.secondary">Removed from stock{r.decision ? ` · ${r.decision}` : ''}</Typography>) },
         ]} />
       )}
       <ReasonDialog
@@ -87,11 +88,13 @@ export default function Auction() {
       <ReasonDialog
         open={Boolean(destroying)}
         title={`Record ${destroying?.id ?? ''} as destroyed?`}
-        description={tr("The goods are removed from stock. The record stays in this list.")}
+        description={tr("Disposal is decided by Customs and the disposal committee. Record the goods leaving custody against that decision; they are removed from stock and the record stays in this list.")}
+        extra={<TextField fullWidth label={tr('Disposal decision reference')} placeholder="DC-BEN-2026-014" value={decision} onChange={(e) => setDecision(e.target.value)} helperText={tr('Recorded by the revenue desk from the committee minutes')} sx={{ mb: 2 }} />}
+        canConfirm={Boolean(decision.trim())}
         confirmLabel={tr("Record as destroyed")}
         confirmColor="error"
-        onClose={() => setDestroying(null)}
-        onConfirm={() => { update(destroying.id, { stage: 'destroyed' }); setToast(`${destroying.id} recorded as destroyed and removed from stock.`); setDestroying(null); }}
+        onClose={() => { setDestroying(null); setDecision(''); }}
+        onConfirm={() => { update(destroying.id, { stage: 'destroyed', decision: decision.trim() }); setToast(`${destroying.id} recorded as destroyed against ${decision.trim()}.`); setDestroying(null); setDecision(''); }}
       />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity="success" variant="filled" onClose={() => setToast('')}>{toast}</Alert>
