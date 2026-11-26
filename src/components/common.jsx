@@ -41,7 +41,7 @@ export function PageHeader({ title, links = [], action, subtitle }) {
           </Typography>
         )}
       </Box>
-      {action && <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ flexShrink: 0 }}>{action}</Stack>}
+      {action && <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ flexShrink: 0, maxWidth: '100%', minWidth: 0 }}>{action}</Stack>}
     </Stack>
   );
 }

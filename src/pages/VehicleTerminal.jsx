@@ -36,7 +36,7 @@ function Slot({ code, state, onClick, onInspect, label }) {
           aria-disabled={state === 'occupied' || state === 'wrong'}
           onClick={() => { onInspect(`${code.split('-')[1]} · ${label}`); if (state === 'free' || state === 'selected') onClick(); }}
           sx={(t) => ({
-            width: '100%', minWidth: 0, height: 32, borderRadius: '6px', ...t.typography.caption,
+            width: '100%', minWidth: 0, height: 32, [t.breakpoints.down('sm')]: { height: 44 }, borderRadius: '6px', ...t.typography.caption,
             border: `1px solid ${state === 'free' ? alpha(t.palette.grey[500], 0.32) : 'transparent'}`,
             color: state === 'selected' ? t.palette.primary.contrastText : t.palette.text.secondary,
             bgcolor: state === 'selected' ? 'primary.main' : state === 'occupied' ? alpha(t.palette.grey[500], 0.24) : 'background.paper',
@@ -68,7 +68,8 @@ function BlockView({ block, vehicle, assigned, selected, onSelect }) {
         <Label color={free ? 'success' : 'error'}>{free} free</Label>
       </Stack>
       {/* Slots share the width instead of scrolling sideways: they shrink on narrow screens and stop growing at 56px. */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${block.cols}, minmax(0, 56px))`, gap: 0.75, [COMPACT]: { gap: 0.5 } }}>
+      {/* On a phone the slots reflow into 44px cells (Annex 24.8 touch target); each keeps its code, so position stays readable. */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(auto-fill, minmax(44px, 1fr))', sm: `repeat(${block.cols}, minmax(0, 56px))` }, gap: 0.75, [COMPACT]: { gap: 0.5 } }}>
           {rows.flatMap((r) => cols.map((c) => {
             const code = slotCode(block, r, c);
             const taken = occupied(r, c);

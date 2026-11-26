@@ -114,6 +114,8 @@ export function createAppTheme(mode = 'light') {
       MuiBadge: { styleOverrides: { colorError: { backgroundColor: palette.error.dark } } },
       MuiAlert: { styleOverrides: { filledSuccess: { backgroundColor: palette.success.dark }, filledError: { backgroundColor: palette.error.dark } } },
       MuiIconButton: { styleOverrides: { root: { borderRadius: 8, '@media (max-width:599.95px)': { minWidth: 44, minHeight: 44 } } } },
+      // Toggle buttons are touch targets too: 44px on a phone (M2 Annex 24.8).
+      MuiToggleButton: { styleOverrides: { root: { '@media (max-width:599.95px)': { minHeight: 44, minWidth: 44 } } } },
       MuiPaper: {
         defaultProps: { elevation: 0 },
         styleOverrides: { root: { backgroundImage: 'none' }, outlined: { borderColor: alpha(overlay, 0.16) } },

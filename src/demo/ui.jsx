@@ -50,7 +50,7 @@ export function Checklist({ checks }) {
           </Box>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle2">
-              <Box component="span" sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{c.state === 'pass' ? `${t('Passed')}: ` : c.state === 'fail' ? `${t('Failed')}: ` : `${t('Information')}: `}</Box>
+              <Box component="span" sx={{ position: 'absolute', width: '1px', height: '1px', margin: '-1px', overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{c.state === 'pass' ? `${t('Passed')}: ` : c.state === 'fail' ? `${t('Failed')}: ` : `${t('Information')}: `}</Box>
               {t(c.label)}
             </Typography>
             {c.text && <Typography variant="body2" color="text.secondary">{typeof c.text === 'string' ? t(c.text) : c.text}</Typography>}
@@ -200,7 +200,7 @@ function openable(onOpen, row) {
 }
 
 // Read by screen readers, not shown.
-const visuallyHidden = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
+const visuallyHidden = { position: 'absolute', width: '1px', height: '1px', margin: '-1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
 
 const focusRing = (t) => ({ outline: `2px solid ${t.palette.primary.main}`, outlineOffset: -2 });
 

@@ -546,3 +546,24 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
   - `Bench` and `Checklist` now translate their context labels and check descriptions.
   - Still in English on purpose: record data (names, plates, goods, audit entries) and sentences built with live
     values, such as "4,000 kg is left unexplained".
+- **M2 recheck fixes (2026-11-26, from `~/IBMS Audits/M2-recheck-2026-11-26.md`):**
+  - N1: the Export view crashed because it never read the port record. It now does and names the current port.
+  - Every screen now sits inside `ScreenErrorBoundary`. A failing screen shows the Annex 24.4 system-error state
+    with a help-desk reference, and the menu and top bar keep working.
+  - N2: the screen-reader-only text was sized 1 (MUI reads that as 100%). It is now 1px with a -1px margin.
+  - N3: page-header actions can wrap, so the Dashboard no longer scrolls sideways on a phone.
+  - N5: transfer requests raised in the C&F portal now reach the inland gate and Transshipment
+    (`src/demo/transfers.js`). The gate admits receiving trucks against the request's slots, checking that the
+    foreign truck is inside and has no hold. Transshipment lets you pick the request and keeps moves, exceptions
+    and the closed state per request.
+  - B18: Posting checks the active storage rules (Administration > Storage rules) against what the chosen place
+    holds. A clash blocks the posting until the supervisor overrides it.
+  - C6, phone touch targets:
+    - Toggle buttons are 44px.
+    - The cargo vehicle terminal reflows into 44px slots, each still labelled with its slot code.
+    - Warehouse layout bays are 44px tall. On a phone they are still only about 23px wide, which needs a layout
+      decision.
+  - Not changed, because they conflict with later product-owner decisions:
+    - The drawers (D1): kept on 2026-11-25, after the M2 ruling.
+    - Lookup and port on the left (C1): asked for on 2026-11-25, after the M2 ruling.
+    - The primary green (C9): a colour token change, which needs the product owner's confirmation.

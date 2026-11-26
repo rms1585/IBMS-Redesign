@@ -12,6 +12,7 @@ import { useColorMode } from '../ColorModeContext';
 import { roles, useRole } from '../RoleContext';
 import { MODULE_NAMES, usePort } from '../demo/PortStore';
 import { inboxWaiting } from '../demo/inbox';
+import ScreenErrorBoundary from '../components/ScreenErrorBoundary';
 import { formatDateTime } from '../demo/format';
 import { useLanguage, useT } from '../i18n/LanguageContext';
 import Logo from '../components/Logo';
@@ -415,7 +416,7 @@ function NotAllowed({ pathname }) {
 
 export default function DashboardLayout() {
   const theme = useTheme();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { moduleOff } = usePort();
   const { canOpen, role } = useRole();
   // ≥1200px: full navigation. 900–1199px (iPad landscape): icon rail by default.
@@ -491,7 +492,7 @@ export default function DashboardLayout() {
           {/* Screens outside the current role's modules send the user back to Home. */}
           <StatusStrips />
           {/* Keyed by language so screens that use tr() re-read their strings when the language changes. */}
-          {!canOpen(pathname) ? <NotAllowed pathname={pathname} /> : moduleOff(pathname) ? <ModuleOff module={moduleOff(pathname)} /> : <Outlet key={lang} />}
+          {!canOpen(pathname) ? <NotAllowed pathname={pathname} /> : moduleOff(pathname) ? <ModuleOff module={moduleOff(pathname)} /> : <ScreenErrorBoundary key={`${pathname}${search}-${lang}`}><Outlet key={lang} /></ScreenErrorBoundary>}
         </Box>
       </Box>
     </Box>

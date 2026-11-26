@@ -1045,6 +1045,11 @@ const bn = {
   'Available once the joint wagon list is signed.': 'যৌথ ওয়াগন তালিকায় স্বাক্ষরের পর পাওয়া যাবে।',
   'Re-tagging moves every line at once and the previous agency loses access.': 'পুনরায় ট্যাগ করলে সব লাইন একসাথে সরে এবং আগের এজেন্সি প্রবেশাধিকার হারায়।',
   'Suggested from the goods category and the product list.': 'পণ্যের শ্রেণি ও পণ্য তালিকা থেকে প্রস্তাবিত।',
+  'This screen could not be shown': 'এই স্ক্রিন দেখানো যায়নি',
+  'Nothing you saved is lost, and other screens still work. Reload to try again. If it happens again, call the help desk and quote this reference.': 'আপনার সংরক্ষিত কিছুই হারায়নি, অন্য স্ক্রিন কাজ করছে। আবার চেষ্টা করতে রিলোড করুন। আবার ঘটলে হেল্প ডেস্কে ফোন করে এই রেফারেন্স বলুন।',
+  'Reload': 'রিলোড করুন',
+  'Go to Home': 'হোমে যান',
+  'Export storage is on at Benapole: export cargo can wait in a shed before it leaves.': 'বেনাপোলে রপ্তানি সংরক্ষণ চালু: রপ্তানি মালামাল বের হওয়ার আগে শেডে অপেক্ষা করতে পারে।',
 };
 
 export default bn;

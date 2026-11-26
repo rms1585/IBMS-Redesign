@@ -3,24 +3,22 @@ import { Alert, Box, Button, Card, MenuItem, Stack, TextField, Typography } from
 import { PageHeader } from '../components/common';
 import { useRole } from '../RoleContext';
 import { usePort, useStoredState } from '../demo/PortStore';
+import { DEMO_REQUEST, useTransferRequests } from '../demo/transfers';
 import { formatDateTime, formatKg } from '../demo/format';
 import { Confirmation, Fact, Facts, HoldRow, LockedValue, Plate, ReasonField, SectionTitle, StatusPill } from '../demo/ui';
 import { useT, tr } from '../i18n/LanguageContext';
 
 // M-07: truck-to-truck transfer of perishable lines against the agency's transfer request.
-// The transfer request is demo data local to this screen; its locked moves and the holds live in the shared record.
-
-const REQUEST = {
-  id: 'TR-2026-0088', manifest: '2026/601/08841', importer: 'Delta Foods Ltd', agency: 'Jamuna C&F Services',
-  foreign: 'WB 37 C 5512', line: 'Line 2: Lentils, red, split', totalKg: 8000,
-  slots: ['Jessore-TA 11-4418', 'Jessore-TA 11-5021', null],
-};
+// Requests come from the C&F portal (src/demo/transfers.js) beside one demo request; each keeps its own moves,
+// exceptions and closed state.
 
 // The first receiving truck is already loaded when the screen opens.
 const FIRST_MOVES = [
   { truck: 'Jessore-TA 11-4418', kg: 4000, by: 'Shahidul Islam', at: new Date(Date.now() - 40 * 60000).toISOString(), assoc: 'Benapole Port Labour Association No. 1' },
 ];
 const NO_LIST = [];
+const SEED_WORK = { [DEMO_REQUEST.id]: { moves: FIRST_MOVES, exceptions: [], closed: false } };
+const NO_WORK = { moves: NO_LIST, exceptions: NO_LIST, closed: false };
 const EXCEPTION_KINDS = ['Damaged', 'Short', 'Refused by the receiver'];
 const MANAGERS = ['warehouse-manager', 'super-admin', 'port-incharge'];
 const toLocalInput = (iso) => (iso ? new Date(new Date(iso).getTime() + 6 * 3600000).toISOString().slice(0, 16) : '');
@@ -32,13 +30,25 @@ export default function Transshipment() {
   const p = usePort();
   const t = useT();
   const { role } = useRole();
-  const [moves, setMoves] = useStoredState('transshipmentMoves', FIRST_MOVES);
+  const { requests } = useTransferRequests();
+  const [reqId, setReqId] = useState(DEMO_REQUEST.id);
+  const REQUEST = requests.find((r) => r.id === reqId) ?? DEMO_REQUEST;
+  const [work, setWork] = useStoredState('transshipmentWork', SEED_WORK);
+  const mine = work[REQUEST.id] ?? NO_WORK;
+  // Writes one part (moves, exceptions or closed) of the selected request's work.
+  const setPart = (key) => (update) => setWork((all) => {
+    const cur = all[REQUEST.id] ?? NO_WORK;
+    return { ...all, [REQUEST.id]: { ...cur, [key]: typeof update === 'function' ? update(cur[key]) : update } };
+  });
+  const { moves } = mine;
+  const setMoves = setPart('moves');
   const [truck, setTruck] = useState('');
   const [kg, setKg] = useState('');
   const [assoc, setAssoc] = useState('');
   const [msg, setMsg] = useState('');
-  const [exceptions, setExceptions] = useStoredState('transshipmentExceptions', NO_LIST);
-  const [closed, setClosed] = useStoredState('transshipmentClosed', false);
+  const { exceptions, closed } = mine;
+  const setExceptions = setPart('exceptions');
+  const setClosed = setPart('closed');
   const [raising, setRaising] = useState(false);
   const [excKind, setExcKind] = useState(EXCEPTION_KINDS[0]);
   const [excKg, setExcKg] = useState('');
@@ -61,6 +71,11 @@ export default function Transshipment() {
       <PageHeader title={t('Transshipment')} subtitle={tr("Only perishables go truck to truck. Customs assesses the goods during the transfer, outside IBMS.")} />
       <Stack spacing={3}>
         <Card sx={{ p: 3 }}>
+          {requests.length > 1 && (
+            <TextField select size="small" label={tr('Transfer request')} value={REQUEST.id} onChange={(e) => { setReqId(e.target.value); setTruck(''); setKg(''); setRaising(false); }} sx={{ mb: 2, minWidth: 280 }}>
+              {requests.map((r) => <MenuItem key={r.id} value={r.id}>{r.id} · {r.foreign} · {r.line}</MenuItem>)}
+            </TextField>
+          )}
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mb: 2 }}>
             <Typography variant="h6">Transfer request {REQUEST.id}</Typography>
             <StatusPill word={closed ? 'Closed' : 'Open'} />

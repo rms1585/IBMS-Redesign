@@ -3,7 +3,7 @@ import { Alert, Box, Button, Card, Stack, Tab, Tabs, Typography } from '@mui/mat
 import { formatBDT, formatDateTime } from '../demo/format';
 import { Confirmation, Plate, ResponsiveTable, SectionTitle, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
-import { useStoredState } from '../demo/PortStore';
+import { usePort, useStoredState } from '../demo/PortStore';
 
 // M2 3.5 and 3.6: export trucks stay loaded (export storage is off at every port by default), the consignment's trucks
 // wait for each other billed as halting, each leaves on a single-use pass, and the empty truck is recognised by plate.
@@ -36,13 +36,14 @@ const RETURNS = [
 // Shown inside the Inland gate as its "Export" view (M2 Annex 24.12: export runs through the gates, the C&F
 // portal and Billing, not a module of its own), so it has no page header of its own.
 export default function ExportCargo() {
+  const p = usePort();
   const t = useT();
   const [tab, setTab] = useState(0);
   const [returned, setReturned] = useStoredState('exportEmptyReturns', NO_RETURNS);
   const [msg, setMsg] = useState('');
   return (
     <>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{p.port.modules.exportStorage ? t('Export storage is on at Benapole: export cargo can wait in a shed before it leaves.') : t('Export storage is off at Benapole, so export trucks stay loaded until the consignment leaves.')}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{p.port.modules.exportStorage ? t(`Export storage is on at ${p.port.name}: export cargo can wait in a shed before it leaves.`) : t(`Export storage is off at ${p.port.name}, so export trucks stay loaded until the consignment leaves.`)}</Typography>
       <Card sx={{ px: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
           {['Export consignments', 'Re-export and returns'].map((x) => <Tab key={x} label={x} />)}

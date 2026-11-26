@@ -5,10 +5,22 @@ import VehicleTerminal from './VehicleTerminal';
 import { PageHeader } from '../components/common';
 import { importerName, usePort, useStoredState } from '../demo/PortStore';
 import { usePortRules } from '../demo/portRules';
+import { storageRules as SEED_RULES } from '../data/mock';
 import { billableTonnes, formatDuration, formatKg } from '../demo/format';
 import { ActionFoot, Bench, Checklist, Confirmation, Fact, Facts, HoldRow, Plate, QueueList, ReasonField, ResponsiveTable, SectionTitle, StatusPill, useKeyAction } from '../demo/ui';
 
 const NO_MAP = {};
+
+// Storage rules (Administration > Storage rules) are pairs of goods categories that must not share a place. Posting
+// checks the active ones against what the chosen place already holds (M-05, M-12; M2 B18). Demo contents.
+const PLACE_HOLDS = { 'Shed 7': ['Rubber'], 'Shed 12': ['Textile'], 'Shed 31': ['Chemical'], 'Open yard B': ['Stone'] };
+const ruleCategoryOf = (line) => {
+  if (line.category === 'perishable' || /lentil|rice|onion|food|fruit|apple|fish/i.test(line.goods)) return 'Food';
+  if (line.category === 'chemicals' || /chemical|dye|acid/i.test(line.goods)) return 'Chemical';
+  if (/yarn|fabric|cotton|textile|fibre/i.test(line.goods)) return 'Textile';
+  if (/stone|boulder/i.test(line.goods)) return 'Stone';
+  return null;
+};
 import { useT, tr } from '../i18n/LanguageContext';
 
 // M-05: route each line, check free space, propose a shed; the holding area is only for trucks with nowhere to go.
@@ -52,7 +64,13 @@ function PostingBench() {
   const dropPoints = [...new Set(lines.map((l) => (l.category === 'perishable' ? 'Transshipment' : l === lines[0] ? chosen : ROUTE[l.category] ?? 'Shed 12')))]
     .sort((a, b) => (a === 'Transshipment') - (b === 'Transshipment'));
   const override = v ? overrides[`${v.id}:${chosen}`] : undefined;
-  const ruleBroken = target && category !== 'perishable' && target.takes !== category;
+  const [storageRules] = useStoredState('storageRules', SEED_RULES);
+  const lineCats = [...new Set(lines.map(ruleCategoryOf).filter(Boolean))];
+  const held = PLACE_HOLDS[chosen] ?? [];
+  const clash = storageRules.filter((r) => r.state === 'Active').find((r) => lineCats.some((c) => (r.a === c && held.includes(r.b)) || (r.b === c && held.includes(r.a))));
+  const takesMismatch = target && category !== 'perishable' && target.takes !== category;
+  const ruleBroken = Boolean(takesMismatch || clash);
+  const ruleText = [takesMismatch && `${chosen} takes ${target.takes} goods, not ${category}.`, clash && `Active rule: ${clash.a} not with ${clash.b} (${clash.reason}); ${chosen} holds ${held.join(', ')}.`].filter(Boolean).join(' ');
   const checks = v ? [
     { label: 'Manifest matched to the visit', state: 'pass', text: v.manifests.join(', ') },
     { label: 'Route', state: 'info', text: `${lines.map((l) => `Line ${l.no}: ${l.goods}`).join('; ')} → ${suggested}` },
@@ -62,8 +80,8 @@ function PostingBench() {
         ? { label: 'Warehousing', state: 'fail', text: 'Warehousing is switched off at this port (Port setup, step 2), so non-perishable cargo has no shed to go to.' }
         : { label: `Free space in ${chosen}`, state: target && target.freeT >= needT ? 'pass' : 'fail', text: target ? `${target.freeT} t free, this truck needs ${needT} t.` : 'Choose a shed or yard.' },
     ...(ruleBroken ? [override
-      ? { label: 'Storage rule', state: 'pass', text: `${chosen} takes ${target.takes} goods. Overridden by the supervisor: ${override}` }
-      : { label: 'Storage rule', state: 'fail', text: `${chosen} takes ${target.takes} goods, not ${category}. Choose another place or ask the supervisor to override.` }] : []),
+      ? { label: 'Storage rule', state: 'pass', text: `${ruleText} Overridden by the supervisor: ${override}` }
+      : { label: 'Storage rule', state: 'fail', text: `${ruleText} Choose another place or ask the supervisor to override.` }] : []),
     ...(dropPoints.length > 1 ? [{ label: 'Drop points', state: 'info', text: `${dropPoints.length} stops in turn: ${dropPoints.join(' → ')}.` }] : []),
     ...(p.holdsOnVisit(v).length ? [{ label: 'Holds', state: 'info', text: 'A hold travels with the lines; posting still goes ahead.' }] : []),
   ] : [];

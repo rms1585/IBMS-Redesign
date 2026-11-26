@@ -47,8 +47,9 @@ export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
   const rows = Array.from({ length: zone.rows }, (_, r) => r);
   const cols = Array.from({ length: zone.cols }, (_, i) => i);
   return (
-    <Stack spacing={1.5} sx={{ display: 'inline-flex' }}>
-    <Box sx={{ display: 'inline-grid', gridTemplateColumns: `24px repeat(${zone.cols}, ${size}px)`, gap: 0.75 }}>
+    <Stack spacing={1.5} sx={{ display: { xs: 'flex', sm: 'inline-flex' } }}>
+    {/* On a phone the grid fills the width and each bay is 44px tall, so it is easier to tap (Annex 24.8). */}
+    <Box sx={{ display: { xs: 'grid', sm: 'inline-grid' }, gridTemplateColumns: { xs: `24px repeat(${zone.cols}, minmax(0, 1fr))`, sm: `24px repeat(${zone.cols}, ${size}px)` }, gap: 0.75 }}>
       <Box />
       {cols.map((i) => (
         <Typography key={i} variant="caption" color="text.secondary" align="center">C{String(i + 1).padStart(2, '0')}</Typography>
@@ -75,7 +76,7 @@ export function BayGrid({ zone, selected, onSelect, isDisallowed, size = 44 }) {
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setInspected(`${code} · ${tip}`); if (clickable) onSelect(code); } }}
                   sx={{
                     '&:focus-visible': { outline: `2px solid ${c.selected.border}`, outlineOffset: 1 },
-                    height: size * 0.72, borderRadius: '6px', background: c[state].bg, border: `1px solid ${c[state].border}`,
+                    height: { xs: 44, sm: size * 0.72 }, borderRadius: '6px', background: c[state].bg, border: `1px solid ${c[state].border}`,
                     cursor: clickable ? 'pointer' : 'default', transition: 'transform 120ms',
                     ...(clickable && { '&:hover': { transform: 'scale(1.08)', borderColor: c.selected.border } }),
                   }}

@@ -118,7 +118,7 @@ function ChargeTable() {
 // so all tiles match whatever the logo's shape.
 const LOGO_BOX = { width: 73, height: 32 };
 // The radio stays for keyboard and screen-reader use but is not drawn; the tile's border shows the choice.
-const hiddenRadio = { position: 'absolute', opacity: 0, width: 1, height: 1, p: 0, m: 0, overflow: 'hidden' };
+const hiddenRadio = { position: 'absolute', opacity: 0, width: '1px', height: '1px', p: 0, m: 0, overflow: 'hidden' };
 
 // Logo tiles like BLPA's passenger site: easier to recognise than a list of names. One can be selected.
 function PaymentMethodPicker({ value, onChange }) {

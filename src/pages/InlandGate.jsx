@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import ExportCargo from './ExportCargo';
 import { PageHeader } from '../components/common';
 import { agencyName, usePort, useStoredState } from '../demo/PortStore';
+import { useTransferRequests } from '../demo/transfers';
 import { dayKey, formatBoe, formatDateTime, formatKg, searchKey } from '../demo/format';
 import { ActionFoot, ApprovalRow, Bench, CameraStill, Checklist, Confirmation, Fact, Facts, Id, Plate, QueueList, Refusal, SectionTitle, StatusPill, useKeyAction } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
@@ -13,22 +14,38 @@ import { useT } from '../i18n/LanguageContext';
 function EntryBench({ onDone }) {
   const p = usePort();
   const t = useT();
-  const slots = p.state.deliveryRequests.flatMap((d) => d.slots.map((sl, i) => ({ d, sl, i, id: `${d.id}-${i}` }))).filter((x) => x.sl.plate && !x.sl.enteredAt);
+  const { fromPortal, admit: admitReceiving } = useTransferRequests();
+  // Local trucks on a paid Delivery Request slot, and receiving trucks keyed on a transfer request (M-10).
+  const slots = [
+    ...p.state.deliveryRequests.flatMap((d) => d.slots.map((sl, i) => ({ d, sl, i, id: `${d.id}-${i}` }))).filter((x) => x.sl.plate && !x.sl.enteredAt),
+    ...fromPortal.flatMap((r) => r.plates.filter((pl) => !r.admitted[pl]).map((pl) => ({ r, sl: { plate: pl }, id: `${r.id}-${pl}` }))),
+  ];
   const [sel, setSel] = useState(slots[0]?.id);
   const [typed, setTyped] = useState('');
   const item = slots.find((x) => x.id === sel) ?? slots[0];
   const typedMatch = typed && slots.find((x) => searchKey(x.sl.plate) === searchKey(typed));
-  const bill = item && p.bill(item.d.bill);
-  const checks = item ? [
+  const bill = item?.d && p.bill(item.d.bill);
+  const foreignVisit = item?.r && p.state.visits.find((v) => v.plate === item.r.foreign && v.stage !== 'Exited');
+  const foreignHolds = item?.r ? p.holdsOnPlate(item.r.foreign) : [];
+  const checks = item?.r ? [
+    { label: 'Plate on a transfer request', state: 'pass', text: `${item.r.id}, ${item.r.agency}` },
+    { label: 'Foreign truck inside the port', state: foreignVisit ? 'pass' : 'fail', text: foreignVisit ? `${item.r.foreign} is inside (${foreignVisit.stage}).` : `${item.r.foreign} is not inside the port, so there is nothing to transfer from.` },
+    { label: 'No hold on the foreign truck', state: foreignHolds.length ? 'fail' : 'pass', text: foreignHolds.length ? `${foreignHolds[0].body} hold: ${foreignHolds[0].reason}` : 'None open.' },
+  ] : item ? [
     { label: 'Plate bound to an open slot', state: 'pass', text: `Slot ${item.i + 1} of ${item.d.id}` },
     { label: 'Delivery Request paid', state: bill.status === 'Paid' ? 'pass' : 'fail', text: bill.status === 'Paid' ? `${bill.paymentId}, provider confirmed` : `Bill ${bill.paymentId} is unpaid. The truck waits until the agency pays.` },
     { label: 'Delivery day', state: dayKey(item.d.day) === dayKey() ? 'pass' : 'fail', text: dayKey(item.d.day) === dayKey() ? 'Today' : `The request is for ${dayKey(item.d.day)}.` },
   ] : [];
   const admit = useCallback(() => {
     if (!item || checks.some((c) => c.state === 'fail')) return;
+    if (item.r) {
+      const pass = admitReceiving(item.r.id, item.sl.plate);
+      onDone(`Admitted ${item.sl.plate} for ${item.r.id}. Entry Pass ${pass} issued`);
+      return;
+    }
     p.admitLocal(item.sl.plate);
     onDone(`Admitted ${item.sl.plate}. Entry Pass issued`);
-  }, [item, checks, p, onDone]);
+  }, [item, checks, p, onDone, admitReceiving]);
   useKeyAction('a', admit, Boolean(item));
   return (
     <Bench
@@ -37,12 +54,20 @@ function EntryBench({ onDone }) {
         <Stack spacing={2}>
           <TextField size="small" label="Plate at the lane" value={typed} onChange={(e) => setTyped(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && typedMatch) setSel(typedMatch.id); }} helperText="Type a plate and press Enter" />
           {typed && !typedMatch && <Refusal title="Not admitted" items={[`${typed} is not bound to an open slot of a paid Delivery Request. The agency keys the plate in its portal first.`]} />}
-          <QueueList title="Expected local trucks" items={slots} selected={item?.id} onSelect={setSel} empty="No local truck expected. Plates appear once an agency keys them against a paid Delivery Request." render={(x) => <><Plate>{x.sl.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.d.id}</Typography></>} />
+          <QueueList title="Expected local trucks" items={slots} selected={item?.id} onSelect={setSel} empty="No local truck expected. Plates appear once an agency keys them against a paid Delivery Request." render={(x) => <><Plate>{x.sl.plate}</Plate><Typography variant="caption" color="text.secondary" component="div">{x.d ? x.d.id : `Receiving truck · ${x.r.id}`}</Typography></>} />
         </Stack>
       }
       center={item ? (
         <Stack spacing={2}>
           <Plate size="hero">{item.sl.plate}</Plate>
+          {item.r ? (
+            <Facts cols={2}>
+              <Fact label="Transfer request">{item.r.id}</Fact>
+              <Fact label="Foreign truck"><Plate>{item.r.foreign}</Plate></Fact>
+              <Fact label="C&F agency">{item.r.agency}</Fact>
+              <Fact label="Line">{item.r.line}</Fact>
+            </Facts>
+          ) : (
           <Facts cols={2}>
             <Fact label="Delivery Request">{item.d.id}</Fact>
             <Fact label="Bill of Entry"><Id>{formatBoe(p.boe(item.d.boe))}</Id></Fact>
@@ -50,6 +75,7 @@ function EntryBench({ onDone }) {
             <Fact label="Quantity">{formatKg(item.d.kg)}</Fact>
             <Fact label="Trucks">{item.d.slots.filter((s) => s.enteredAt).length} of {item.d.ceiling} entered</Fact>
           </Facts>
+          )}
         </Stack>
       ) : <Typography variant="body2" color="text.secondary">No truck selected.</Typography>}
       right={item ? (<><CameraStill lane="Lane 1" read={item.sl.plate} expected={item.sl.plate} /><Checklist checks={checks} /><ActionFoot checks={checks} label={t('Admit truck')} keyHint="A" onClick={admit} /></>) : null}
