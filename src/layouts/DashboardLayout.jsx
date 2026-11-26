@@ -11,6 +11,7 @@ import Label from '../components/Label';
 import { useColorMode } from '../ColorModeContext';
 import { roles, useRole } from '../RoleContext';
 import { MODULE_NAMES, usePort } from '../demo/PortStore';
+import { inboxWaiting } from '../demo/inbox';
 import { formatDateTime } from '../demo/format';
 import { useLanguage, useT } from '../i18n/LanguageContext';
 import Logo from '../components/Logo';
@@ -174,7 +175,10 @@ function Header({ navWidth, onOpenNav }) {
   const { mode, toggle } = useColorMode();
   const { lang, setLang } = useLanguage();
   const t = useT();
-  const { state, reset } = usePort();
+  const port = usePort();
+  const { state, reset } = port;
+  // A supervisor or approver starts on the Inbox only when something waits for them (M-13; M2 B11).
+  const landingOf = (r) => (r.inboxFirst && inboxWaiting({ ...port, actor: { name: r.person } }) > 0 ? '/inbox' : r.landing);
   const [anchor, setAnchor] = useState(null);
   const items = state.events.slice(0, 10);
   const [userAnchor, setUserAnchor] = useState(null);
@@ -268,7 +272,7 @@ function Header({ navWidth, onOpenNav }) {
         {/* Demo role switcher with the Annex 8 template roles. */}
         <Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 1.5, pt: 1, pb: 0.5 }}>{t('Switch role')} (demo)</Typography>
         {roles.map((r) => (
-          <MenuItem key={r.id} selected={r.id === role.id} onClick={() => { setRole(r.id); setUserAnchor(null); navigate(r.landing); }}>
+          <MenuItem key={r.id} selected={r.id === role.id} onClick={() => { setRole(r.id); setUserAnchor(null); navigate(landingOf(r)); }}>
             <ListItemText primary={r.name} secondary={r.person} primaryTypographyProps={{ variant: 'body2', fontWeight: r.id === role.id ? 600 : 400 }} secondaryTypographyProps={{ variant: 'caption' }} />
             {r.id === role.id && <CheckRoundedIcon fontSize="small" color="primary" />}
           </MenuItem>

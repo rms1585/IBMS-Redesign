@@ -7,6 +7,7 @@ import { agencyName, billTotals, importerName, usePort, useStoredState } from '.
 import { formatBDT, formatBoe, formatDateTime, searchKey } from '../demo/format';
 import { Confirmation, Id, ReasonField, Refusal, ResponsiveTable, SectionTitle, SourceMarker, StatusPill } from '../demo/ui';
 import { useT } from '../i18n/LanguageContext';
+import { MISSING_PAYMENTS } from '../data/finance';
 
 // M-09: bills built from recorded events and the tariff in force. Paid comes only from the provider; paid never means released.
 
@@ -236,10 +237,7 @@ const CHANNELS = [
   { channel: 'Bank counter at the port', bills: 167, amount: 2611850 },
   { channel: 'Online payment gateway', bills: 88, amount: 1210350 },
 ];
-const MISSING = [
-  { id: 'PC-BEN-2026-012', paymentId: 'BLPA-BEN-0391-2', provider: 'Online payment gateway', amount: 18420, since: '24 Nov, 15:10', status: 'Provider asked for its settlement file' },
-  { id: 'PC-BEN-2026-013', paymentId: 'BLPA-BEN-0402-6', provider: 'Sonali Bank e-payment', amount: 6230, since: '25 Nov, 11:42', status: 'Agent shows a debit; bank checking' },
-];
+
 
 function Finance() {
   const p = usePort();
@@ -270,7 +268,7 @@ function Finance() {
       </Card>
       <Card sx={{ p: 3 }}>
         <SectionTitle>Payments that did not arrive</SectionTitle>
-        <ResponsiveTable rowKey={(m) => m.id} rows={MISSING} columns={[
+        <ResponsiveTable rowKey={(m) => m.id} rows={MISSING_PAYMENTS} columns={[
           { label: 'Case', render: (m) => <><Id>{m.id}</Id><Typography variant="caption" color="text.secondary" component="div">Payment ID {m.paymentId}</Typography></> },
           { label: 'Provider', priority: 'low', render: (m) => m.provider },
           { label: 'Amount', align: 'right', nowrap: true, render: (m) => formatBDT(m.amount) },
@@ -287,7 +285,8 @@ export default function Billing() {
   const p = usePort();
   const t = useT();
   const { role } = useRole();
-  const [tab, setTab] = useState(0);
+  // Finance staff start on their own view (TR-11).
+  const [tab, setTab] = useState(role.id === 'finance' ? 5 : 0);
   const [msg, setMsg] = useState('');
   if (role.id === 'bank') {
     return (<><PageHeader title="Take payment" subtitle="Bank counter, Benapole" /><BankCounter onDone={setMsg} /><Confirmation text={msg} onClose={() => setMsg('')} /></>);

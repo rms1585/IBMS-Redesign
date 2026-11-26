@@ -222,7 +222,7 @@ function CreateRole({ open, onClose, onSave }) {
 }
 
 export default function Roles() {
-  const [list, setList] = useStoredState('roles', roles);
+  const [list, setList] = useStoredState('rolesV2', roles);
   const [tab, setTab] = useState('all');
   const [open, setOpen] = useState(false);
   const [copy, setCopy] = useState(null);

@@ -299,6 +299,9 @@ export function PortProvider({ children }) {
           n[name] = typeof update === 'function' ? update(current) : update;
         }),
 
+      // Writes one plain-sentence entry to the audit trail, e.g. an export or an override request (M-13).
+      logEvent: (text, record, source = 'IBMS') => change((n, { log }) => log(text, record, source)),
+
       // Importer portal (M-15)
       tagAgency: (mid, bin, ain) =>
         change((n, { log }) => {

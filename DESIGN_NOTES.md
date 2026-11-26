@@ -486,3 +486,28 @@ with one exception. Source: M2 compliance audit, `~/IBMS Audits/M2-compliance-au
     - Customs decisions by reference: temporary-import terms, disposal and dues settlement.
     - Finance: collections by channel, bills raised against payments received each day, and payments that did
       not arrive.
+- **Step 4 batch 3, inbox, roles, access and audit (B11, B12, B14–B16):**
+  - Start page: the supervisor, port in-charge, bill approver and head-office approver start on the Inbox only
+    when something waits for them. Otherwise they start on their usual screen (`src/demo/inbox.js`).
+  - Inbox:
+    - Four tabs, each with a count: Approvals, Needs attention, Reconciliation and Alerts.
+    - Reconciliation lists back-entry exceptions, values keyed while BNSW was down, and payments that never
+      arrived.
+    - Alerts are newest first and marked unread, with a choice of alert types to follow.
+  - Approvals:
+    - A correction is approved only after a signature drawn on the device and a six-digit second-factor code.
+      The decided item shows the signature image.
+    - Approvals also takes override requests with a reason. The six never-overridable acts are listed but refused
+      for every role.
+    - The person who asked for an override never sees Approve.
+  - Roles: the demo role switcher and the role templates gain the eight missing roles: TR-03, 08, 10, 11, 18,
+    19, 20 and 27. The Finance officer starts on Billing > Finance. The roles list in the demo record is renamed
+    `rolesV2` so the new templates show.
+  - Users:
+    - "Upload staff list" checks each row (name, email, duplicate account, role, port) and imports only the good
+      rows. A demo file is built in.
+    - "Add role assignment" refuses role pairs that must stay with different people: Billing officer and Bill
+      approver, Revenue configurator and Head-office approver, Access administrator and Head-office approver.
+  - Audit log:
+    - Filters for person, role and period, and "only keyed, typed or back-entered values".
+    - Export first shows a notice. The export itself is written to the audit trail, with the filters used.
